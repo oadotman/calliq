@@ -36,13 +36,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     console.log('AuthContext: Initializing...')
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('AuthContext: Initial session loaded', { hasSession: !!session, hasUser: !!session?.user })
-      setSession(session)
-      setUser(session?.user ?? null)
+    // Set a timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      console.log('AuthContext: Session check timed out, proceeding without auth')
       setLoading(false)
-    })
+    }, 5000) // 5 second timeout
+
+    // Get initial session
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        console.log('AuthContext: Initial session loaded', { hasSession: !!session, hasUser: !!session?.user })
+        setSession(session)
+        setUser(session?.user ?? null)
+        setLoading(false)
+        clearTimeout(timeout)
+      })
+      .catch((error) => {
+        console.error('AuthContext: Error loading session', error)
+        setLoading(false)
+        clearTimeout(timeout)
+      })
 
     // Listen for auth changes
     const {
@@ -54,7 +67,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false)
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      subscription.unsubscribe()
+      clearTimeout(timeout)
+    }
   }, [])
 
   const signOut = async () => {

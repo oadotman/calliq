@@ -38,8 +38,9 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
     }
   }, [user, loading, isAuthPage, isPublicPage, router, pathname])
 
-  // Show loading spinner while checking auth state
-  if (loading) {
+  // For public pages, don't show loading - render immediately
+  // Only show loading spinner for protected pages that need auth check
+  if (loading && !isPublicPage && !isAuthPage) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
         <div className="text-center">
