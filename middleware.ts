@@ -128,27 +128,28 @@ export async function middleware(req: NextRequest) {
     hasUser: !!session?.user
   })
 
-  const publicPaths = ['/login', '/signup', '/forgot-password', '/reset-password', '/landing', '/api/auth/signup', '/api/health']
+  const publicPaths = ['/login', '/signup', '/forgot-password', '/reset-password', '/', '/api/auth/signup', '/api/health']
   const isPublicPath = publicPaths.some(path => req.nextUrl.pathname.startsWith(path))
 
-  // If user is not signed in and trying to access protected route, redirect to landing or login
+  // If user is signed in and on root path, redirect to dashboard
+  if (session && req.nextUrl.pathname === '/') {
+    console.log('Middleware: Session found on root path, redirecting to /dashboard')
+    return NextResponse.redirect(new URL('/dashboard', req.url))
+  }
+
+  // If user is not signed in and trying to access protected route, redirect to login
   if (!session && !isPublicPath) {
-    // Redirect to landing page for root path, login for others
-    if (req.nextUrl.pathname === '/') {
-      console.log('Middleware: No session on root path, redirecting to /landing')
-      return NextResponse.redirect(new URL('/landing', req.url))
-    }
-    console.log('Middleware: No session, redirecting to /login')
+    console.log('Middleware: No session on protected route, redirecting to /login')
     const redirectUrl = new URL('/login', req.url)
     redirectUrl.searchParams.set('redirect', req.nextUrl.pathname)
     return NextResponse.redirect(redirectUrl)
   }
 
-  // If user is signed in and trying to access auth pages (except API routes), redirect to home
+  // If user is signed in and trying to access auth pages, redirect to dashboard
   const isAuthPage = ['/login', '/signup', '/forgot-password', '/reset-password'].some(path => req.nextUrl.pathname.startsWith(path))
   if (session && isAuthPage) {
-    console.log('Middleware: Session found on auth page, redirecting to /')
-    return NextResponse.redirect(new URL('/', req.url))
+    console.log('Middleware: Session found on auth page, redirecting to /dashboard')
+    return NextResponse.redirect(new URL('/dashboard', req.url))
   }
 
   console.log('Middleware: Allowing request through')

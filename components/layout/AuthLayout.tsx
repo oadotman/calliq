@@ -17,8 +17,8 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
   const isAuthPage = authPages.some(page => pathname?.startsWith(page))
 
   // Public pages that don't require authentication (like landing page)
-  const publicPages = ['/landing']
-  const isPublicPage = publicPages.some(page => pathname?.startsWith(page))
+  const publicPages = ['/', '/landing']
+  const isPublicPage = publicPages.some(page => pathname === page || pathname?.startsWith(page + '/'))
 
   // Handle redirects based on auth state
   useEffect(() => {
@@ -27,13 +27,13 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
     if (!loading) {
       // If user is logged in and on an auth page, redirect to dashboard
       if (user && isAuthPage) {
-        console.log('AuthLayout: User logged in on auth page, redirecting to /')
-        router.replace('/')
+        console.log('AuthLayout: User logged in on auth page, redirecting to /dashboard')
+        router.replace('/dashboard')
       }
-      // If user is NOT logged in and NOT on an auth page or public page, redirect to landing
+      // If user is NOT logged in and NOT on an auth page or public page, redirect to login
       else if (!user && !isAuthPage && !isPublicPage) {
-        console.log('AuthLayout: No user on protected page, redirecting to /landing')
-        router.replace('/landing')
+        console.log('AuthLayout: No user on protected page, redirecting to /login')
+        router.replace('/login')
       }
     }
   }, [user, loading, isAuthPage, isPublicPage, router, pathname])
