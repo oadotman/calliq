@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Upload, FileAudio, X, Check, AlertCircle, Loader2, Link as LinkIcon, Plus, Users } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { validateAudioFile, formatFileSize, type FileValidationResult } from "@/lib/fileValidation";
+import { validateAudioFile, formatFileSize, getAudioDuration, type FileValidationResult } from "@/lib/fileValidation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -111,13 +111,37 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
     for (const fileUpload of newFiles) {
       const validation = await validateAudioFile(fileUpload.file);
 
+      // Check actual audio duration for free tier users
+      let actualDuration: number | null = null;
+      let durationError: string | null = null;
+
+      if (validation.valid) {
+        try {
+          actualDuration = await getAudioDuration(fileUpload.file);
+
+          // Check against 30-minute free tier limit
+          const MAX_FREE_TIER_DURATION = 30 * 60; // 30 minutes in seconds
+          if (actualDuration > MAX_FREE_TIER_DURATION) {
+            durationError = `Recording duration (${Math.ceil(actualDuration / 60)} minutes) exceeds the 30-minute free tier limit. Please upgrade your plan or use a shorter recording.`;
+          }
+        } catch (error) {
+          console.warn("Could not determine audio duration:", error);
+          // Don't block upload if duration check fails, but warn user
+          toast({
+            title: "Warning",
+            description: "Could not verify recording duration. Upload may fail if it exceeds 30 minutes.",
+            variant: "default",
+          });
+        }
+      }
+
       setFiles((prev) =>
         prev.map((f) =>
           f.id === fileUpload.id
             ? {
                 ...f,
-                status: validation.valid ? ("idle" as UploadStatus) : ("error" as UploadStatus),
-                error: validation.error,
+                status: (validation.valid && !durationError) ? ("idle" as UploadStatus) : ("error" as UploadStatus),
+                error: durationError || validation.error,
                 validation: validation,
               }
             : f

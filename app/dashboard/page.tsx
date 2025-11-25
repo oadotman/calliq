@@ -196,6 +196,31 @@ export default function Dashboard() {
     }
 
     fetchDashboardData();
+
+    // Set up real-time subscription for call status updates
+    const supabase = createClient();
+    const channel = supabase
+      .channel('dashboard-calls')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all changes (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'calls',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          console.log('Call updated:', payload);
+          // Refresh dashboard data when a call changes
+          fetchDashboardData();
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription on unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   // Calculate ROI metrics

@@ -86,6 +86,31 @@ export default function CallsPage() {
     }
 
     fetchCalls();
+
+    // Set up real-time subscription for call status updates
+    const supabase = createClient();
+    const channel = supabase
+      .channel('calls-list')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all changes (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'calls',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          console.log('Call updated:', payload);
+          // Refresh calls list when a call changes
+          fetchCalls();
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription on unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   // Debounced search
