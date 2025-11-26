@@ -1,28 +1,14 @@
-// =====================================================
-// FILE VALIDATION UTILITY
-// Validates audio files before upload
-// =====================================================
-
-// Supported audio formats
-const SUPPORTED_FORMATS = [
-  'audio/mpeg',       // .mp3
-  'audio/mp4',        // .m4a
-  'audio/wav',        // .wav
-  'audio/x-wav',      // .wav (alternative)
-  'audio/webm',       // .webm
-  'audio/ogg',        // .ogg
-  'audio/flac',       // .flac
-  'audio/x-m4a',      // .m4a (alternative)
-  'audio/mp3',        // .mp3 (alternative)
-];
-
-const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB
-const MAX_DURATION = 60 * 60; // 60 minutes in seconds
-const MIN_DURATION = 10; // 10 seconds
+/**
+ * Client-side File Validation Utilities
+ * Provides validation and helper functions for file uploads in the browser
+ */
 
 export interface FileValidationResult {
   valid: boolean;
   error?: string;
+  size?: number;
+  duration?: number;
+  mimeType?: string;
   warnings?: string[];
   metadata?: {
     estimatedDuration?: number;
@@ -30,32 +16,44 @@ export interface FileValidationResult {
   };
 }
 
+// Supported audio MIME types
+const SUPPORTED_AUDIO_TYPES = [
+  'audio/mpeg',
+  'audio/mp3',
+  'audio/mp4',
+  'audio/x-m4a',
+  'audio/wav',
+  'audio/x-wav',
+  'audio/wave',
+  'audio/ogg',
+  'audio/vorbis',
+  'audio/flac',
+  'audio/x-flac',
+  'audio/webm',
+];
+
+// Supported file extensions
+const SUPPORTED_EXTENSIONS = ['mp3', 'mp4', 'm4a', 'wav', 'ogg', 'flac', 'webm', 'oga'];
+
+// Maximum file size in bytes (500MB)
+const MAX_FILE_SIZE = 500 * 1024 * 1024;
+
+// Maximum duration in seconds (4 hours)
+const MAX_DURATION = 4 * 60 * 60;
+
 /**
- * Validates an audio file before upload
- * Checks: format, size, and optionally duration
+ * Validate audio file on client side
  */
-export async function validateAudioFile(
-  file: File
-): Promise<FileValidationResult> {
-  const warnings: string[] = [];
-  const sizeInMB = file.size / 1024 / 1024;
-
-  // Check file type
-  if (!SUPPORTED_FORMATS.includes(file.type)) {
+export async function validateAudioFile(file: File): Promise<FileValidationResult> {
+  // Check if file exists
+  if (!file) {
     return {
       valid: false,
-      error: `Unsupported file format: ${file.type}. Please use MP3, WAV, M4A, WEBM, OGG, or FLAC.`,
+      error: 'No file provided',
     };
   }
 
-  // Check file size
-  if (file.size > MAX_FILE_SIZE) {
-    return {
-      valid: false,
-      error: `File size exceeds 500MB limit. Current size: ${sizeInMB.toFixed(2)}MB`,
-    };
-  }
-
+  // Validate file size
   if (file.size === 0) {
     return {
       valid: false,
@@ -63,132 +61,99 @@ export async function validateAudioFile(
     };
   }
 
-  // Warn if file is very small
-  if (file.size < 100 * 1024) { // < 100KB
-    warnings.push('File is very small. It may be corrupted or incomplete.');
+  if (file.size > MAX_FILE_SIZE) {
+    return {
+      valid: false,
+      error: `File too large. Maximum size is ${formatFileSize(MAX_FILE_SIZE)}`,
+      size: file.size,
+    };
   }
 
-  // Estimate duration from file size
-  const estimatedDuration = estimateDuration(file);
-
-  if (estimatedDuration > MAX_DURATION) {
-    warnings.push(
-      `Audio appears to exceed 60-minute limit (estimated ${Math.round(estimatedDuration / 60)} minutes). Processing may fail or take longer.`
-    );
+  // Validate MIME type
+  if (!SUPPORTED_AUDIO_TYPES.includes(file.type)) {
+    return {
+      valid: false,
+      error: `Unsupported file type: ${file.type}. Supported types: MP3, MP4, M4A, WAV, OGG, FLAC, WebM`,
+      mimeType: file.type,
+    };
   }
 
-  if (estimatedDuration < MIN_DURATION) {
-    warnings.push(
-      `Audio is very short (estimated ${Math.round(estimatedDuration)} seconds). Transcription may be less accurate.`
-    );
+  // Validate file extension
+  const extension = file.name.split('.').pop()?.toLowerCase();
+  if (!extension || !SUPPORTED_EXTENSIONS.includes(extension)) {
+    return {
+      valid: false,
+      error: `Unsupported file extension: .${extension}`,
+    };
+  }
+
+  // Validate filename
+  if (file.name.includes('..') || file.name.includes('/') || file.name.includes('\\')) {
+    return {
+      valid: false,
+      error: 'Filename contains invalid characters',
+    };
+  }
+
+  if (file.name.length > 255) {
+    return {
+      valid: false,
+      error: 'Filename too long (max 255 characters)',
+    };
+  }
+
+  // Try to get duration (optional, non-blocking)
+  let duration: number | undefined;
+  try {
+    duration = await getAudioDuration(file);
+    if (duration > MAX_DURATION) {
+      return {
+        valid: false,
+        error: `Audio too long. Maximum duration is ${formatDuration(MAX_DURATION)}`,
+        duration,
+      };
+    }
+  } catch (error) {
+    // Duration check failed, but we'll allow the upload
+    console.warn('Could not determine audio duration:', error);
   }
 
   return {
     valid: true,
-    warnings: warnings.length > 0 ? warnings : undefined,
-    metadata: {
-      estimatedDuration,
-      sizeInMB: parseFloat(sizeInMB.toFixed(2)),
-    },
+    size: file.size,
+    duration,
+    mimeType: file.type,
   };
 }
 
 /**
- * Estimates audio duration from file size
- * This is a rough estimate based on average bitrates
+ * Get audio file duration in seconds
  */
-function estimateDuration(file: File): number {
-  let avgBytesPerSecond: number;
-
-  switch (file.type) {
-    case 'audio/wav':
-    case 'audio/x-wav':
-      // WAV: ~1.5MB per minute at 16-bit 44.1kHz stereo
-      avgBytesPerSecond = 25000; // ~1.5MB/min / 60s
-      break;
-    case 'audio/flac':
-      // FLAC: ~0.5-1MB per minute (compressed lossless)
-      avgBytesPerSecond = 12000;
-      break;
-    case 'audio/mpeg':
-    case 'audio/mp4':
-    case 'audio/x-m4a':
-      // MP3/M4A: 128kbps = 16KB/s typical
-      avgBytesPerSecond = 16000;
-      break;
-    case 'audio/ogg':
-    case 'audio/webm':
-      // OGG/WEBM: ~10KB/s typical
-      avgBytesPerSecond = 10000;
-      break;
-    default:
-      // Default estimate
-      avgBytesPerSecond = 16000;
-  }
-
-  return Math.round(file.size / avgBytesPerSecond);
-}
-
-/**
- * Gets actual audio duration using HTML5 Audio API
- * This is more accurate but requires loading the file in browser
- */
-export function getAudioDuration(file: File): Promise<number> {
+export async function getAudioDuration(file: File): Promise<number> {
   return new Promise((resolve, reject) => {
-    const audio = new Audio();
-    audio.preload = 'metadata';
+    const audio = document.createElement('audio');
+    const objectUrl = URL.createObjectURL(file);
 
-    const cleanup = () => {
-      URL.revokeObjectURL(audio.src);
-      audio.remove();
-    };
-
-    const timeout = setTimeout(() => {
-      cleanup();
-      reject(new Error('Timeout loading audio metadata'));
-    }, 30000); // 30 second timeout
-
-    audio.onloadedmetadata = () => {
-      clearTimeout(timeout);
-      const duration = audio.duration;
-      cleanup();
-
-      if (isNaN(duration) || duration === 0) {
+    audio.addEventListener('loadedmetadata', () => {
+      URL.revokeObjectURL(objectUrl);
+      if (audio.duration === Infinity || isNaN(audio.duration)) {
         reject(new Error('Could not determine audio duration'));
       } else {
-        resolve(Math.round(duration));
+        resolve(audio.duration);
       }
-    };
+    });
 
-    audio.onerror = () => {
-      clearTimeout(timeout);
-      cleanup();
-      reject(new Error('Failed to load audio metadata'));
-    };
+    audio.addEventListener('error', () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('Failed to load audio file'));
+    });
 
-    try {
-      audio.src = URL.createObjectURL(file);
-    } catch (error) {
-      clearTimeout(timeout);
-      reject(error);
-    }
+    audio.src = objectUrl;
   });
 }
 
 /**
- * Gets SHA-256 hash of file for deduplication
- * Used to detect if same file has been uploaded before
- */
-export async function getFileHash(file: File): Promise<string> {
-  const arrayBuffer = await file.arrayBuffer();
-  const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return hashHex;
-}
-
-/**
- * Format file size for display
+ * Format file size in human-readable format
  */
 export function formatFileSize(bytes: number): string {
   if (bytes === 0) return '0 Bytes';
@@ -201,38 +166,47 @@ export function formatFileSize(bytes: number): string {
 }
 
 /**
- * Format duration for display
+ * Format duration in human-readable format
  */
 export function formatDuration(seconds: number): string {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
+  const secs = Math.floor(seconds % 60);
 
   if (hours > 0) {
-    return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    return `${hours}h ${minutes}m ${secs}s`;
+  } else if (minutes > 0) {
+    return `${minutes}m ${secs}s`;
   } else {
-    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+    return `${secs}s`;
   }
 }
 
 /**
- * Sanitize filename for safe storage
- * Removes special characters and limits length
+ * Validate multiple files
  */
-export function sanitizeFilename(filename: string): string {
-  // Get extension
-  const lastDot = filename.lastIndexOf('.');
-  const name = lastDot > 0 ? filename.substring(0, lastDot) : filename;
-  const ext = lastDot > 0 ? filename.substring(lastDot) : '';
+export async function validateAudioFiles(files: File[]): Promise<FileValidationResult[]> {
+  return Promise.all(files.map(file => validateAudioFile(file)));
+}
 
-  // Remove special characters, keep only alphanumeric, dash, underscore
-  const sanitized = name.replace(/[^a-zA-Z0-9-_]/g, '_');
+/**
+ * Check if a file is a valid audio file based on extension only (quick check)
+ */
+export function isAudioFile(filename: string): boolean {
+  const extension = filename.split('.').pop()?.toLowerCase();
+  return extension ? SUPPORTED_EXTENSIONS.includes(extension) : false;
+}
 
-  // Limit length
-  const maxLength = 100;
-  const truncated = sanitized.length > maxLength
-    ? sanitized.substring(0, maxLength)
-    : sanitized;
+/**
+ * Get supported file types as a string for input accept attribute
+ */
+export function getAcceptedFileTypes(): string {
+  return SUPPORTED_AUDIO_TYPES.join(',');
+}
 
-  return truncated + ext;
+/**
+ * Get supported file extensions as a comma-separated string
+ */
+export function getSupportedExtensions(): string {
+  return SUPPORTED_EXTENSIONS.map(ext => `.${ext}`).join(', ');
 }

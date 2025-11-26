@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient, requireAuth } from '@/lib/supabase/server';
-import { sanitizeFilename } from '@/lib/fileValidation';
+import { validateUploadedFile, generateSecureFileName, sanitizeFileName } from '@/lib/security/file-validation';
 import { calculateUsageAndOverage } from '@/lib/overage';
 import { uploadRateLimiter } from '@/lib/rateLimit';
 import { validateDownloadUrl, safeFetch, convertToDirectDownloadUrl } from '@/lib/security/url-validation';
@@ -221,22 +221,14 @@ export async function POST(req: NextRequest) {
 
     let downloadResponse: Response;
     try {
-      // Use native fetch with redirect following for platform downloads
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout for large files
-
-      try {
-        downloadResponse = await fetch(downloadUrl, {
-          method: 'GET',
-          headers: {
-            'User-Agent': 'SynQall/1.0',
-          },
-          signal: controller.signal,
-          redirect: 'follow', // Follow redirects for Google Drive, Dropbox, etc.
-        });
-      } finally {
-        clearTimeout(timeoutId);
-      }
+      // Use safeFetch which validates all redirects for SSRF protection
+      downloadResponse = await safeFetch(downloadUrl, {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'SynQall/1.0',
+        },
+        redirect: 'follow', // safeFetch will validate each redirect
+      });
 
       if (!downloadResponse.ok) {
         throw new Error(`Download failed: ${downloadResponse.status} ${downloadResponse.statusText}`);
@@ -308,34 +300,50 @@ export async function POST(req: NextRequest) {
 
     // Download the file
     const arrayBuffer = await downloadResponse.arrayBuffer();
-    const fileSize = arrayBuffer.byteLength;
+    const buffer = Buffer.from(arrayBuffer);
+    const fileSize = buffer.byteLength;
 
     console.log('File downloaded:', {
       size: fileSize,
       sizeMB: (fileSize / 1024 / 1024).toFixed(2),
     });
 
-    // Validate downloaded size
-    if (fileSize > MAX_FILE_SIZE) {
-      return NextResponse.json(
-        { error: `File size exceeds 500MB limit. Size: ${(fileSize / 1024 / 1024).toFixed(2)}MB` },
-        { status: 400 }
-      );
-    }
-
-    if (fileSize === 0) {
-      return NextResponse.json(
-        { error: 'Downloaded file is empty' },
-        { status: 400 }
-      );
-    }
-
-    // Generate filename
+    // Generate filename for validation
     const originalFilename = extractFilenameFromUrl(recordingUrl);
     const extension = getFileExtensionFromContentType(contentType);
-    const timestamp = Date.now();
-    const sanitized = sanitizeFilename(originalFilename);
-    const fileName = `${userId}/${timestamp}_${sanitized}`;
+
+    // Advanced validation with magic number verification
+    const validation = await validateUploadedFile(buffer, {
+      fileName: originalFilename,
+      mimeType: contentType,
+      size: fileSize
+    });
+
+    if (!validation.valid) {
+      console.warn('Downloaded file validation failed:', {
+        url: recordingUrl,
+        errors: validation.errors,
+        detectedType: validation.detectedType
+      });
+
+      return NextResponse.json(
+        {
+          error: 'Downloaded file validation failed',
+          details: validation.errors
+        },
+        { status: 400 }
+      );
+    }
+
+    console.log('File validation successful:', {
+      fileName: originalFilename,
+      detectedType: validation.detectedType,
+      sizeMB: validation.sizeMB
+    });
+
+    // Generate secure filename
+    const sanitizedFilename = sanitizeFileName(originalFilename.replace(/\.[^/.]+$/, ''));
+    const fileName = `${userId}/${generateSecureFileName(originalFilename, userId)}`;
 
     // Normalize MIME type for Supabase Storage compatibility
     // Supabase doesn't accept audio/x-m4a, convert to audio/mp4
@@ -349,10 +357,10 @@ export async function POST(req: NextRequest) {
       size: fileSize,
       contentType,
       normalizedContentType,
+      detectedType: validation.detectedType,
     });
 
-    // Upload to Supabase Storage
-    const buffer = Buffer.from(arrayBuffer);
+    // Upload to Supabase Storage (using the already validated buffer)
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('call-audio')
       .upload(fileName, buffer, {
@@ -387,7 +395,7 @@ export async function POST(req: NextRequest) {
       .insert({
         user_id: userId,
         organization_id: organizationId,
-        file_name: `${sanitized}.${extension}`,
+        file_name: `${sanitizedFilename}.${extension}`,
         file_size: fileSize,
         file_url: publicUrl,
         mime_type: contentType,
@@ -435,7 +443,7 @@ export async function POST(req: NextRequest) {
           callId: callData.id,
           userId: userId,
           organizationId: organizationId || undefined,
-          fileName: `${sanitized}.${extension}`,
+          fileName: `${sanitizedFilename}.${extension}`,
           fileSize: fileSize,
           audioUrl: publicUrl,
           customerName: customerName || undefined,

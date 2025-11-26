@@ -33,7 +33,18 @@
       "Bash(openssl rand:*)",
       "Bash(pm2 status:*)",
       "Bash(git commit:*)",
-      "Bash(ssh root@datalix.eu \"cd /var/www/synqall && echo ''=== Checking if .next/static exists in parent directory ==='' && ls -la .next/ | grep static && echo '''' && echo ''=== Checking standalone directory structure ==='' && ls -la .next/standalone/ 2>&1 | head -20\")"
+      "Bash(ssh root@datalix.eu \"cd /var/www/synqall && echo ''=== Checking if .next/static exists in parent directory ==='' && ls -la .next/ | grep static && echo '''' && echo ''=== Checking standalone directory structure ==='' && ls -la .next/standalone/ 2>&1 | head -20\")",
+      "Bash(ssh:*)",
+      "Bash(npx inngest-cli@latest dev)",
+      "Bash(npx inngest-cli dev:*)",
+      "Bash(taskkill /F /IM \"inngest*\" /T 2)",
+      "Bash(netstat:*)",
+      "Bash(taskkill:*)",
+      "Bash(node test-e2e.js:*)",
+      "Bash(node test-simple.js:*)",
+      "Bash(tasklist:*)",
+      "Bash(timeout /t 2 /nobreak)",
+      "Bash(npm run clean:*)"
     ],
     "deny": [],
     "ask": []

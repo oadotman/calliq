@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { sanitizeEmail, sanitizeInput } from '@/lib/sanitize';
+import { sanitizeEmail, sanitizeInput } from '@/lib/sanitize-simple';
 import { inviteRateLimiter } from '@/lib/rateLimit';
 import { randomBytes } from 'crypto';
 

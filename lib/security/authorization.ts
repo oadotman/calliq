@@ -151,7 +151,7 @@ export async function getUserOrganizations(
 }
 
 /**
- * Check if user owns a call
+ * Check if user owns a call or has access via organization
  */
 export async function hasCallAccess(
   userId: string,
@@ -159,9 +159,10 @@ export async function hasCallAccess(
 ): Promise<boolean> {
   const supabase = createServerClient();
 
+  // Fetch call with organization_id
   const { data, error } = await supabase
     .from('calls')
-    .select('id, user_id')
+    .select('id, user_id, organization_id')
     .eq('id', callId)
     .maybeSingle();
 
@@ -174,8 +175,13 @@ export async function hasCallAccess(
     return true;
   }
 
-  // TODO: Check if user has access via organization
-  // This requires adding organization_id to calls table
+  // Check if user has access via organization membership
+  if (data.organization_id) {
+    const hasOrgAccess = await hasOrganizationAccess(userId, data.organization_id);
+    if (hasOrgAccess) {
+      return true;
+    }
+  }
 
   return false;
 }

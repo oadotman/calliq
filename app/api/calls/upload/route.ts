@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient, requireAuth } from '@/lib/supabase/server';
-import { sanitizeFilename } from '@/lib/fileValidation';
+import { validateUploadedFile, generateSecureFileName, sanitizeFileName } from '@/lib/security/file-validation';
 import { calculateUsageAndOverage } from '@/lib/overage';
 import { uploadRateLimiter } from '@/lib/rateLimit';
 
@@ -159,32 +159,41 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate file
-    if (!SUPPORTED_FORMATS.includes(file.type)) {
+    // Convert file to buffer for magic number validation
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    // Advanced validation with magic number verification
+    const validation = await validateUploadedFile(buffer, {
+      fileName: file.name,
+      mimeType: file.type,
+      size: file.size
+    });
+
+    if (!validation.valid) {
+      console.warn('File validation failed:', {
+        fileName: file.name,
+        errors: validation.errors,
+        detectedType: validation.detectedType
+      });
+
       return NextResponse.json(
-        { error: `Unsupported file format: ${file.type}. Please use MP3, WAV, M4A, WEBM, OGG, or FLAC.` },
+        {
+          error: 'File validation failed',
+          details: validation.errors
+        },
         { status: 400 }
       );
     }
 
-    if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json(
-        { error: `File size exceeds 500MB limit. Current size: ${(file.size / 1024 / 1024).toFixed(2)}MB` },
-        { status: 400 }
-      );
-    }
+    console.log('File validation successful:', {
+      fileName: file.name,
+      detectedType: validation.detectedType,
+      sizeMB: validation.sizeMB
+    });
 
-    if (file.size === 0) {
-      return NextResponse.json(
-        { error: 'File is empty' },
-        { status: 400 }
-      );
-    }
-
-    // Generate unique filename
-    const timestamp = Date.now();
-    const sanitized = sanitizeFilename(file.name);
-    const fileName = `${userId}/${timestamp}_${sanitized}`;
+    // Generate secure unique filename
+    const fileName = `${userId}/${generateSecureFileName(file.name, userId)}`;
 
     // Normalize MIME type for Supabase Storage compatibility
     // Supabase doesn't accept audio/x-m4a, convert to audio/mp4
@@ -195,17 +204,20 @@ export async function POST(req: NextRequest) {
 
     console.log('Uploading file:', {
       originalName: file.name,
-      sanitizedName: sanitized,
       storagePath: fileName,
       size: file.size,
       type: file.type,
       normalizedType: contentType,
+      detectedType: validation.detectedType,
     });
+
+    // Create Blob from validated buffer for upload
+    const blob = new Blob([buffer], { type: contentType });
 
     // Upload to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('call-audio')
-      .upload(fileName, file, {
+      .upload(fileName, blob, {
         cacheControl: '3600',
         upsert: false,
         contentType: contentType,
