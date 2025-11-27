@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
-import { Bell, Plus, Search, Settings, User, Sparkles } from "lucide-react";
+import { Plus, Search, User, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -18,9 +18,33 @@ interface TopBarProps {
 
 export function TopBar({ showUploadButton = true }: TopBarProps) {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, organization } = useAuth();
 
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
+
+  // Format plan name for display
+  const getPlanName = (planType: string | undefined) => {
+    if (!planType) return "Free Plan";
+
+    switch (planType) {
+      case "free":
+        return "Free Plan";
+      case "solo":
+        return "Solo Plan";
+      case "team_starter":
+        return "Team Starter";
+      case "team_pro":
+        return "Team Pro";
+      case "team_enterprise":
+        return "Team Enterprise";
+      case "enterprise":
+        return "Enterprise";
+      default:
+        return "Free Plan";
+    }
+  };
+
+  const planName = getPlanName(organization?.plan_type);
 
   return (
     <>
@@ -56,17 +80,6 @@ export function TopBar({ showUploadButton = true }: TopBarProps) {
               </Button>
             )}
 
-            {/* Notifications */}
-            <button className="relative p-2.5 hover:bg-violet-50 dark:hover:bg-violet-900/20 rounded-xl transition-all duration-200 group">
-              <Bell className="w-5 h-5 text-slate-600 dark:text-slate-400 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-gradient-to-br from-red-500 to-pink-500 rounded-full ring-2 ring-white dark:ring-slate-900 animate-pulse" />
-            </button>
-
-            {/* Settings */}
-            <button className="p-2.5 hover:bg-violet-50 dark:hover:bg-violet-900/20 rounded-xl transition-all duration-200 group">
-              <Settings className="w-5 h-5 text-slate-600 dark:text-slate-400 group-hover:text-violet-600 dark:group-hover:text-violet-400 group-hover:rotate-90 transition-all duration-300" />
-            </button>
-
             {/* Theme Toggle */}
             <ThemeToggle />
 
@@ -85,7 +98,7 @@ export function TopBar({ showUploadButton = true }: TopBarProps) {
                 <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">{userName}</p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1">
                   <Sparkles className="w-3 h-3" />
-                  Free Plan
+                  {planName}
                 </p>
               </div>
             </button>

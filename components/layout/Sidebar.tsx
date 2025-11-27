@@ -120,13 +120,6 @@ export function Sidebar() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 rounded-xl dark:bg-slate-800 dark:border-slate-700">
               <DropdownMenuItem
-                className="rounded-lg cursor-pointer dark:hover:bg-slate-700 dark:focus:bg-slate-700"
-                onClick={() => router.push('/settings')}
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                Settings
-              </DropdownMenuItem>
-              <DropdownMenuItem
                 className="rounded-lg cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:text-red-400 dark:focus:text-red-400 dark:focus:bg-red-950/50"
                 onClick={handleLogout}
               >
