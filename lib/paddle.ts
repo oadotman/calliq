@@ -29,15 +29,15 @@ export const paddleConfig = {
 export const paddlePlanIds = {
   sandbox: {
     solo: 'pri_01hzq...',  // Replace with actual Paddle price ID
-    team_5: 'pri_01hzq...',
-    team_10: 'pri_01hzq...',
-    team_20: 'pri_01hzq...',
+    team_starter: 'pri_01hzq...',
+    team_pro: 'pri_01hzq...',
+    team_enterprise: 'pri_01hzq...',
   },
   production: {
     solo: 'pri_01hzq...',  // Replace with actual Paddle price ID
-    team_5: 'pri_01hzq...',
-    team_10: 'pri_01hzq...',
-    team_20: 'pri_01hzq...',
+    team_starter: 'pri_01hzq...',
+    team_pro: 'pri_01hzq...',
+    team_enterprise: 'pri_01hzq...',
   },
 };
 

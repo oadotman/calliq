@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS organizations (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name TEXT NOT NULL,
   slug TEXT UNIQUE NOT NULL,
-  plan_type TEXT DEFAULT 'free' CHECK (plan_type IN ('free', 'solo', 'team_5', 'team_10', 'team_20', 'enterprise')),
+  plan_type TEXT DEFAULT 'free' CHECK (plan_type IN ('free', 'solo', 'team_starter', 'team_pro', 'team_enterprise', 'enterprise')),
   billing_email TEXT,
   max_members INTEGER DEFAULT 1,
   max_minutes_monthly INTEGER DEFAULT 30,

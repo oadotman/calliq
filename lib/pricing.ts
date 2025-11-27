@@ -3,7 +3,7 @@
 // Must stay in sync with database/008_team_management.sql
 // =====================================================
 
-export type PlanType = 'free' | 'solo' | 'team_5' | 'team_10' | 'team_20' | 'enterprise';
+export type PlanType = 'free' | 'solo' | 'team_starter' | 'team_pro' | 'team_enterprise' | 'enterprise';
 
 export interface PlanDetails {
   id: PlanType;
@@ -64,9 +64,9 @@ export const PLANS: Record<PlanType, PlanDetails> = {
     ],
     cta: 'Start Free Trial',
   },
-  team_5: {
-    id: 'team_5',
-    name: 'Team 5',
+  team_starter: {
+    id: 'team_starter',
+    name: 'Team Starter',
     price: 149,
     priceAnnual: 1484, // $149 * 12 * 0.83
     priceDisplay: '$149/mo',
@@ -86,9 +86,9 @@ export const PLANS: Record<PlanType, PlanDetails> = {
     isPopular: true,
     cta: 'Start Free Trial',
   },
-  team_10: {
-    id: 'team_10',
-    name: 'Team 10',
+  team_pro: {
+    id: 'team_pro',
+    name: 'Team Pro',
     price: 299,
     priceAnnual: 2978, // $299 * 12 * 0.83
     priceDisplay: '$299/mo',
@@ -106,9 +106,9 @@ export const PLANS: Record<PlanType, PlanDetails> = {
     ],
     cta: 'Start Free Trial',
   },
-  team_20: {
-    id: 'team_20',
-    name: 'Team 20',
+  team_enterprise: {
+    id: 'team_enterprise',
+    name: 'Team Enterprise',
     price: 499,
     priceAnnual: 4968, // $499 * 12 * 0.83
     priceDisplay: '$499/mo',
@@ -217,23 +217,23 @@ export function getRecommendedPlan(
   if (teamSize === 1) {
     if (minutesUsed <= 30) return 'free';
     if (minutesUsed <= 1500) return 'solo';
-    return 'team_5'; // Suggest team plan if solo user needs more
+    return 'team_starter'; // Suggest team plan if solo user needs more
   }
 
   // For teams
   if (teamSize <= 5) {
-    if (minutesUsed <= 6000) return 'team_5';
-    if (minutesUsed <= 15000) return 'team_10';
-    return 'team_20';
+    if (minutesUsed <= 6000) return 'team_starter';
+    if (minutesUsed <= 15000) return 'team_pro';
+    return 'team_enterprise';
   }
 
   if (teamSize <= 10) {
-    if (minutesUsed <= 15000) return 'team_10';
-    return 'team_20';
+    if (minutesUsed <= 15000) return 'team_pro';
+    return 'team_enterprise';
   }
 
   if (teamSize <= 20) {
-    return 'team_20';
+    return 'team_enterprise';
   }
 
   return 'enterprise';
@@ -244,9 +244,9 @@ export function getPublicPlans(): PlanDetails[] {
   return [
     PLANS.free,
     PLANS.solo,
-    PLANS.team_5,
-    PLANS.team_10,
-    PLANS.team_20,
+    PLANS.team_starter,
+    PLANS.team_pro,
+    PLANS.team_enterprise,
   ];
 }
 

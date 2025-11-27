@@ -259,9 +259,9 @@ function getPlanTypeFromPriceId(priceId?: string): string {
   const priceIdMap: Record<string, string> = {
     // Sandbox IDs (replace with actual IDs)
     'pri_01hzq...': 'solo',
-    'pri_01hzr...': 'team_5',
-    'pri_01hzs...': 'team_10',
-    'pri_01hzt...': 'team_20',
+    'pri_01hzr...': 'team_starter',
+    'pri_01hzs...': 'team_pro',
+    'pri_01hzt...': 'team_enterprise',
   };
 
   return priceIdMap[priceId] || 'free';
