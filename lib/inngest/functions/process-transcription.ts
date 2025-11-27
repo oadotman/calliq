@@ -163,14 +163,17 @@ export const processTranscription = inngest.createFunction(
       }
 
       // Update call status to 'transcribed' (NOT completed - needs review first)
+      // Store duration in MINUTES for usage tracking
+      const durationMinutes = transcript.audio_duration
+        ? Math.round(transcript.audio_duration / 1000 / 60)
+        : null;
+
       await supabase
         .from('calls')
         .update({
           status: 'transcribed' as CallStatus,
           processed_at: new Date().toISOString(),
-          audio_duration: transcript.audio_duration
-            ? Math.round(transcript.audio_duration / 1000)
-            : null,
+          duration: durationMinutes, // Store as minutes for usage tracking
           sentiment_type: sentiment.type,
           sentiment_score: sentiment.score,
           transcription_quality_score: Math.round(avgConfidence * 100),

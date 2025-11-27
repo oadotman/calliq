@@ -18,6 +18,8 @@ import { useToast } from "@/components/ui/use-toast";
 import { validateAudioFile, formatFileSize, getAudioDuration, type FileValidationResult } from "@/lib/fileValidation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useAuth } from "@/lib/AuthContext";
+import { getPlanDetails } from "@/lib/pricing";
 
 interface UploadModalProps {
   isOpen: boolean;
@@ -61,6 +63,11 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
   const [isImporting, setIsImporting] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
+  const { organization } = useAuth();
+
+  // Get user's plan details for duration validation
+  const userPlan = organization?.plan_type || 'free';
+  const planDetails = getPlanDetails(userPlan as any);
 
   const addParticipant = () => {
     const newParticipant: Participant = {
@@ -111,7 +118,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
     for (const fileUpload of newFiles) {
       const validation = await validateAudioFile(fileUpload.file);
 
-      // Check actual audio duration for free tier users
+      // Check actual audio duration against user's plan limits
       let actualDuration: number | null = null;
       let durationError: string | null = null;
 
@@ -119,19 +126,26 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
         try {
           actualDuration = await getAudioDuration(fileUpload.file);
 
-          // Check against 30-minute free tier limit
-          const MAX_FREE_TIER_DURATION = 30 * 60; // 30 minutes in seconds
-          if (actualDuration > MAX_FREE_TIER_DURATION) {
-            durationError = `Recording duration (${Math.ceil(actualDuration / 60)} minutes) exceeds the 30-minute free tier limit. Please upgrade your plan or use a shorter recording.`;
+          // For free tier, check per-file duration limit (30 minutes per file)
+          // For paid tiers, the limit is monthly total, not per-file
+          if (userPlan === 'free') {
+            const MAX_FREE_TIER_DURATION = 30 * 60; // 30 minutes in seconds
+            if (actualDuration > MAX_FREE_TIER_DURATION) {
+              durationError = `Recording duration (${Math.ceil(actualDuration / 60)} minutes) exceeds the 30-minute free tier limit per file. Please upgrade your plan or use a shorter recording.`;
+            }
           }
+          // For paid plans, we don't enforce per-file limits, only monthly totals
+          // The server will handle monthly limit checks
         } catch (error) {
           console.warn("Could not determine audio duration:", error);
-          // Don't block upload if duration check fails, but warn user
-          toast({
-            title: "Warning",
-            description: "Could not verify recording duration. Upload may fail if it exceeds 30 minutes.",
-            variant: "default",
-          });
+          // Don't block upload if duration check fails
+          if (userPlan === 'free') {
+            toast({
+              title: "Warning",
+              description: "Could not verify recording duration. Upload may fail if it exceeds 30 minutes on the free plan.",
+              variant: "default",
+            });
+          }
         }
       }
 
