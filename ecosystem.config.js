@@ -15,10 +15,11 @@ module.exports = {
     {
       name: 'inngest',
       script: 'npx',
-      args: 'inngest-cli@latest dev -u http://localhost:3000/api/inngest',
+      args: 'inngest-cli@latest dev -u http://localhost:3000/api/inngest --no-discovery',
       cwd: '/var/www/synqall',
       env: {
         NODE_ENV: 'production',
+        INNGEST_DEV: 'http://127.0.0.1:8288',
       },
       instances: 1,
       exec_mode: 'fork',
