@@ -5,7 +5,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient, requireAuth } from '@/lib/supabase/server';
-import { inngest } from '@/lib/inngest/client';
 import type { ApproveCallRequest, ApproveCallResponse, CallStatus } from '@/lib/types/approval';
 
 export const runtime = 'nodejs';
@@ -91,27 +90,9 @@ export async function POST(
 
     let extractionTriggered = false;
 
-    // Trigger extraction unless explicitly skipped
-    if (!skipExtraction) {
-      try {
-        await inngest.send({
-          name: 'call/approved',
-          data: {
-            callId,
-            userId: user.id,
-            transcriptId: call.assemblyai_transcript_id,
-            autoApproved: false,
-          },
-        });
-
-        extractionTriggered = true;
-        console.log(`[API] Extraction triggered for call ${callId}`);
-      } catch (inngestError) {
-        console.error('Error triggering extraction:', inngestError);
-        // Don't fail the approval if extraction trigger fails
-        // The user can manually trigger it later
-      }
-    }
+    // Note: Extraction is now handled automatically during the transcription process
+    // No need to trigger it separately after approval
+    // This endpoint now simply marks the call as approved
 
     // Send notification
     await supabase.from('notifications').insert({

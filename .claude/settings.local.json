@@ -48,7 +48,8 @@
       "Bash(awk:*)",
       "Bash(git checkout:*)",
       "Bash(timeout /t 15 /nobreak)",
-      "Bash(timeout /t 20 /nobreak)"
+      "Bash(timeout /t 20 /nobreak)",
+      "Bash(timeout /t 3 /nobreak)"
     ],
     "deny": [],
     "ask": []

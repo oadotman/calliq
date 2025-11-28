@@ -16,7 +16,7 @@ export async function middleware(req: NextRequest) {
     const referer = req.headers.get('referer');
 
     // Webhook endpoints and internal processing are exempt from CSRF checks
-    const webhookPaths = ['/api/webhooks/', '/api/paddle/webhook', '/api/inngest'];
+    const webhookPaths = ['/api/webhooks/', '/api/paddle/webhook'];
     const internalProcessingPaths = ['/process'];
 
     const isWebhook = webhookPaths.some(path => req.nextUrl.pathname.startsWith(path));

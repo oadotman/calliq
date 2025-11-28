@@ -85,10 +85,10 @@ export async function POST(
     const { error: updateError } = await supabase
       .from('calls')
       .update({
+        trim_start: startTime,
+        trim_end: endTime,
         metadata: {
           ...(call.metadata || {}),
-          trim_start: startTime,
-          trim_end: endTime,
           trim_duration: endTime - startTime,
         },
       })
@@ -102,28 +102,9 @@ export async function POST(
       );
     }
 
-    // Trigger Inngest job for transcription with trim parameters
+    // Trigger background processing directly (no Inngest needed)
     try {
-      const { inngest } = await import('@/lib/inngest/client');
-
-      await inngest.send({
-        name: 'call/uploaded',
-        data: {
-          callId: call.id,
-          userId: user.id,
-          organizationId: call.organization_id || undefined,
-          fileName: call.customer_name || 'recording',
-          fileSize: 0,
-          audioUrl: call.audio_url || call.file_url,
-          customerName: call.customer_name || undefined,
-          // Add trim parameters
-          trimStart: startTime,
-          trimEnd: endTime,
-        },
-      });
-
-      console.log('Transcription triggered with trim:', {
-        callId,
+      console.log('🚀 Triggering background processing with trim for call:', callId, {
         startTime,
         endTime,
         duration: endTime - startTime,
@@ -137,6 +118,21 @@ export async function POST(
           assemblyai_error: null, // Clear any previous errors
         })
         .eq('id', callId);
+
+      // Call processing endpoint asynchronously (fire and forget)
+      const processUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/calls/${callId}/process`;
+
+      // Use fetch without awaiting to trigger background processing
+      fetch(processUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }).catch((err) => {
+        console.error('Failed to trigger processing:', err);
+      });
+
+      console.log('✅ Background processing triggered for call:', callId);
 
       // Create notification
       await supabase.from('notifications').insert({
@@ -157,16 +153,16 @@ export async function POST(
         },
       });
 
-    } catch (inngestError) {
-      console.error('Failed to trigger transcription:', inngestError);
+    } catch (error) {
+      console.error('Failed to trigger transcription:', error);
 
       // Update status to failed
       await supabase
         .from('calls')
         .update({
           status: 'failed',
-          assemblyai_error: inngestError instanceof Error
-            ? inngestError.message
+          assemblyai_error: error instanceof Error
+            ? error.message
             : 'Failed to start transcription',
         })
         .eq('id', callId);

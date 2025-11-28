@@ -56,24 +56,9 @@ export async function POST(
       );
     }
 
-    // Trigger Inngest job
+    // Trigger background processing directly (no Inngest needed)
     try {
-      const { inngest } = await import('@/lib/inngest/client');
-
-      await inngest.send({
-        name: 'call/uploaded',
-        data: {
-          callId: call.id,
-          userId: user.id,
-          organizationId: call.organization_id || undefined,
-          fileName: call.customer_name || 'recording',
-          fileSize: 0,
-          audioUrl: call.audio_url || call.file_url,
-          customerName: call.customer_name || undefined,
-        },
-      });
-
-      console.log('Manual transcription triggered for call:', callId);
+      console.log('🚀 Triggering background processing for call:', callId);
 
       // Update call status to processing
       await supabase
@@ -83,6 +68,21 @@ export async function POST(
           assemblyai_error: null, // Clear any previous errors
         })
         .eq('id', callId);
+
+      // Call processing endpoint asynchronously (fire and forget)
+      const processUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/calls/${callId}/process`;
+
+      // Use fetch without awaiting to trigger background processing
+      fetch(processUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }).catch((err) => {
+        console.error('Failed to trigger processing:', err);
+      });
+
+      console.log('✅ Background processing triggered for call:', callId);
 
       // Create notification
       await supabase.from('notifications').insert({
@@ -102,16 +102,16 @@ export async function POST(
         },
       });
 
-    } catch (inngestError) {
-      console.error('Failed to trigger transcription:', inngestError);
+    } catch (error) {
+      console.error('Failed to trigger transcription:', error);
 
       // Update status to failed
       await supabase
         .from('calls')
         .update({
           status: 'failed',
-          assemblyai_error: inngestError instanceof Error
-            ? inngestError.message
+          assemblyai_error: error instanceof Error
+            ? error.message
             : 'Failed to start transcription',
         })
         .eq('id', callId);
