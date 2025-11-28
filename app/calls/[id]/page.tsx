@@ -119,7 +119,11 @@ export default function CallDetailPage() {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(1380); // Default 23 minutes
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [volume, setVolume] = useState(1);
   const [copiedInsight, setCopiedInsight] = useState<number | null>(null);
+
+  // Audio element ref
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Audio trimming and transcription states
   const [showTrimModal, setShowTrimModal] = useState(false);
@@ -443,29 +447,86 @@ export default function CallDetailPage() {
   }, [activeTab, callDetail, duration, router]);
 
   // =====================================================
-  // AUDIO PLAYBACK SIMULATION
+  // REAL AUDIO PLAYBACK
   // =====================================================
 
+  // Setup audio element event listeners
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleLoadedMetadata = () => {
+      setDuration(audio.duration);
+    };
+
+    const handleTimeUpdate = () => {
+      setCurrentTime(audio.currentTime);
+    };
+
+    const handleEnded = () => {
+      setIsPlaying(false);
+      setCurrentTime(0);
+    };
+
+    const handleError = (e: Event) => {
+      console.error('Audio playback error:', e);
+      toast({
+        title: "Playback Error",
+        description: "Failed to load or play audio file",
+        variant: "destructive",
+      });
+      setIsPlaying(false);
+    };
+
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('error', handleError);
+
+    return () => {
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+      audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('error', handleError);
+    };
+  }, [toast]);
+
+  // Control play/pause
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
     if (isPlaying) {
-      interval = setInterval(() => {
-        setCurrentTime((prev) => {
-          if (prev >= duration) {
-            setIsPlaying(false);
-            return duration;
-          }
-          return prev + playbackSpeed;
-        });
-      }, 1000);
+      audio.play().catch(error => {
+        console.error('Play failed:', error);
+        setIsPlaying(false);
+      });
+    } else {
+      audio.pause();
     }
-    return () => clearInterval(interval);
-  }, [isPlaying, playbackSpeed, duration]);
+  }, [isPlaying]);
+
+  // Control playback speed
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.playbackRate = playbackSpeed;
+  }, [playbackSpeed]);
+
+  // Control volume
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.volume = volume;
+  }, [volume]);
 
   // Jump to timestamp in audio
   const jumpToTimestamp = (seconds: number) => {
-    setCurrentTime(seconds);
-    setIsPlaying(true);
+    const audio = audioRef.current;
+    if (audio) {
+      audio.currentTime = seconds;
+      setIsPlaying(true);
+    }
   };
 
   // =====================================================
@@ -640,6 +701,15 @@ Call_Duration__c: ${call.duration || 0}
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
       <TopBar showUploadButton={false} />
 
+      {/* Hidden audio element for playback */}
+      {call.file_url && (
+        <audio
+          ref={audioRef}
+          src={call.file_url}
+          preload="metadata"
+        />
+      )}
+
       <div className="px-6 lg:px-8 py-6 space-y-6 max-w-[1600px] mx-auto">
         {/* Header Section */}
         <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
@@ -796,7 +866,17 @@ Call_Duration__c: ${call.duration || 0}
                 </div>
 
                 {/* Progress Bar */}
-                <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden cursor-pointer group">
+                <div
+                  className="relative h-2 bg-gray-200 rounded-full overflow-hidden cursor-pointer group"
+                  onClick={(e) => {
+                    const audio = audioRef.current;
+                    if (!audio) return;
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const percentage = x / rect.width;
+                    audio.currentTime = percentage * duration;
+                  }}
+                >
                   <div
                     className="absolute inset-y-0 left-0 bg-purple-600 transition-all"
                     style={{ width: `${(currentTime / duration) * 100}%` }}
@@ -837,15 +917,12 @@ Call_Duration__c: ${call.duration || 0}
           </CardContent>
         </Card>
 
-        {/* Two-Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Transcript (2/3 width) */}
-          <div className="lg:col-span-2">
-            <Card className="border border-gray-200 shadow-sm">
-              <CardHeader className="bg-gray-50 border-b border-gray-200">
-                <CardTitle className="text-2xl font-bold text-gray-900">Call Transcript</CardTitle>
-              </CardHeader>
-              <CardContent className="p-6 space-y-4 max-h-[800px] overflow-y-auto">
+        {/* Transcript Section - Full Width */}
+        <Card className="border border-gray-200 shadow-sm">
+          <CardHeader className="bg-gray-50 border-b border-gray-200">
+            <CardTitle className="text-2xl font-bold text-gray-900">Call Transcript</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 space-y-4 max-h-[800px] overflow-y-auto">
                 {transcript && transcript.utterances && transcript.utterances.length > 0 ? (
                   transcript.utterances.map((utterance, index) => {
                     const sentiment = sentimentConfig[utterance.sentiment as keyof typeof sentimentConfig] || sentimentConfig.neutral;
@@ -923,172 +1000,18 @@ Call_Duration__c: ${call.duration || 0}
                     </p>
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          </div>
+          </CardContent>
+        </Card>
 
-          {/* Right Column - Insights & CRM Output (1/3 width) */}
-          <div className="space-y-6">
-            {/* Quick Insights Card */}
-            <Card className="border border-gray-200 shadow-sm">
-              <CardHeader className="bg-gray-50 border-b border-gray-200">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-purple-600" />
-                  <CardTitle className="text-lg font-semibold text-gray-900">Quick Insights</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="p-6 space-y-4">
-                {/* Pain Points */}
-                {painPoints.length > 0 && (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center">
-                        <AlertCircle className="w-3.5 h-3.5 text-red-600" />
-                      </div>
-                      <span className="text-xs font-semibold text-red-600 uppercase tracking-wider">
-                        Pain Points
-                      </span>
-                    </div>
-                    {painPoints.map((insight, idx) => (
-                      <div
-                        key={insight.id}
-                        className="group relative pl-8 pr-8 py-2 hover:bg-red-50/50 rounded-lg transition-colors"
-                      >
-                        <p className="text-sm text-gray-900">{insight.insight_text}</p>
-                        <button
-                          onClick={() => handleInsightCopy(insight.insight_text, idx)}
-                          className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-white rounded"
-                        >
-                          {copiedInsight === idx ? (
-                            <Check className="w-4 h-4 text-green-600" />
-                          ) : (
-                            <Copy className="w-4 h-4 text-gray-400" />
-                          )}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Action Items */}
-                {actionItems.length > 0 && (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
-                        <CheckCircle className="w-3.5 h-3.5 text-blue-600" />
-                      </div>
-                      <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider">
-                        Action Items
-                      </span>
-                    </div>
-                    {actionItems.map((insight, idx) => (
-                      <div
-                        key={insight.id}
-                        className="group relative pl-8 pr-8 py-2 hover:bg-blue-50/50 rounded-lg transition-colors"
-                      >
-                        <p className="text-sm text-gray-900">{insight.insight_text}</p>
-                        <button
-                          onClick={() => handleInsightCopy(insight.insight_text, idx + painPoints.length)}
-                          className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-white rounded"
-                        >
-                          {copiedInsight === idx + painPoints.length ? (
-                            <Check className="w-4 h-4 text-green-600" />
-                          ) : (
-                            <Copy className="w-4 h-4 text-gray-400" />
-                          )}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Competitors */}
-                {competitors.length > 0 && (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center">
-                        <Flag className="w-3.5 h-3.5 text-orange-600" />
-                      </div>
-                      <span className="text-xs font-semibold text-orange-600 uppercase tracking-wider">
-                        Competitors
-                      </span>
-                    </div>
-                    {competitors.map((insight, idx) => (
-                      <div
-                        key={insight.id}
-                        className="group relative pl-8 pr-8 py-2 hover:bg-orange-50/50 rounded-lg transition-colors"
-                      >
-                        <p className="text-sm text-gray-900">{insight.insight_text}</p>
-                        <button
-                          onClick={() =>
-                            handleInsightCopy(insight.insight_text, idx + painPoints.length + actionItems.length)
-                          }
-                          className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-white rounded"
-                        >
-                          {copiedInsight === idx + painPoints.length + actionItems.length ? (
-                            <Check className="w-4 h-4 text-green-600" />
-                          ) : (
-                            <Copy className="w-4 h-4 text-gray-400" />
-                          )}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* No insights message */}
-                {painPoints.length === 0 && actionItems.length === 0 && competitors.length === 0 && (
-                  <div className="text-center py-6">
-                    <Sparkles className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-gray-500 text-sm">
-                      {call.status === "processing" || call.status === "extracting"
-                        ? "Insights are being extracted..."
-                        : "No insights extracted yet."}
-                    </p>
-                  </div>
-                )}
-
-                {/* Budget (if available) */}
-                {budgetField && (
-                  <div className="pt-2 border-t border-gray-200">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
-                        <DollarSign className="w-3.5 h-3.5 text-green-600" />
-                      </div>
-                      <span className="text-xs font-semibold text-green-600 uppercase tracking-wider">
-                        Budget
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-900 pl-8">{budgetField.field_value}</p>
-                  </div>
-                )}
-
-                {/* Timeline (if available) */}
-                {timelineField && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center">
-                        <Calendar className="w-3.5 h-3.5 text-purple-600" />
-                      </div>
-                      <span className="text-xs font-semibold text-purple-600 uppercase tracking-wider">
-                        Timeline
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-900 pl-8">{timelineField.field_value}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* CRM Output Card */}
-            <Card className="border border-gray-200 shadow-sm">
-              <CardHeader className="bg-gray-50 border-b border-gray-200">
-                <div className="flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-purple-600" />
-                  <CardTitle className="text-lg font-semibold text-gray-900">CRM Output</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="p-6">
+        {/* CRM Output Section - Full Width */}
+        <Card className="border border-gray-200 shadow-sm">
+          <CardHeader className="bg-gray-50 border-b border-gray-200">
+            <div className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-purple-600" />
+              <CardTitle className="text-2xl font-bold text-gray-900">CRM Output</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6">
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
                   <TabsList className="grid grid-cols-4 w-full mb-4 bg-gray-100 p-1 rounded-lg">
                     <TabsTrigger
@@ -1118,96 +1041,72 @@ Call_Duration__c: ${call.duration || 0}
                   </TabsList>
 
                   <TabsContent value="plain" className="mt-0">
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 min-h-[400px] max-h-[600px] overflow-y-auto">
-                      <pre className="text-sm text-gray-900 whitespace-pre-wrap font-mono leading-relaxed">
+                    <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 min-h-[400px] max-h-[600px] overflow-y-auto">
+                      <pre className="text-base text-gray-900 whitespace-pre-wrap font-mono leading-relaxed">
                         {generateCRMOutput("plain")}
                       </pre>
                     </div>
                   </TabsContent>
 
                   <TabsContent value="hubspot" className="mt-0">
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 min-h-[400px] max-h-[600px] overflow-y-auto">
-                      <pre className="text-sm text-gray-900 whitespace-pre-wrap font-mono leading-relaxed">
+                    <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 min-h-[400px] max-h-[600px] overflow-y-auto">
+                      <pre className="text-base text-gray-900 whitespace-pre-wrap font-mono leading-relaxed">
                         {generateCRMOutput("hubspot")}
                       </pre>
                     </div>
                   </TabsContent>
 
                   <TabsContent value="salesforce" className="mt-0">
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 min-h-[400px] max-h-[600px] overflow-y-auto">
-                      <pre className="text-sm text-gray-900 whitespace-pre-wrap font-mono leading-relaxed">
+                    <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 min-h-[400px] max-h-[600px] overflow-y-auto">
+                      <pre className="text-base text-gray-900 whitespace-pre-wrap font-mono leading-relaxed">
                         {generateCRMOutput("salesforce")}
                       </pre>
                     </div>
                   </TabsContent>
 
                   <TabsContent value="csv" className="mt-0">
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 min-h-[400px] max-h-[600px] overflow-y-auto">
-                      <pre className="text-sm text-gray-900 whitespace-pre-wrap font-mono leading-relaxed">
+                    <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 min-h-[400px] max-h-[600px] overflow-y-auto">
+                      <pre className="text-base text-gray-900 whitespace-pre-wrap font-mono leading-relaxed">
                         {generateCRMOutput("csv")}
                       </pre>
                     </div>
                   </TabsContent>
                 </Tabs>
 
-                {/* BIG COPY BUTTON */}
-                <Button
-                  onClick={() =>
-                    handleCopy(
-                      generateCRMOutput(activeTab),
-                      activeTab.charAt(0).toUpperCase() + activeTab.slice(1)
-                    )
-                  }
-                  className="w-full mt-4 h-14 bg-purple-600 hover:bg-purple-700 text-white text-base font-semibold shadow-lg hover:shadow-xl transition-all group"
-                >
-                  <Copy className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
-                  📋 Copy to Clipboard
-                </Button>
+            {/* Action Buttons Row */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+              <Button
+                onClick={() =>
+                  handleCopy(
+                    generateCRMOutput(activeTab),
+                    activeTab.charAt(0).toUpperCase() + activeTab.slice(1)
+                  )
+                }
+                className="h-12 bg-purple-600 hover:bg-purple-700 text-white text-base font-semibold shadow-lg hover:shadow-xl transition-all group"
+              >
+                <Copy className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
+                Copy to Clipboard
+              </Button>
 
-                {/* Share Button */}
-                <Button
-                  variant="outline"
-                  className="w-full mt-3 border-2 border-gray-300 hover:bg-gray-50 font-medium"
-                >
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Share Call
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Action Buttons */}
-            <div className="space-y-3">
               <Button
                 onClick={() => setShowEmailModal(true)}
                 disabled={!transcript || !transcript.full_text}
-                className="w-full bg-blue-50 text-blue-600 hover:bg-blue-100 border-2 border-blue-200 font-semibold h-11 disabled:opacity-50"
+                className="h-12 bg-blue-600 text-white hover:bg-blue-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Mail className="w-4 h-4 mr-2" />
                 Generate Follow-up Email
               </Button>
+
               <Button
                 variant="outline"
-                className="w-full border-2 border-gray-200 hover:bg-gray-50 text-gray-600 font-medium"
+                className="h-12 border-2 border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold"
               >
                 <Download className="w-4 h-4 mr-2" />
                 Download as PDF
               </Button>
             </div>
-
-            {/* Keyboard Shortcuts Info */}
-            <div className="text-center pt-4 border-t border-gray-200">
-              <p className="text-xs text-gray-500 mb-2">Keyboard Shortcuts</p>
-              <div className="flex flex-wrap gap-2 justify-center text-xs">
-                <kbd className="px-2 py-1 bg-gray-100 border border-gray-300 rounded">Space</kbd>
-                <span className="text-gray-400">Play/Pause</span>
-                <kbd className="px-2 py-1 bg-gray-100 border border-gray-300 rounded">C</kbd>
-                <span className="text-gray-400">Copy</span>
-                <kbd className="px-2 py-1 bg-gray-100 border border-gray-300 rounded">Esc</kbd>
-                <span className="text-gray-400">Back</span>
-              </div>
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Audio Trim Modal */}
