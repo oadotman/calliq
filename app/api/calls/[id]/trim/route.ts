@@ -127,6 +127,7 @@ export async function POST(
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-internal-processing': 'true',
         },
       }).catch((err) => {
         console.error('Failed to trigger processing:', err);

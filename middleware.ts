@@ -14,13 +14,14 @@ export async function middleware(req: NextRequest) {
     const origin = req.headers.get('origin');
     const host = req.headers.get('host');
     const referer = req.headers.get('referer');
+    const internalProcessingHeader = req.headers.get('x-internal-processing');
 
     // Webhook endpoints and internal processing are exempt from CSRF checks
     const webhookPaths = ['/api/webhooks/', '/api/paddle/webhook'];
     const internalProcessingPaths = ['/process'];
 
     const isWebhook = webhookPaths.some(path => req.nextUrl.pathname.startsWith(path));
-    const isInternalProcessing = internalProcessingPaths.some(path => req.nextUrl.pathname.includes(path));
+    const isInternalProcessing = internalProcessingPaths.some(path => req.nextUrl.pathname.includes(path)) || internalProcessingHeader === 'true';
 
     if (!isWebhook && !isInternalProcessing) {
       // Get allowed origins - must be exact matches
