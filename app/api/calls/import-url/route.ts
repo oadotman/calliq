@@ -443,24 +443,9 @@ export async function POST(req: NextRequest) {
     const shouldAutoTranscribe = userPreferences?.auto_transcribe ?? true; // Default to true
 
     if (shouldAutoTranscribe) {
-      // Trigger Inngest job for reliable processing
+      // Trigger background processing directly (no Inngest needed)
       try {
-        const { inngest } = await import('@/lib/inngest/client');
-
-        await inngest.send({
-          name: 'call/uploaded',
-          data: {
-            callId: callData.id,
-            userId: userId,
-            organizationId: organizationId || undefined,
-            fileName: `${sanitizedFilename}.${extension}`,
-            fileSize: fileSize,
-            audioUrl: publicUrl,
-            customerName: customerName || undefined,
-          },
-        });
-
-        console.log('Inngest job triggered for call:', callData.id);
+        console.log('🚀 Triggering background processing for call:', callData.id);
 
         // Update call status to processing
         await supabase
@@ -470,15 +455,30 @@ export async function POST(req: NextRequest) {
           })
           .eq('id', callData.id);
 
-      } catch (inngestError) {
-        console.error('Failed to trigger Inngest job:', inngestError);
+        // Call processing endpoint asynchronously (fire and forget)
+        const processUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/calls/${callData.id}/process`;
+
+        // Use fetch without awaiting to trigger background processing
+        fetch(processUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }).catch((err) => {
+          console.error('Failed to trigger processing:', err);
+        });
+
+        console.log('✅ Background processing triggered for call:', callData.id);
+
+      } catch (error) {
+        console.error('Failed to trigger processing:', error);
 
         await supabase
           .from('calls')
           .update({
             status: 'failed',
-            assemblyai_error: inngestError instanceof Error
-              ? inngestError.message
+            assemblyai_error: error instanceof Error
+              ? error.message
               : 'Failed to start processing',
           })
           .eq('id', callData.id);
