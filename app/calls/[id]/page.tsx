@@ -768,24 +768,63 @@ Call_Duration__c: ${call.duration || 0}
                       ? "bg-green-100 text-green-800"
                       : call.status === "failed"
                       ? "bg-red-100 text-red-800"
-                      : "bg-yellow-100 text-yellow-800"
+                      : "bg-violet-100 text-violet-800"
                   )}
                 >
                   {call.status === "completed" ? "✓ Completed" :
                    call.status === "failed" ? "✗ Failed" :
                    call.status === "transcribing" && call.processing_progress !== null
-                     ? `⏳ Transcribing ${call.processing_progress}%`
-                     : "⏳ Processing"}
+                     ? `Transcribing ${call.processing_progress}%`
+                     : call.status === "extracting"
+                     ? "Extracting Data"
+                     : "Processing"}
                 </Badge>
-
-                {/* Show detailed progress message during transcription */}
-                {call.status === "transcribing" && call.processing_message && (
-                  <span className="ml-3 text-sm text-gray-600">
-                    {call.processing_message}
-                  </span>
-                )}
               </div>
             </div>
+
+            {/* Modern Progress Indicator */}
+            {(call.status === "processing" || call.status === "transcribing" || call.status === "extracting") && (
+              <div className="bg-violet-50 border border-violet-200 rounded-lg p-4 space-y-3 mt-4">
+                {/* Progress Bar */}
+                {call.processing_progress !== null && call.processing_progress !== undefined && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium text-violet-900">
+                        {call.processing_message || 'Processing...'}
+                      </span>
+                      <span className="text-violet-700 font-semibold">
+                        {call.processing_progress}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-violet-200 rounded-full h-2.5 overflow-hidden">
+                      <div
+                        className="bg-gradient-to-r from-violet-600 to-purple-600 h-2.5 rounded-full transition-all duration-500 ease-out"
+                        style={{ width: `${call.processing_progress}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Status Message without Progress Bar */}
+                {(call.processing_progress === null || call.processing_progress === undefined) && (
+                  <div className="flex items-center gap-3">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-violet-600"></div>
+                    <span className="text-sm font-medium text-violet-900">
+                      {call.processing_message || 'Starting processing...'}
+                    </span>
+                  </div>
+                )}
+
+                {/* Estimated Time */}
+                <p className="text-xs text-violet-600">
+                  {call.status === "transcribing"
+                    ? "This usually takes 3-6 minutes depending on call length"
+                    : call.status === "extracting"
+                    ? "Analyzing conversation and extracting insights..."
+                    : "Initializing transcription service..."}
+                </p>
+              </div>
+            )}
 
             {/* Action Buttons */}
             {(call.status === "uploaded" || call.status === "failed") && call.file_url && (

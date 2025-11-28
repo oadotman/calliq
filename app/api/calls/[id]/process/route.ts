@@ -43,7 +43,7 @@ export async function POST(
       .update({
         status: 'processing',
         processing_progress: 0,
-        processing_message: 'Starting transcription...',
+        processing_message: 'Preparing audio file for transcription...',
       })
       .eq('id', callId);
 
@@ -150,7 +150,7 @@ export async function POST(
       .update({
         status: 'extracting',
         processing_progress: 50,
-        processing_message: 'Extracting CRM data...',
+        processing_message: 'Analyzing conversation with AI to extract insights...',
       })
       .eq('id', callId);
 
@@ -165,6 +165,15 @@ export async function POST(
     });
 
     console.log('[Process] ✅ CRM data extracted');
+
+    // Update progress
+    await supabase
+      .from('calls')
+      .update({
+        processing_progress: 75,
+        processing_message: 'Saving extracted data to database...',
+      })
+      .eq('id', callId);
 
     // =====================================================
     // STEP 4: SAVE EXTRACTED FIELDS
@@ -208,6 +217,15 @@ export async function POST(
 
     console.log('[Process] ✅ Saved', coreFields.length, 'fields');
 
+    // Update progress
+    await supabase
+      .from('calls')
+      .update({
+        processing_progress: 95,
+        processing_message: 'Finalizing call record...',
+      })
+      .eq('id', callId);
+
     // =====================================================
     // STEP 5: UPDATE CALL WITH FINAL DATA
     // =====================================================
@@ -217,7 +235,7 @@ export async function POST(
       .update({
         status: 'completed',
         processing_progress: 100,
-        processing_message: 'Processing complete!',
+        processing_message: 'All done! Your call is ready to review.',
         duration_minutes: transcriptionResult.audio_duration
           ? Math.ceil(transcriptionResult.audio_duration / 60)
           : null,
