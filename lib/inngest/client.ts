@@ -12,6 +12,8 @@ export type Events = {
       duration?: number;
       audioUrl: string;
       customerName?: string;
+      trimStart?: number;
+      trimEnd?: number;
     };
   };
   'call/transcribed': {

@@ -1,0 +1,186 @@
+// =====================================================
+// AUDIO TRIMMING API
+// POST: Trim audio to selected time range before transcription
+// =====================================================
+
+import { NextRequest, NextResponse } from 'next/server';
+import { createAdminClient } from '@/lib/supabase/server';
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const supabase = createAdminClient();
+
+    // Get authenticated user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const callId = params.id;
+    const body = await request.json();
+    const { startTime, endTime } = body;
+
+    // Validate input
+    if (typeof startTime !== 'number' || typeof endTime !== 'number') {
+      return NextResponse.json(
+        { error: 'Invalid time range' },
+        { status: 400 }
+      );
+    }
+
+    if (startTime < 0 || endTime <= startTime) {
+      return NextResponse.json(
+        { error: 'Invalid time range. End time must be after start time.' },
+        { status: 400 }
+      );
+    }
+
+    if (endTime - startTime < 1) {
+      return NextResponse.json(
+        { error: 'Selected audio must be at least 1 second long' },
+        { status: 400 }
+      );
+    }
+
+    // Get call record
+    const { data: call, error: callError } = await supabase
+      .from('calls')
+      .select('*')
+      .eq('id', callId)
+      .eq('user_id', user.id) // Ensure user owns the call
+      .single();
+
+    if (callError || !call) {
+      return NextResponse.json(
+        { error: 'Call not found' },
+        { status: 404 }
+      );
+    }
+
+    // Check if call is in a state that can be trimmed
+    if (call.status !== 'uploaded' && call.status !== 'failed') {
+      return NextResponse.json(
+        { error: `Cannot trim audio. Call is in "${call.status}" state. Audio can only be trimmed before transcription.` },
+        { status: 400 }
+      );
+    }
+
+    // Check if audio URL exists
+    if (!call.audio_url && !call.file_url) {
+      return NextResponse.json(
+        { error: 'No audio file found for this call' },
+        { status: 400 }
+      );
+    }
+
+    // Store trim metadata in the call record
+    // The actual audio trimming will be handled by AssemblyAI using the start/end timestamps
+    const { error: updateError } = await supabase
+      .from('calls')
+      .update({
+        metadata: {
+          ...(call.metadata || {}),
+          trim_start: startTime,
+          trim_end: endTime,
+          trim_duration: endTime - startTime,
+        },
+      })
+      .eq('id', callId);
+
+    if (updateError) {
+      console.error('Failed to update call metadata:', updateError);
+      return NextResponse.json(
+        { error: 'Failed to save trim settings' },
+        { status: 500 }
+      );
+    }
+
+    // Trigger Inngest job for transcription with trim parameters
+    try {
+      const { inngest } = await import('@/lib/inngest/client');
+
+      await inngest.send({
+        name: 'call/uploaded',
+        data: {
+          callId: call.id,
+          userId: user.id,
+          organizationId: call.organization_id || undefined,
+          fileName: call.customer_name || 'recording',
+          fileSize: 0,
+          audioUrl: call.audio_url || call.file_url,
+          customerName: call.customer_name || undefined,
+          // Add trim parameters
+          trimStart: startTime,
+          trimEnd: endTime,
+        },
+      });
+
+      console.log('Transcription triggered with trim:', {
+        callId,
+        startTime,
+        endTime,
+        duration: endTime - startTime,
+      });
+
+      // Update call status to processing
+      await supabase
+        .from('calls')
+        .update({
+          status: 'processing',
+          assemblyai_error: null, // Clear any previous errors
+        })
+        .eq('id', callId);
+
+      // Create notification
+      await supabase.from('notifications').insert({
+        user_id: user.id,
+        notification_type: 'call_processing',
+        title: 'Transcription started',
+        message: `Transcribing ${Math.floor(endTime - startTime)} seconds of your call with ${call.customer_name || 'customer'}. This usually takes 3-6 minutes.`,
+        link: `/calls/${callId}`,
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: 'Audio trimmed and transcription started',
+        trim: {
+          start: startTime,
+          end: endTime,
+          duration: endTime - startTime,
+        },
+      });
+
+    } catch (inngestError) {
+      console.error('Failed to trigger transcription:', inngestError);
+
+      // Update status to failed
+      await supabase
+        .from('calls')
+        .update({
+          status: 'failed',
+          assemblyai_error: inngestError instanceof Error
+            ? inngestError.message
+            : 'Failed to start transcription',
+        })
+        .eq('id', callId);
+
+      return NextResponse.json(
+        { error: 'Failed to start transcription. Please try again.' },
+        { status: 500 }
+      );
+    }
+  } catch (error) {
+    console.error('Trim error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}

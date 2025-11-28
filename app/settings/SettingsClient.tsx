@@ -1,15 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TopBar } from "@/components/layout/TopBar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Download, Eye, EyeOff, Copy, RefreshCw, Settings, User, CreditCard, Bell, Key, AlertTriangle } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Download, Eye, EyeOff, Copy, RefreshCw, Settings, User, CreditCard, Bell, Key, AlertTriangle, Loader2, Mic } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
+import type { UserPreferences } from "@/lib/types/preferences";
 
 interface SettingsClientProps {
   user: {
@@ -34,8 +36,78 @@ interface SettingsClientProps {
 export function SettingsClient({ user, billing, organizationId, userId }: SettingsClientProps) {
   const [showApiKey, setShowApiKey] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [preferences, setPreferences] = useState<UserPreferences | null>(null);
+  const [isLoadingPreferences, setIsLoadingPreferences] = useState(true);
+  const [isSavingPreferences, setIsSavingPreferences] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+
+  // Fetch user preferences on mount
+  useEffect(() => {
+    fetchPreferences();
+  }, []);
+
+  const fetchPreferences = async () => {
+    try {
+      setIsLoadingPreferences(true);
+      const response = await fetch('/api/preferences');
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch preferences');
+      }
+
+      const data = await response.json();
+      setPreferences(data.preferences);
+    } catch (error) {
+      console.error('Error fetching preferences:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load preferences",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingPreferences(false);
+    }
+  };
+
+  const updatePreference = async (key: keyof UserPreferences, value: any) => {
+    if (!preferences) return;
+
+    // Optimistically update UI
+    const prevPreferences = preferences;
+    setPreferences({ ...preferences, [key]: value });
+
+    try {
+      const response = await fetch('/api/preferences', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ [key]: value }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update preference');
+      }
+
+      const data = await response.json();
+      setPreferences(data.preferences);
+
+      toast({
+        title: "Preference updated",
+        description: "Your settings have been saved.",
+      });
+    } catch (error) {
+      console.error('Error updating preference:', error);
+      // Revert on error
+      setPreferences(prevPreferences);
+      toast({
+        title: "Error",
+        description: "Failed to update preference",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleUpdateProfile = async () => {
     setIsUpdating(true);
@@ -296,46 +368,105 @@ export function SettingsClient({ user, billing, organizationId, userId }: Settin
             </TabsContent>
 
             {/* Notifications Tab */}
-            <TabsContent value="notifications">
+            <TabsContent value="notifications" className="space-y-6">
+              {/* Processing Preferences */}
               <Card className="border-0 shadow-xl rounded-2xl overflow-hidden">
-                <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100/50 dark:from-slate-800 dark:to-slate-700/50 border-b border-slate-100 dark:border-slate-700">
-                  <CardTitle className="text-xl font-bold text-slate-900 dark:text-slate-100">Email Preferences</CardTitle>
+                <CardHeader className="bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-950 dark:to-purple-950 border-b border-violet-100 dark:border-violet-900">
+                  <div className="flex items-center gap-2">
+                    <Mic className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+                    <CardTitle className="text-xl font-bold text-slate-900 dark:text-slate-100">Processing Preferences</CardTitle>
+                  </div>
                   <CardDescription className="text-slate-600 dark:text-slate-400 font-medium">
-                    Manage how you receive notifications
+                    Control how your calls are processed
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-6 space-y-6 bg-white dark:bg-slate-800">
-                  <div className="flex items-center justify-between py-4 border-b border-slate-100 dark:border-slate-700">
-                    <div className="flex-1">
-                      <p className="font-semibold text-sm text-slate-900 dark:text-slate-100">Call processing complete</p>
-                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 font-medium">
-                        Get notified when your call recordings have been fully analyzed.
-                      </p>
+                  {isLoadingPreferences ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="w-6 h-6 animate-spin text-violet-600" />
                     </div>
-                    <input
-                      type="checkbox"
-                      className="w-5 h-5 rounded border-2 border-slate-300 dark:border-slate-600 text-violet-600 focus:ring-2 focus:ring-violet-500/50 cursor-pointer"
-                      defaultChecked
-                    />
-                  </div>
-                  <div className="flex items-center justify-between py-4 border-b border-slate-100 dark:border-slate-700">
-                    <div className="flex-1">
-                      <p className="font-semibold text-sm text-slate-900 dark:text-slate-100">Weekly summary report</p>
-                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 font-medium">
-                        Receive a weekly digest of your call activity and insights.
-                      </p>
+                  ) : (
+                    <div className="flex items-center justify-between py-4 border-b border-slate-100 dark:border-slate-700">
+                      <div className="flex-1">
+                        <p className="font-semibold text-sm text-slate-900 dark:text-slate-100">
+                          Auto-transcribe calls after upload
+                        </p>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 font-medium">
+                          Automatically start transcription when you upload a call recording. Disable this if you prefer to manually trigger transcription.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={preferences?.auto_transcribe ?? true}
+                        onCheckedChange={(checked) => updatePreference('auto_transcribe', checked)}
+                        className="ml-4"
+                      />
                     </div>
-                    <input
-                      type="checkbox"
-                      className="w-5 h-5 rounded border-2 border-slate-300 dark:border-slate-600 text-violet-600 focus:ring-2 focus:ring-violet-500/50 cursor-pointer"
-                      defaultChecked
-                    />
-                  </div>
-                  <div className="flex justify-end pt-4">
-                    <Button className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white shadow-lg shadow-violet-500/30 hover:shadow-xl hover:shadow-violet-500/50 transition-all duration-300 rounded-xl border-0 font-semibold px-6 py-2">
-                      Save Preferences
-                    </Button>
-                  </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Email Notifications */}
+              <Card className="border-0 shadow-xl rounded-2xl overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100/50 dark:from-slate-800 dark:to-slate-700/50 border-b border-slate-100 dark:border-slate-700">
+                  <CardTitle className="text-xl font-bold text-slate-900 dark:text-slate-100">Email Notifications</CardTitle>
+                  <CardDescription className="text-slate-600 dark:text-slate-400 font-medium">
+                    Choose which email notifications you receive
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-6 space-y-6 bg-white dark:bg-slate-800">
+                  {isLoadingPreferences ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="w-6 h-6 animate-spin text-violet-600" />
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between py-4 border-b border-slate-100 dark:border-slate-700">
+                        <div className="flex-1">
+                          <p className="font-semibold text-sm text-slate-900 dark:text-slate-100">
+                            Transcription complete
+                          </p>
+                          <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 font-medium">
+                            Get notified when your call transcription is complete and ready for extraction.
+                          </p>
+                        </div>
+                        <Switch
+                          checked={preferences?.email_on_transcription_complete ?? true}
+                          onCheckedChange={(checked) => updatePreference('email_on_transcription_complete', checked)}
+                          className="ml-4"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between py-4 border-b border-slate-100 dark:border-slate-700">
+                        <div className="flex-1">
+                          <p className="font-semibold text-sm text-slate-900 dark:text-slate-100">
+                            Extraction complete
+                          </p>
+                          <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 font-medium">
+                            Get notified when data extraction and analysis is complete.
+                          </p>
+                        </div>
+                        <Switch
+                          checked={preferences?.email_on_extraction_complete ?? true}
+                          onCheckedChange={(checked) => updatePreference('email_on_extraction_complete', checked)}
+                          className="ml-4"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between py-4">
+                        <div className="flex-1">
+                          <p className="font-semibold text-sm text-slate-900 dark:text-slate-100">
+                            Review needed
+                          </p>
+                          <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 font-medium">
+                            Get notified when a call requires manual review before processing.
+                          </p>
+                        </div>
+                        <Switch
+                          checked={preferences?.email_on_review_needed ?? true}
+                          onCheckedChange={(checked) => updatePreference('email_on_review_needed', checked)}
+                          className="ml-4"
+                        />
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>

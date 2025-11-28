@@ -44,7 +44,10 @@
       "Bash(node test-simple.js:*)",
       "Bash(tasklist:*)",
       "Bash(timeout /t 2 /nobreak)",
-      "Bash(npm run clean:*)"
+      "Bash(npm run clean:*)",
+      "Bash(awk:*)",
+      "Bash(git checkout:*)",
+      "Bash(timeout /t 15 /nobreak)"
     ],
     "deny": [],
     "ask": []

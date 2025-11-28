@@ -22,7 +22,7 @@ export const processTranscription = inngest.createFunction(
   },
   { event: 'call/uploaded' },
   async ({ event, step }) => {
-    const { callId, audioUrl } = event.data;
+    const { callId, audioUrl, trimStart, trimEnd } = event.data;
 
     console.log('[Inngest] Starting transcription job for call:', callId);
 
@@ -56,6 +56,8 @@ export const processTranscription = inngest.createFunction(
         audioUrl,
         speakersExpected: 2,
         webhookUrl: undefined, // No webhook - Inngest handles polling
+        trimStart: trimStart,
+        trimEnd: trimEnd,
       });
 
       // Update call with transcript ID

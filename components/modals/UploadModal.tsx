@@ -173,92 +173,198 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
   };
 
   const uploadFile = async (fileUpload: FileUpload) => {
-    try {
-      // Update status to uploading
-      setFiles((prev) =>
-        prev.map((f) =>
-          f.id === fileUpload.id ? { ...f, status: "uploading" as UploadStatus, progress: 0 } : f
-        )
-      );
+    return new Promise<string | null>((resolve) => {
+      try {
+        // Update status to uploading
+        setFiles((prev) =>
+          prev.map((f) =>
+            f.id === fileUpload.id ? { ...f, status: "uploading" as UploadStatus, progress: 0 } : f
+          )
+        );
 
-      // Create form data
-      const formData = new FormData();
-      formData.append("file", fileUpload.file);
+        // Create form data
+        const formData = new FormData();
+        formData.append("file", fileUpload.file);
 
-      // Get primary customer and sales rep from participants
-      const customers = participants.filter((p) => p.role === "customer");
-      const salesReps = participants.filter((p) => p.role === "sales_rep");
+        // Get primary customer and sales rep from participants
+        const customers = participants.filter((p) => p.role === "customer");
+        const salesReps = participants.filter((p) => p.role === "sales_rep");
 
-      if (customers.length > 0) {
-        formData.append("customerName", customers[0].name);
-        formData.append("customerEmail", customers[0].email);
-        formData.append("customerCompany", customers[0].company);
+        if (customers.length > 0) {
+          formData.append("customerName", customers[0].name);
+          formData.append("customerEmail", customers[0].email);
+          formData.append("customerCompany", customers[0].company);
+        }
+
+        if (salesReps.length > 0) {
+          formData.append("salesRep", salesReps[0].name);
+        }
+
+        // Store all participants as JSON
+        formData.append("participants", JSON.stringify(participants.filter(p => p.name.trim())));
+        formData.append("callDate", new Date().toISOString());
+
+        // Use XMLHttpRequest for upload progress tracking
+        const xhr = new XMLHttpRequest();
+
+        // Track upload progress
+        xhr.upload.addEventListener("progress", (event) => {
+          if (event.lengthComputable) {
+            const percentComplete = Math.round((event.loaded / event.total) * 100);
+            setFiles((prev) =>
+              prev.map((f) =>
+                f.id === fileUpload.id ? { ...f, progress: percentComplete } : f
+              )
+            );
+          }
+        });
+
+        // Handle completion
+        xhr.addEventListener("load", () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const result = JSON.parse(xhr.responseText);
+
+              // Update to success
+              setFiles((prev) =>
+                prev.map((f) =>
+                  f.id === fileUpload.id
+                    ? {
+                        ...f,
+                        status: "processing" as UploadStatus,
+                        progress: 100,
+                        callId: result.call.id,
+                      }
+                    : f
+                )
+              );
+
+              toast({
+                title: "Upload successful",
+                description: `${fileUpload.name} is now being processed.`,
+              });
+
+              resolve(result.call.id);
+            } catch (error) {
+              console.error("Error parsing response:", error);
+              setFiles((prev) =>
+                prev.map((f) =>
+                  f.id === fileUpload.id
+                    ? {
+                        ...f,
+                        status: "error" as UploadStatus,
+                        error: "Failed to parse server response",
+                      }
+                    : f
+                )
+              );
+              toast({
+                title: "Upload failed",
+                description: "Failed to parse server response",
+                variant: "destructive",
+              });
+              resolve(null);
+            }
+          } else {
+            // Handle error response
+            let errorMessage = "Upload failed";
+            try {
+              const errorData = JSON.parse(xhr.responseText);
+              errorMessage = errorData.error || errorMessage;
+            } catch {
+              errorMessage = `Upload failed with status ${xhr.status}`;
+            }
+
+            setFiles((prev) =>
+              prev.map((f) =>
+                f.id === fileUpload.id
+                  ? {
+                      ...f,
+                      status: "error" as UploadStatus,
+                      error: errorMessage,
+                    }
+                  : f
+              )
+            );
+
+            toast({
+              title: "Upload failed",
+              description: errorMessage,
+              variant: "destructive",
+            });
+
+            resolve(null);
+          }
+        });
+
+        // Handle network errors
+        xhr.addEventListener("error", () => {
+          console.error("Upload error: Network error");
+
+          setFiles((prev) =>
+            prev.map((f) =>
+              f.id === fileUpload.id
+                ? {
+                    ...f,
+                    status: "error" as UploadStatus,
+                    error: "Network error during upload",
+                  }
+                : f
+            )
+          );
+
+          toast({
+            title: "Upload failed",
+            description: "Network error during upload",
+            variant: "destructive",
+          });
+
+          resolve(null);
+        });
+
+        // Handle abort
+        xhr.addEventListener("abort", () => {
+          setFiles((prev) =>
+            prev.map((f) =>
+              f.id === fileUpload.id
+                ? {
+                    ...f,
+                    status: "error" as UploadStatus,
+                    error: "Upload cancelled",
+                  }
+                : f
+            )
+          );
+          resolve(null);
+        });
+
+        // Send request
+        xhr.open("POST", "/api/calls/upload");
+        xhr.send(formData);
+      } catch (error) {
+        console.error("Upload error:", error);
+
+        setFiles((prev) =>
+          prev.map((f) =>
+            f.id === fileUpload.id
+              ? {
+                  ...f,
+                  status: "error" as UploadStatus,
+                  error: error instanceof Error ? error.message : "Upload failed",
+                }
+              : f
+          )
+        );
+
+        toast({
+          title: "Upload failed",
+          description: error instanceof Error ? error.message : "Unknown error",
+          variant: "destructive",
+        });
+
+        resolve(null);
       }
-
-      if (salesReps.length > 0) {
-        formData.append("salesRep", salesReps[0].name);
-      }
-
-      // Store all participants as JSON
-      formData.append("participants", JSON.stringify(participants.filter(p => p.name.trim())));
-      formData.append("callDate", new Date().toISOString());
-
-      // Upload file with progress tracking
-      const response = await fetch("/api/calls/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Upload failed");
-      }
-
-      const result = await response.json();
-
-      // Update to success
-      setFiles((prev) =>
-        prev.map((f) =>
-          f.id === fileUpload.id
-            ? {
-                ...f,
-                status: "processing" as UploadStatus,
-                progress: 100,
-                callId: result.call.id,
-              }
-            : f
-        )
-      );
-
-      toast({
-        title: "Upload successful",
-        description: `${fileUpload.name} is now being processed.`,
-      });
-
-      return result.call.id;
-    } catch (error) {
-      console.error("Upload error:", error);
-
-      setFiles((prev) =>
-        prev.map((f) =>
-          f.id === fileUpload.id
-            ? {
-                ...f,
-                status: "error" as UploadStatus,
-                error: error instanceof Error ? error.message : "Upload failed",
-              }
-            : f
-        )
-      );
-
-      toast({
-        title: "Upload failed",
-        description: error instanceof Error ? error.message : "Unknown error",
-        variant: "destructive",
-      });
-
-      return null;
-    }
+    });
   };
 
   const handleImportFromUrl = async () => {

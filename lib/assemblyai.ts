@@ -37,6 +37,8 @@ export interface TranscriptionConfig {
   speakersExpected?: number;
   wordBoost?: string[];
   webhookUrl?: string;
+  trimStart?: number; // Start time in seconds
+  trimEnd?: number; // End time in seconds
 }
 
 export interface TranscriptionResult {
@@ -101,7 +103,7 @@ export async function submitTranscriptionJob(
       speakersExpected: config.speakersExpected || 2,
     });
 
-    const params = {
+    const params: any = {
       audio: config.audioUrl,
 
       // Use best speech model
@@ -148,6 +150,17 @@ export async function submitTranscriptionJob(
       // Webhook (if provided)
       webhook_url: config.webhookUrl,
     };
+
+    // Add trim parameters if provided (convert seconds to milliseconds)
+    if (config.trimStart !== undefined && config.trimStart > 0) {
+      params.audio_start_from = Math.floor(config.trimStart * 1000);
+      console.log(`Trimming audio from ${config.trimStart}s (${params.audio_start_from}ms)`);
+    }
+
+    if (config.trimEnd !== undefined && config.trimEnd > 0) {
+      params.audio_end_at = Math.floor(config.trimEnd * 1000);
+      console.log(`Trimming audio to ${config.trimEnd}s (${params.audio_end_at}ms)`);
+    }
 
     const transcript = await assemblyAIClient.transcripts.transcribe(params);
 

@@ -29,6 +29,8 @@ import {
   DollarSign,
   Check,
   Loader2,
+  Scissors,
+  Mic,
 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/components/ui/use-toast";
@@ -36,6 +38,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useAuth } from "@/lib/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { format } from "date-fns";
+import { AudioTrimModal } from "@/components/modals/AudioTrimModal";
+import { EmailGenerationModal } from "@/components/modals/EmailGenerationModal";
 
 // =====================================================
 // TYPESCRIPT INTERFACES
@@ -53,6 +57,7 @@ interface CallRecord {
   status: string;
   created_at: string;
   audio_url: string | null;
+  file_url: string | null;
 }
 
 interface TranscriptUtterance {
@@ -115,6 +120,13 @@ export default function CallDetailPage() {
   const [duration, setDuration] = useState(1380); // Default 23 minutes
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [copiedInsight, setCopiedInsight] = useState<number | null>(null);
+
+  // Audio trimming and transcription states
+  const [showTrimModal, setShowTrimModal] = useState(false);
+  const [isStartingTranscription, setIsStartingTranscription] = useState(false);
+
+  // Email generation state
+  const [showEmailModal, setShowEmailModal] = useState(false);
 
   // =====================================================
   // FETCH CALL DETAIL DATA
@@ -227,6 +239,75 @@ export default function CallDetailPage() {
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
+  // Poll for status updates while processing
+  useEffect(() => {
+    if (!callDetail) return;
+
+    const processingStates = ['uploading', 'processing', 'transcribing', 'extracting'];
+    const isProcessing = processingStates.includes(callDetail.call.status);
+
+    if (!isProcessing) return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const supabase = createClient();
+        const { data: updatedCall, error } = await supabase
+          .from('calls')
+          .select('*')
+          .eq('id', callDetail.call.id)
+          .single();
+
+        if (!error && updatedCall) {
+          setCallDetail(prev => prev ? { ...prev, call: updatedCall } : null);
+
+          if (updatedCall.status === 'completed' || updatedCall.status === 'failed') {
+            const { data: transcriptData } = await supabase
+              .from('transcripts')
+              .select('*')
+              .eq('call_id', updatedCall.id)
+              .maybeSingle();
+
+            let utterancesData: TranscriptUtterance[] = [];
+            if (transcriptData) {
+              const { data: utterances } = await supabase
+                .from('transcript_utterances')
+                .select('*')
+                .eq('transcript_id', transcriptData.id)
+                .order('start_time', { ascending: true });
+
+              if (utterances) {
+                utterancesData = utterances;
+              }
+            }
+
+            const { data: insightsData } = await supabase
+              .from('call_insights')
+              .select('*')
+              .eq('call_id', updatedCall.id)
+              .order('created_at', { ascending: true });
+
+            const { data: fieldsData } = await supabase
+              .from('call_fields')
+              .select('*')
+              .eq('call_id', updatedCall.id)
+              .order('created_at', { ascending: true });
+
+            setCallDetail({
+              call: updatedCall,
+              transcript: transcriptData ? { ...transcriptData, utterances: utterancesData } : null,
+              insights: insightsData || [],
+              fields: fieldsData || []
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error polling call status:', error);
+      }
+    }, 5000);
+
+    return () => clearInterval(pollInterval);
+  }, [callDetail]);
+
   // Handle copy to clipboard
   const handleCopy = async (text: string, label: string) => {
     try {
@@ -262,6 +343,58 @@ export default function CallDetailPage() {
         variant: "destructive",
         duration: 2000,
       });
+    }
+  };
+
+  // =====================================================
+  // TRANSCRIPTION & TRIMMING HANDLERS
+  // =====================================================
+
+  const handleStartTranscription = async () => {
+    if (!callDetail) return;
+
+    setIsStartingTranscription(true);
+
+    try {
+      const response = await fetch(`/api/calls/${callDetail.call.id}/transcribe`, {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to start transcription');
+      }
+
+      // Update local state
+      setCallDetail(prev => prev ? {
+        ...prev,
+        call: { ...prev.call, status: 'processing' },
+      } : null);
+
+      toast({
+        title: "Transcription started",
+        description: "This usually takes 3-6 minutes.",
+      });
+    } catch (error) {
+      console.error('Start transcription error:', error);
+      toast({
+        title: "Failed to start transcription",
+        description: error instanceof Error ? error.message : "Please try again",
+        variant: "destructive",
+      });
+    } finally {
+      setIsStartingTranscription(false);
+    }
+  };
+
+  const handleTrimComplete = () => {
+    // Refresh call detail after trim to get updated status
+    if (callDetail) {
+      setCallDetail(prev => prev ? {
+        ...prev,
+        call: { ...prev.call, status: 'processing' },
+      } : null);
     }
   };
 
@@ -572,6 +705,37 @@ Call_Duration__c: ${call.duration || 0}
                 </Badge>
               </div>
             </div>
+
+            {/* Action Buttons */}
+            {(call.status === "uploaded" || call.status === "failed") && call.file_url && (
+              <div className="flex items-center gap-3">
+                <Button
+                  onClick={() => setShowTrimModal(true)}
+                  variant="outline"
+                  className="border-violet-600 text-violet-600 hover:bg-violet-50"
+                >
+                  <Scissors className="w-4 h-4 mr-2" />
+                  Trim Audio
+                </Button>
+                <Button
+                  onClick={handleStartTranscription}
+                  disabled={isStartingTranscription}
+                  className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
+                >
+                  {isStartingTranscription ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Starting...
+                    </>
+                  ) : (
+                    <>
+                      <Mic className="w-4 h-4 mr-2" />
+                      Start Transcription
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1013,7 +1177,11 @@ Call_Duration__c: ${call.duration || 0}
 
             {/* Action Buttons */}
             <div className="space-y-3">
-              <Button className="w-full bg-blue-50 text-blue-600 hover:bg-blue-100 border-2 border-blue-200 font-semibold h-11">
+              <Button
+                onClick={() => setShowEmailModal(true)}
+                disabled={!transcript || !transcript.full_text}
+                className="w-full bg-blue-50 text-blue-600 hover:bg-blue-100 border-2 border-blue-200 font-semibold h-11 disabled:opacity-50"
+              >
                 <Mail className="w-4 h-4 mr-2" />
                 Generate Follow-up Email
               </Button>
@@ -1041,6 +1209,27 @@ Call_Duration__c: ${call.duration || 0}
           </div>
         </div>
       </div>
+
+      {/* Audio Trim Modal */}
+      {callDetail && call.file_url && (
+        <AudioTrimModal
+          isOpen={showTrimModal}
+          onClose={() => setShowTrimModal(false)}
+          audioUrl={call.file_url}
+          callId={call.id}
+          onTrimComplete={handleTrimComplete}
+        />
+      )}
+
+      {/* Email Generation Modal */}
+      {callDetail && (
+        <EmailGenerationModal
+          isOpen={showEmailModal}
+          onClose={() => setShowEmailModal(false)}
+          callId={call.id}
+          customerName={call.customer_name}
+        />
+      )}
     </div>
   );
 }

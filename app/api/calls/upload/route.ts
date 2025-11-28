@@ -281,47 +281,61 @@ export async function POST(req: NextRequest) {
 
     console.log('Call record created:', callData);
 
-    // Phase 5: Trigger Inngest job for reliable processing
-    try {
-      const { inngest } = await import('@/lib/inngest/client');
+    // Phase 5: Check user preferences for auto-transcription
+    const { data: userPreferences } = await supabase
+      .from('user_preferences')
+      .select('auto_transcribe')
+      .eq('user_id', userId)
+      .maybeSingle();
 
-      // Send event to Inngest to start processing
-      await inngest.send({
-        name: 'call/uploaded',
-        data: {
-          callId: callData.id,
-          userId: userId,
-          organizationId: organizationId || undefined,
-          fileName: file.name,
-          fileSize: file.size,
-          audioUrl: publicUrl,
-          customerName: customerName || undefined,
-        },
-      });
+    const shouldAutoTranscribe = userPreferences?.auto_transcribe ?? true; // Default to true
 
-      console.log('Inngest job triggered for call:', callData.id);
+    if (shouldAutoTranscribe) {
+      // Trigger Inngest job for reliable processing
+      try {
+        const { inngest } = await import('@/lib/inngest/client');
 
-      // Update call status to processing
-      await supabase
-        .from('calls')
-        .update({
-          status: 'processing',
-        })
-        .eq('id', callData.id);
+        // Send event to Inngest to start processing
+        await inngest.send({
+          name: 'call/uploaded',
+          data: {
+            callId: callData.id,
+            userId: userId,
+            organizationId: organizationId || undefined,
+            fileName: file.name,
+            fileSize: file.size,
+            audioUrl: publicUrl,
+            customerName: customerName || undefined,
+          },
+        });
 
-    } catch (inngestError) {
-      console.error('Failed to trigger Inngest job:', inngestError);
+        console.log('Inngest job triggered for call:', callData.id);
 
-      // Update status to failed
-      await supabase
-        .from('calls')
-        .update({
-          status: 'failed',
-          assemblyai_error: inngestError instanceof Error
-            ? inngestError.message
-            : 'Failed to start processing',
-        })
-        .eq('id', callData.id);
+        // Update call status to processing
+        await supabase
+          .from('calls')
+          .update({
+            status: 'processing',
+          })
+          .eq('id', callData.id);
+
+      } catch (inngestError) {
+        console.error('Failed to trigger Inngest job:', inngestError);
+
+        // Update status to failed
+        await supabase
+          .from('calls')
+          .update({
+            status: 'failed',
+            assemblyai_error: inngestError instanceof Error
+              ? inngestError.message
+              : 'Failed to start processing',
+          })
+          .eq('id', callData.id);
+      }
+    } else {
+      console.log('Auto-transcribe disabled, leaving call in uploaded state');
+      // Keep status as 'uploaded' - user will manually trigger transcription
     }
 
     // Create notification
@@ -329,7 +343,9 @@ export async function POST(req: NextRequest) {
       user_id: userId,
       notification_type: 'call_uploaded',
       title: 'Call uploaded successfully',
-      message: `Your call with ${customerName || 'customer'} is being processed. This usually takes 3-6 minutes.`,
+      message: shouldAutoTranscribe
+        ? `Your call with ${customerName || 'customer'} is being processed. This usually takes 3-6 minutes.`
+        : `Your call with ${customerName || 'customer'} has been uploaded. Click "Start Transcription" to process it.`,
       link: `/calls/${callData.id}`,
     });
 
