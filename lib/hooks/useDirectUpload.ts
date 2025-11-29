@@ -138,31 +138,49 @@ export function useDirectUpload() {
         // Get the normalized content type from the presigned URL response
         const contentType = uploadMetadata.contentType;
 
-        // Create a new Blob with the correct MIME type for M4A files
-        // This is necessary because Supabase validates the File/Blob's type property
-        let uploadFile: File | Blob = file;
+        // For M4A files, we need to upload directly via HTTP to bypass Supabase SDK validation
+        if (file.name.toLowerCase().endsWith('.m4a')) {
+          console.log('📝 Using direct HTTP upload for M4A file with normalized MIME type');
 
-        // If it's an M4A file with a problematic MIME type, create a new Blob
-        if (file.name.toLowerCase().endsWith('.m4a') && contentType === 'audio/mp4') {
-          // Read the file and create a new Blob with the correct MIME type
-          const arrayBuffer = await file.arrayBuffer();
-          uploadFile = new Blob([arrayBuffer], { type: contentType });
-          console.log('📝 Created new Blob with normalized MIME type for M4A file');
-        }
+          // Create FormData for the upload
+          const formData = new FormData();
 
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('call-audio')
-          .uploadToSignedUrl(path, token, uploadFile, {
-            contentType: contentType, // Use the normalized MIME type from the server
+          // Create a new File object with the correct MIME type
+          const normalizedFile = new File([file], file.name, { type: contentType });
+          formData.append('', normalizedFile);
+
+          // Upload directly using fetch
+          const uploadResponse = await fetch(uploadUrl, {
+            method: 'PUT',
+            body: normalizedFile,
+            headers: {
+              'Content-Type': contentType,
+              'x-upsert': 'false',
+            },
           });
 
-        clearInterval(progressInterval);
+          if (!uploadResponse.ok) {
+            const errorText = await uploadResponse.text();
+            throw new Error(`Upload failed: ${uploadResponse.status} - ${errorText}`);
+          }
 
-        if (uploadError) {
-          throw new Error(uploadError.message || 'Failed to upload file to storage');
+          console.log('✅ M4A file uploaded successfully via direct HTTP');
+        } else {
+          // For non-M4A files, use the standard Supabase SDK method
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('call-audio')
+            .uploadToSignedUrl(path, token, file, {
+              contentType: contentType,
+            });
+
+          if (uploadError) {
+            throw new Error(uploadError.message || 'Failed to upload file to storage');
+          }
+
+          console.log('✅ File uploaded to storage:', uploadData);
         }
 
-        console.log('✅ File uploaded to storage:', uploadData);
+        clearInterval(progressInterval);
       } catch (uploadErr) {
         clearInterval(progressInterval);
         throw uploadErr;
