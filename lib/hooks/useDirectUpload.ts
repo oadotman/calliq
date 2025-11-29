@@ -102,9 +102,14 @@ export function useDirectUpload() {
       }, 200); // Update every 200ms
 
       try {
+        // Get the normalized content type from the presigned URL response
+        const contentType = uploadMetadata.contentType;
+
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('call-audio')
-          .uploadToSignedUrl(path, token, file);
+          .uploadToSignedUrl(path, token, file, {
+            contentType: contentType, // Use the normalized MIME type from the server
+          });
 
         clearInterval(progressInterval);
 
