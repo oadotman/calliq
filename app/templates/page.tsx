@@ -124,10 +124,10 @@ export default function TemplatesPage() {
       try {
         const supabase = createClient();
 
-        // Fetch custom templates
+        // Fetch custom templates with their fields
         const { data: customData, error: customError } = await supabase
           .from('custom_templates')
-          .select('*')
+          .select('*, template_fields(*)')
           .eq('user_id', user.id)
           .is('deleted_at', null)
           .order('created_at', { ascending: false });
@@ -135,7 +135,19 @@ export default function TemplatesPage() {
         if (customError) {
           console.error('Error fetching custom templates:', customError);
         } else {
-          setCustomTemplates(customData || []);
+          // Transform fields to match frontend format
+          const formattedTemplates = (customData || []).map(template => ({
+            ...template,
+            fields: template.template_fields?.map((f: any) => ({
+              id: f.id,
+              fieldName: f.field_name,
+              fieldType: f.field_type,
+              description: f.description,
+              picklistValues: f.picklist_values,
+              required: f.is_required
+            })) || []
+          }));
+          setCustomTemplates(formattedTemplates);
         }
 
         // Fetch call stats for usage tracking
@@ -202,21 +214,70 @@ export default function TemplatesPage() {
     try {
       const supabase = createClient();
 
-      const { data, error } = await supabase
+      // First, create the template without fields
+      const { data: templateData, error: templateError } = await supabase
         .from('custom_templates')
         .insert({
           user_id: user.id,
           name: templateForm.name,
           description: templateForm.description,
           category: 'custom',
-          fields: templateForm.fields
+          field_count: templateForm.fields.length
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (templateError) throw templateError;
 
-      setCustomTemplates(prev => [data, ...prev]);
+      // Then, insert fields separately if there are any
+      if (templateForm.fields.length > 0) {
+        const fieldsToInsert = templateForm.fields.map((field, index) => ({
+          template_id: templateData.id,
+          field_name: field.fieldName,
+          field_type: field.fieldType,
+          description: field.description || '',
+          is_required: field.required || false,
+          sort_order: index,
+          picklist_values: field.picklistValues || null
+        }));
+
+        const { error: fieldsError } = await supabase
+          .from('template_fields')
+          .insert(fieldsToInsert);
+
+        if (fieldsError) {
+          // If fields insert fails, delete the template
+          await supabase
+            .from('custom_templates')
+            .delete()
+            .eq('id', templateData.id);
+          throw fieldsError;
+        }
+      }
+
+      // Fetch the complete template with fields
+      const { data: completeTemplate, error: fetchError } = await supabase
+        .from('custom_templates')
+        .select('*, template_fields(*)')
+        .eq('id', templateData.id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Transform fields to match frontend format
+      const formattedTemplate = {
+        ...completeTemplate,
+        fields: completeTemplate.template_fields?.map((f: any) => ({
+          id: f.id,
+          fieldName: f.field_name,
+          fieldType: f.field_type,
+          description: f.description,
+          picklistValues: f.picklist_values,
+          required: f.is_required
+        })) || []
+      };
+
+      setCustomTemplates(prev => [formattedTemplate, ...prev]);
       setIsCreateDialogOpen(false);
       setTemplateForm({ name: "", description: "", fields: [] });
 
@@ -247,21 +308,71 @@ export default function TemplatesPage() {
     try {
       const supabase = createClient();
 
-      const { data, error } = await supabase
+      // First, update the template metadata
+      const { data: updatedTemplate, error: updateError } = await supabase
         .from('custom_templates')
         .update({
           name: templateForm.name,
           description: templateForm.description,
-          fields: templateForm.fields
+          field_count: templateForm.fields.length
         })
         .eq('id', editingTemplate.id)
         .select()
         .single();
 
-      if (error) throw error;
+      if (updateError) throw updateError;
+
+      // Delete existing fields
+      const { error: deleteError } = await supabase
+        .from('template_fields')
+        .delete()
+        .eq('template_id', editingTemplate.id);
+
+      if (deleteError) throw deleteError;
+
+      // Insert new fields
+      if (templateForm.fields.length > 0) {
+        const fieldsToInsert = templateForm.fields.map((field, index) => ({
+          template_id: editingTemplate.id,
+          field_name: field.fieldName,
+          field_type: field.fieldType,
+          description: field.description || '',
+          is_required: field.required || false,
+          sort_order: index,
+          picklist_values: field.picklistValues || null
+        }));
+
+        const { error: fieldsError } = await supabase
+          .from('template_fields')
+          .insert(fieldsToInsert);
+
+        if (fieldsError) throw fieldsError;
+      }
+
+      // Fetch the complete updated template with fields
+      const { data: completeTemplate, error: fetchError } = await supabase
+        .from('custom_templates')
+        .select('*, template_fields(*)')
+        .eq('id', editingTemplate.id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Transform fields to match frontend format
+      const formattedTemplate = {
+        ...completeTemplate,
+        fields: completeTemplate.template_fields?.map((f: any) => ({
+          id: f.id,
+          fieldName: f.field_name,
+          fieldType: f.field_type,
+          description: f.description,
+          picklistValues: f.picklist_values,
+          required: f.is_required
+        })) || []
+      };
 
       setCustomTemplates(prev =>
-        prev.map(t => t.id === data.id ? data : t)
+        prev.map(t => t.id === formattedTemplate.id ? formattedTemplate : t)
       );
       setIsEditDialogOpen(false);
       setEditingTemplate(null);

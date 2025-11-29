@@ -42,6 +42,7 @@ import { createClient } from "@/lib/supabase/client";
 import { format } from "date-fns";
 import { AudioTrimModal } from "@/components/modals/AudioTrimModal";
 import { EmailGenerationModal } from "@/components/modals/EmailGenerationModal";
+import { generateCallPDF, downloadPDF } from "@/lib/pdf-export";
 
 // =====================================================
 // TYPESCRIPT INTERFACES
@@ -137,6 +138,10 @@ export default function CallDetailPage() {
   // Email generation state
   const [showEmailModal, setShowEmailModal] = useState(false);
 
+  // Custom templates state
+  const [customTemplates, setCustomTemplates] = useState<any[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+
   // =====================================================
   // FETCH CALL DETAIL DATA
   // =====================================================
@@ -224,6 +229,30 @@ export default function CallDetailPage() {
         // Don't set duration from call data - let audio metadata handle it
         // The call.duration is in minutes while audio player needs seconds
         console.log('Call duration from DB (minutes):', callData.duration);
+
+        // Fetch user's custom templates
+        const { data: templatesData, error: templatesError } = await supabase
+          .from('custom_templates')
+          .select('*, template_fields(*)')
+          .eq('user_id', user.id)
+          .is('deleted_at', null)
+          .order('created_at', { ascending: false });
+
+        if (!templatesError && templatesData) {
+          // Transform fields to match frontend format
+          const formattedTemplates = templatesData.map(template => ({
+            ...template,
+            fields: template.template_fields?.map((f: any) => ({
+              id: f.id,
+              fieldName: f.field_name,
+              fieldType: f.field_type,
+              description: f.description,
+              picklistValues: f.picklist_values,
+              required: f.is_required
+            })) || []
+          }));
+          setCustomTemplates(formattedTemplates);
+        }
 
         setLoading(false);
       } catch (err) {
@@ -565,6 +594,56 @@ export default function CallDetailPage() {
   };
 
   // =====================================================
+  // ACTION HANDLERS
+  // =====================================================
+
+  const handleCopyToClipboard = () => {
+    const output = generateCRMOutput(activeTab);
+    navigator.clipboard.writeText(output);
+    toast({
+      title: "Copied to clipboard",
+      description: "The output has been copied to your clipboard.",
+    });
+  };
+
+  const handleDownloadPDF = () => {
+    if (!callDetail) return;
+
+    const output = generateCRMOutput(activeTab);
+    const { call, fields } = callDetail;
+
+    // Extract customer name and sales rep from fields
+    const customerName = fields.find(f => f.field_name.toLowerCase() === 'customer name')?.field_value || 'Unknown Customer';
+    const salesRep = fields.find(f => f.field_name.toLowerCase() === 'sales representative')?.field_value || 'Unknown';
+    const sentiment = fields.find(f => f.field_name.toLowerCase() === 'sentiment')?.field_value || 'neutral';
+
+    // Generate PDF
+    const pdfBlob = generateCallPDF({
+      callId: call.id,
+      customerName,
+      salesRep,
+      callDate: format(new Date(call.created_at), 'MMMM d, yyyy'),
+      duration: Math.round(call.duration / 60), // Convert to minutes
+      sentiment,
+      content: output,
+      format: activeTab
+    });
+
+    // Download the PDF
+    const filename = `call-summary-${call.id.slice(0, 8)}-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+    downloadPDF(pdfBlob, filename);
+
+    toast({
+      title: "PDF Downloaded",
+      description: "The call summary has been downloaded as a PDF.",
+    });
+  };
+
+  const handleGenerateEmail = () => {
+    setShowEmailModal(true);
+  };
+
+  // =====================================================
   // CRM OUTPUT GENERATION
   // =====================================================
 
@@ -578,6 +657,68 @@ export default function CallDetailPage() {
       const field = fields.find(f => f.field_name.toLowerCase() === name.toLowerCase());
       return field?.field_value || "N/A";
     };
+
+    // Handle custom template format
+    if (format.startsWith('template_')) {
+      const templateId = format.replace('template_', '');
+      const template = customTemplates.find(t => t.id === templateId);
+
+      if (!template) return "Template not found";
+
+      let output = `📋 ${template.name}\n`;
+      output += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+      if (template.description) {
+        output += `📝 Description: ${template.description}\n\n`;
+      }
+
+      // Generate output based on template fields
+      output += `📊 EXTRACTED DATA\n`;
+      output += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+      template.fields.forEach((templateField: any) => {
+        // Try to match template field with extracted fields
+        const extractedValue = getField(templateField.fieldName.replace(/\s+/g, '_').toLowerCase());
+
+        const icon =
+          templateField.fieldType === 'email' ? '📧' :
+          templateField.fieldType === 'date' ? '📅' :
+          templateField.fieldType === 'number' ? '🔢' :
+          templateField.fieldType === 'picklist' ? '📝' :
+          '📋';
+
+        output += `${icon} ${templateField.fieldName}${templateField.required ? ' *' : ''}: ${extractedValue}\n`;
+
+        if (templateField.description) {
+          output += `   ↳ ${templateField.description}\n`;
+        }
+
+        if (templateField.picklistValues && templateField.picklistValues.length > 0) {
+          output += `   Options: ${templateField.picklistValues.join(', ')}\n`;
+        }
+
+        output += '\n';
+      });
+
+      // Add insights section
+      output += `\n💡 INSIGHTS\n`;
+      output += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+      if (insights.length > 0) {
+        insights.forEach(insight => {
+          const icon =
+            insight.insight_type === 'pain_point' ? '⚠️' :
+            insight.insight_type === 'action_item' ? '🎯' :
+            insight.insight_type === 'competitor' ? '🏢' : '📝';
+
+          output += `${icon} ${insight.insight_text}\n`;
+        });
+      } else {
+        output += '📝 No insights extracted yet\n';
+      }
+
+      return output;
+    }
 
     switch (format) {
       case "plain":
@@ -1147,7 +1288,7 @@ Call_Duration__c: ${call.duration || 0}
           </CardHeader>
           <CardContent className="p-6">
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="grid grid-cols-4 w-full mb-4 bg-gray-100 p-1 rounded-lg">
+                  <TabsList className={`grid ${customTemplates.length > 0 ? `grid-cols-${Math.min(4 + customTemplates.length, 6)}` : 'grid-cols-4'} w-full mb-4 bg-gray-100 p-1 rounded-lg overflow-x-auto`}>
                     <TabsTrigger
                       value="plain"
                       className="data-[state=active]:bg-purple-600 data-[state=active]:text-white rounded-md font-medium text-sm transition-all"
@@ -1172,6 +1313,16 @@ Call_Duration__c: ${call.duration || 0}
                     >
                       CSV
                     </TabsTrigger>
+                    {/* Custom Template Tabs */}
+                    {customTemplates.map(template => (
+                      <TabsTrigger
+                        key={template.id}
+                        value={`template_${template.id}`}
+                        className="data-[state=active]:bg-purple-600 data-[state=active]:text-white rounded-md font-medium text-sm transition-all"
+                      >
+                        {template.name}
+                      </TabsTrigger>
+                    ))}
                   </TabsList>
 
                   <TabsContent value="plain" className="mt-0">
@@ -1205,6 +1356,17 @@ Call_Duration__c: ${call.duration || 0}
                       </pre>
                     </div>
                   </TabsContent>
+
+                  {/* Custom Template TabsContent */}
+                  {customTemplates.map(template => (
+                    <TabsContent key={template.id} value={`template_${template.id}`} className="mt-0">
+                      <div className="bg-gradient-to-br from-purple-50 to-indigo-50 p-6 rounded-lg border border-purple-200 min-h-[400px] max-h-[600px] overflow-y-auto">
+                        <pre className="text-base text-gray-900 whitespace-pre-wrap font-mono leading-relaxed">
+                          {generateCRMOutput(`template_${template.id}`)}
+                        </pre>
+                      </div>
+                    </TabsContent>
+                  ))}
                 </Tabs>
 
             {/* Action Buttons Row */}
@@ -1234,6 +1396,7 @@ Call_Duration__c: ${call.duration || 0}
               <Button
                 variant="outline"
                 className="h-12 border-2 border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold"
+                onClick={handleDownloadPDF}
               >
                 <Download className="w-4 h-4 mr-2" />
                 Download as PDF
