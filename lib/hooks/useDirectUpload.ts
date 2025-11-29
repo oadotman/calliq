@@ -52,6 +52,32 @@ export function useDirectUpload() {
       // Step 1: Get presigned upload URL from our API
       console.log('📋 Requesting presigned upload URL...');
 
+      // Fix MIME type for M4A files - browsers report different types
+      let mimeType = file.type;
+
+      // Check file extension if MIME type is missing or unusual
+      const fileExtension = file.name.split('.').pop()?.toLowerCase();
+      if (fileExtension === 'm4a') {
+        // Normalize M4A MIME types to what the server expects
+        if (!mimeType || mimeType === 'audio/m4a' || mimeType === 'audio/mp4a' || mimeType === 'audio/mp4a-latm') {
+          mimeType = 'audio/x-m4a';
+        }
+      }
+
+      // For empty MIME types, try to detect from extension
+      if (!mimeType && fileExtension) {
+        const extensionToMimeMap: Record<string, string> = {
+          'mp3': 'audio/mpeg',
+          'mp4': 'audio/mp4',
+          'm4a': 'audio/x-m4a',
+          'wav': 'audio/wav',
+          'ogg': 'audio/ogg',
+          'flac': 'audio/flac',
+          'webm': 'audio/webm',
+        };
+        mimeType = extensionToMimeMap[fileExtension] || '';
+      }
+
       const urlResponse = await fetch('/api/upload/presigned-url', {
         method: 'POST',
         headers: {
@@ -60,7 +86,7 @@ export function useDirectUpload() {
         body: JSON.stringify({
           fileName: file.name,
           fileSize: file.size,
-          mimeType: file.type,
+          mimeType: mimeType,
         }),
       });
 
@@ -137,7 +163,7 @@ export function useDirectUpload() {
           path,
           fileName: file.name,
           fileSize: file.size,
-          mimeType: file.type,
+          mimeType: mimeType,  // Use the normalized MIME type
           ...metadata,
         }),
       });

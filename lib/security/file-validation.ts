@@ -128,8 +128,8 @@ export function validateAudioFile(
   // Map MIME types to detected types
   const mimeTypeMap: Record<string, string[]> = {
     mp3: ['audio/mpeg', 'audio/mp3'],
-    mp4: ['audio/mp4', 'audio/x-m4a'],
-    m4a: ['audio/mp4', 'audio/x-m4a'],
+    mp4: ['audio/mp4', 'audio/x-m4a', 'audio/m4a', 'audio/mp4a', 'audio/mp4a-latm'],
+    m4a: ['audio/mp4', 'audio/x-m4a', 'audio/m4a', 'audio/mp4a', 'audio/mp4a-latm'],
     wav: ['audio/wav', 'audio/x-wav', 'audio/wave'],
     ogg: ['audio/ogg', 'audio/vorbis'],
     flac: ['audio/flac', 'audio/x-flac'],

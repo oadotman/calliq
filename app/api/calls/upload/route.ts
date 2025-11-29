@@ -15,6 +15,7 @@ export const maxDuration = 300; // 5 minutes max for upload
 // Supported audio formats
 const SUPPORTED_FORMATS = [
   'audio/mpeg',
+  'audio/mp3',
   'audio/mp4',
   'audio/wav',
   'audio/x-wav',
@@ -22,6 +23,9 @@ const SUPPORTED_FORMATS = [
   'audio/ogg',
   'audio/flac',
   'audio/x-m4a',
+  'audio/m4a',
+  'audio/mp4a',
+  'audio/mp4a-latm',
 ];
 
 const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB
@@ -198,7 +202,10 @@ export async function POST(req: NextRequest) {
     // Normalize MIME type for Supabase Storage compatibility
     // Supabase doesn't accept audio/x-m4a, convert to audio/mp4
     let contentType = file.type;
-    if (contentType === 'audio/x-m4a') {
+    if (contentType === 'audio/x-m4a' ||
+        contentType === 'audio/m4a' ||
+        contentType === 'audio/mp4a' ||
+        contentType === 'audio/mp4a-latm') {
       contentType = 'audio/mp4';
     }
 

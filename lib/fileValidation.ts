@@ -22,6 +22,9 @@ const SUPPORTED_AUDIO_TYPES = [
   'audio/mp3',
   'audio/mp4',
   'audio/x-m4a',
+  'audio/m4a',
+  'audio/mp4a',
+  'audio/mp4a-latm',
   'audio/wav',
   'audio/x-wav',
   'audio/wave',
@@ -69,17 +72,36 @@ export async function validateAudioFile(file: File): Promise<FileValidationResul
     };
   }
 
-  // Validate MIME type
-  if (!SUPPORTED_AUDIO_TYPES.includes(file.type)) {
-    return {
-      valid: false,
-      error: `Unsupported file type: ${file.type}. Supported types: MP3, MP4, M4A, WAV, OGG, FLAC, WebM`,
-      mimeType: file.type,
-    };
+  // Get file extension
+  const extension = file.name.split('.').pop()?.toLowerCase();
+
+  // Validate MIME type - check extension first if no MIME type
+  // Some browsers don't provide MIME types for certain files
+  // If no MIME type, validate by extension
+  if (!file.type || file.type === '') {
+    if (!extension || !SUPPORTED_EXTENSIONS.includes(extension)) {
+      return {
+        valid: false,
+        error: `File type could not be determined. Please ensure the file has a valid extension: ${SUPPORTED_EXTENSIONS.join(', ')}`,
+        mimeType: file.type,
+      };
+    }
+    // Extension is valid, continue with validation
+  } else if (!SUPPORTED_AUDIO_TYPES.includes(file.type)) {
+    // For M4A files, some browsers report unusual MIME types
+    if (extension === 'm4a') {
+      // Allow M4A files even with unusual MIME types
+      console.warn(`M4A file with unusual MIME type: ${file.type}, allowing based on extension`);
+    } else {
+      return {
+        valid: false,
+        error: `Unsupported file type: ${file.type}. Supported types: MP3, MP4, M4A, WAV, OGG, FLAC, WebM`,
+        mimeType: file.type,
+      };
+    }
   }
 
   // Validate file extension
-  const extension = file.name.split('.').pop()?.toLowerCase();
   if (!extension || !SUPPORTED_EXTENSIONS.includes(extension)) {
     return {
       valid: false,
