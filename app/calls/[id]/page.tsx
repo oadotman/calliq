@@ -254,6 +254,8 @@ export default function CallDetailPage() {
 
     if (!isProcessing) return;
 
+    let lastKnownStatus = callDetail.call.status;
+
     const pollInterval = setInterval(async () => {
       try {
         const supabase = createClient();
@@ -264,8 +266,17 @@ export default function CallDetailPage() {
           .single();
 
         if (!error && updatedCall) {
+          // Check if status changed to completed/failed
+          const justCompleted =
+            (updatedCall.status === 'completed' || updatedCall.status === 'failed') &&
+            lastKnownStatus !== updatedCall.status;
+
+          lastKnownStatus = updatedCall.status;
+
+          // Always update the call data
           setCallDetail(prev => prev ? { ...prev, call: updatedCall } : null);
 
+          // If completed or failed, fetch all related data
           if (updatedCall.status === 'completed' || updatedCall.status === 'failed') {
             const { data: transcriptData } = await supabase
               .from('transcripts')
@@ -304,6 +315,18 @@ export default function CallDetailPage() {
               insights: insightsData || [],
               fields: fieldsData || []
             });
+
+            // Log completion for debugging
+            if (justCompleted) {
+              console.log('Call processing completed!', {
+                status: updatedCall.status,
+                progress: updatedCall.processing_progress,
+                message: updatedCall.processing_message,
+                hasTranscript: !!transcriptData,
+                insightsCount: insightsData?.length || 0,
+                fieldsCount: fieldsData?.length || 0,
+              });
+            }
           }
         }
       } catch (error) {

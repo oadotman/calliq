@@ -205,7 +205,7 @@ export default function LandingPage() {
         <div className="container mx-auto max-w-5xl">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-slate-100 mb-6">
-              Turn Every Call Into Perfect CRM Data—<span className="text-violet-600 dark:text-violet-400">in 60 Seconds</span>
+              Turn Every Call Into Perfect CRM Data—<span className="text-violet-600 dark:text-violet-400">Automatically</span>
             </h2>
             <p className="text-xl text-slate-600 dark:text-slate-400 leading-relaxed max-w-3xl mx-auto">
               SynQall transcribes your calls and formats the output into your exact CRM structure.<br />
@@ -1046,7 +1046,7 @@ export default function LandingPage() {
                 <span className="text-xl font-bold">SynQall</span>
               </div>
               <p className="text-slate-400 text-sm">
-                Turn sales calls into perfect CRM data in 60 seconds.
+                Turn sales calls into perfect CRM data automatically.
               </p>
             </div>
             <div>
