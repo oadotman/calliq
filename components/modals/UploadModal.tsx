@@ -20,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/lib/AuthContext";
 import { getPlanDetails } from "@/lib/pricing";
+import { useDirectUpload } from "@/lib/hooks/useDirectUpload";
 
 interface UploadModalProps {
   isOpen: boolean;
@@ -64,6 +65,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
   const { toast } = useToast();
   const router = useRouter();
   const { organization } = useAuth();
+  const { upload: directUpload, uploading: isDirectUploading } = useDirectUpload();
 
   // Get user's plan details for duration validation
   const userPlan = organization?.plan_type || 'free';
@@ -173,184 +175,69 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
   };
 
   const uploadFile = async (fileUpload: FileUpload) => {
-    return new Promise<string | null>((resolve) => {
-      try {
-        // Update status to uploading
+    try {
+      // Update status to uploading
+      setFiles((prev) =>
+        prev.map((f) =>
+          f.id === fileUpload.id ? { ...f, status: "uploading" as UploadStatus, progress: 0 } : f
+        )
+      );
+
+      // Get primary customer and sales rep from participants
+      const customers = participants.filter((p) => p.role === "customer");
+      const salesReps = participants.filter((p) => p.role === "sales_rep");
+
+      // Prepare metadata
+      const metadata = {
+        customerName: customers.length > 0 ? customers[0].name : undefined,
+        customerEmail: customers.length > 0 ? customers[0].email : undefined,
+        customerPhone: customers.length > 0 ? customers[0].company : undefined,
+        customerCompany: customers.length > 0 ? customers[0].company : undefined,
+        salesRep: salesReps.length > 0 ? salesReps[0].name : undefined,
+        callDate: new Date().toISOString(),
+        participants: participants.filter(p => p.name.trim()),
+      };
+
+      // Upload directly to Supabase Storage (zero memory usage)
+      const result = await directUpload(fileUpload.file, metadata, (progress) => {
+        // Update file progress in UI
         setFiles((prev) =>
           prev.map((f) =>
-            f.id === fileUpload.id ? { ...f, status: "uploading" as UploadStatus, progress: 0 } : f
+            f.id === fileUpload.id ? { ...f, progress: progress.percentage } : f
+          )
+        );
+      });
+
+      if (result.success && result.call) {
+        // Update to success
+        setFiles((prev) =>
+          prev.map((f) =>
+            f.id === fileUpload.id
+              ? {
+                  ...f,
+                  status: "processing" as UploadStatus,
+                  progress: 100,
+                  callId: result.call.id,
+                }
+              : f
           )
         );
 
-        // Create form data
-        const formData = new FormData();
-        formData.append("file", fileUpload.file);
-
-        // Get primary customer and sales rep from participants
-        const customers = participants.filter((p) => p.role === "customer");
-        const salesReps = participants.filter((p) => p.role === "sales_rep");
-
-        if (customers.length > 0) {
-          formData.append("customerName", customers[0].name);
-          formData.append("customerEmail", customers[0].email);
-          formData.append("customerCompany", customers[0].company);
-        }
-
-        if (salesReps.length > 0) {
-          formData.append("salesRep", salesReps[0].name);
-        }
-
-        // Store all participants as JSON
-        formData.append("participants", JSON.stringify(participants.filter(p => p.name.trim())));
-        formData.append("callDate", new Date().toISOString());
-
-        // Use XMLHttpRequest for upload progress tracking
-        const xhr = new XMLHttpRequest();
-
-        // Track upload progress
-        xhr.upload.addEventListener("progress", (event) => {
-          if (event.lengthComputable) {
-            const percentComplete = Math.round((event.loaded / event.total) * 100);
-            setFiles((prev) =>
-              prev.map((f) =>
-                f.id === fileUpload.id ? { ...f, progress: percentComplete } : f
-              )
-            );
-          }
+        toast({
+          title: "Upload successful",
+          description: `${fileUpload.name} is now being processed.`,
         });
 
-        // Handle completion
-        xhr.addEventListener("load", () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              const result = JSON.parse(xhr.responseText);
-
-              // Update to success
-              setFiles((prev) =>
-                prev.map((f) =>
-                  f.id === fileUpload.id
-                    ? {
-                        ...f,
-                        status: "processing" as UploadStatus,
-                        progress: 100,
-                        callId: result.call.id,
-                      }
-                    : f
-                )
-              );
-
-              toast({
-                title: "Upload successful",
-                description: `${fileUpload.name} is now being processed.`,
-              });
-
-              resolve(result.call.id);
-            } catch (error) {
-              console.error("Error parsing response:", error);
-              setFiles((prev) =>
-                prev.map((f) =>
-                  f.id === fileUpload.id
-                    ? {
-                        ...f,
-                        status: "error" as UploadStatus,
-                        error: "Failed to parse server response",
-                      }
-                    : f
-                )
-              );
-              toast({
-                title: "Upload failed",
-                description: "Failed to parse server response",
-                variant: "destructive",
-              });
-              resolve(null);
-            }
-          } else {
-            // Handle error response
-            let errorMessage = "Upload failed";
-            try {
-              const errorData = JSON.parse(xhr.responseText);
-              errorMessage = errorData.error || errorMessage;
-            } catch {
-              errorMessage = `Upload failed with status ${xhr.status}`;
-            }
-
-            setFiles((prev) =>
-              prev.map((f) =>
-                f.id === fileUpload.id
-                  ? {
-                      ...f,
-                      status: "error" as UploadStatus,
-                      error: errorMessage,
-                    }
-                  : f
-              )
-            );
-
-            toast({
-              title: "Upload failed",
-              description: errorMessage,
-              variant: "destructive",
-            });
-
-            resolve(null);
-          }
-        });
-
-        // Handle network errors
-        xhr.addEventListener("error", () => {
-          console.error("Upload error: Network error");
-
-          setFiles((prev) =>
-            prev.map((f) =>
-              f.id === fileUpload.id
-                ? {
-                    ...f,
-                    status: "error" as UploadStatus,
-                    error: "Network error during upload",
-                  }
-                : f
-            )
-          );
-
-          toast({
-            title: "Upload failed",
-            description: "Network error during upload",
-            variant: "destructive",
-          });
-
-          resolve(null);
-        });
-
-        // Handle abort
-        xhr.addEventListener("abort", () => {
-          setFiles((prev) =>
-            prev.map((f) =>
-              f.id === fileUpload.id
-                ? {
-                    ...f,
-                    status: "error" as UploadStatus,
-                    error: "Upload cancelled",
-                  }
-                : f
-            )
-          );
-          resolve(null);
-        });
-
-        // Send request
-        xhr.open("POST", "/api/calls/upload");
-        xhr.send(formData);
-      } catch (error) {
-        console.error("Upload error:", error);
-
+        return result.call.id;
+      } else {
+        // Handle error
         setFiles((prev) =>
           prev.map((f) =>
             f.id === fileUpload.id
               ? {
                   ...f,
                   status: "error" as UploadStatus,
-                  error: error instanceof Error ? error.message : "Upload failed",
+                  error: result.error || "Upload failed",
                 }
               : f
           )
@@ -358,13 +245,35 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
 
         toast({
           title: "Upload failed",
-          description: error instanceof Error ? error.message : "Unknown error",
+          description: result.error || "Unknown error",
           variant: "destructive",
         });
 
-        resolve(null);
+        return null;
       }
-    });
+    } catch (error) {
+      console.error("Upload error:", error);
+
+      setFiles((prev) =>
+        prev.map((f) =>
+          f.id === fileUpload.id
+            ? {
+                ...f,
+                status: "error" as UploadStatus,
+                error: error instanceof Error ? error.message : "Upload failed",
+              }
+            : f
+        )
+      );
+
+      toast({
+        title: "Upload failed",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      });
+
+      return null;
+    }
   };
 
   const handleImportFromUrl = async () => {
