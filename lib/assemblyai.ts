@@ -399,29 +399,152 @@ export async function deleteTranscript(transcriptId: string): Promise<void> {
 }
 
 /**
- * Helper: Map AssemblyAI speakers to roles
- * Assumes Speaker A = Sales Rep, Speaker B = Prospect
+ * Helper: Map AssemblyAI speakers to roles using intelligent detection
+ * Analyzes language patterns to identify sales rep vs prospect
  */
 export function mapSpeakersToRoles(
   utterances: AssemblyAIUtterance[]
 ): Record<string, string> {
   const speakers = [...new Set(utterances.map((u) => u.speaker))];
-
   const mapping: Record<string, string> = {};
 
-  if (speakers.length >= 1) {
+  // If only one speaker, assume it's the rep
+  if (speakers.length === 1) {
     mapping[speakers[0]] = 'rep';
+    return mapping;
   }
 
-  if (speakers.length >= 2) {
-    mapping[speakers[1]] = 'prospect';
-  }
+  // Analyze speaking patterns to identify roles
+  const speakerScores: Record<string, { repScore: number; wordCount: number }> = {};
 
-  if (speakers.length >= 3) {
-    speakers.slice(2).forEach((speaker, idx) => {
-      mapping[speaker] = `participant_${idx + 1}`;
+  // Sales rep indicators (phrases commonly used by sales reps)
+  const repIndicators = [
+    'how can i help',
+    'let me show you',
+    'our product',
+    'our solution',
+    'our team',
+    'our company',
+    'we offer',
+    'we provide',
+    'we can help',
+    'pricing',
+    'discount',
+    'proposal',
+    'demo',
+    'implementation',
+    'onboarding',
+    'support team',
+    'customer success',
+    'best practices',
+    'roi',
+    'value proposition',
+    'features',
+    'benefits',
+    'integration',
+    'schedule a call',
+    'follow up',
+    'next steps',
+    'thank you for your time',
+    'appreciate your time',
+    'any questions',
+    'let me explain',
+    'i can show you',
+    'walking you through'
+  ];
+
+  // Prospect indicators (phrases commonly used by prospects)
+  const prospectIndicators = [
+    'we need',
+    'our problem',
+    'our challenge',
+    'our current',
+    'we are looking',
+    'we want',
+    'our budget',
+    'our team uses',
+    'our process',
+    'how much',
+    'what is the cost',
+    'can you',
+    'does it',
+    'will it',
+    'how does',
+    'we currently',
+    'pain point',
+    'struggling with',
+    'issue with',
+    'concern about',
+    'worried about',
+    'timeline',
+    'by when'
+  ];
+
+  // Analyze each speaker's utterances
+  speakers.forEach(speaker => {
+    const speakerUtterances = utterances.filter(u => u.speaker === speaker);
+    const allText = speakerUtterances.map(u => u.text.toLowerCase()).join(' ');
+    const wordCount = allText.split(' ').length;
+
+    let repScore = 0;
+    let prospectScore = 0;
+
+    // Count rep indicators
+    repIndicators.forEach(phrase => {
+      if (allText.includes(phrase)) {
+        repScore += 2;
+      }
+    });
+
+    // Count prospect indicators
+    prospectIndicators.forEach(phrase => {
+      if (allText.includes(phrase)) {
+        prospectScore += 2;
+      }
+    });
+
+    // Check who speaks first (often the rep initiates)
+    if (utterances[0]?.speaker === speaker) {
+      repScore += 1;
+    }
+
+    // Check who speaks more (sales reps often dominate conversation)
+    const speakerUtteranceRatio = speakerUtterances.length / utterances.length;
+    if (speakerUtteranceRatio > 0.55) {
+      repScore += 1;
+    }
+
+    // Store scores
+    speakerScores[speaker] = {
+      repScore: repScore - prospectScore, // Net score
+      wordCount
+    };
+  });
+
+  // Assign roles based on scores
+  const scoredSpeakers = Object.entries(speakerScores)
+    .sort((a, b) => b[1].repScore - a[1].repScore);
+
+  if (speakers.length === 2) {
+    // Two speakers: highest rep score is the rep, other is prospect
+    mapping[scoredSpeakers[0][0]] = 'rep';
+    mapping[scoredSpeakers[1][0]] = 'prospect';
+  } else {
+    // Multiple speakers: highest rep score is the rep, second highest is primary prospect
+    scoredSpeakers.forEach((speaker, idx) => {
+      if (idx === 0) {
+        mapping[speaker[0]] = 'rep';
+      } else if (idx === 1) {
+        mapping[speaker[0]] = 'prospect';
+      } else {
+        mapping[speaker[0]] = `participant_${idx}`;
+      }
     });
   }
+
+  // Log the detection for debugging
+  console.log('[Speaker Detection] Mapping:', mapping);
+  console.log('[Speaker Detection] Scores:', speakerScores);
 
   return mapping;
 }

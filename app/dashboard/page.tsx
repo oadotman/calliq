@@ -114,6 +114,28 @@ export default function Dashboard() {
       try {
         const supabase = createClient();
 
+        // Fetch user's organization to get plan limits
+        const { data: userOrg } = await supabase
+          .from('user_organizations')
+          .select('organization_id, role')
+          .eq('user_id', user.id)
+          .single();
+
+        let planLimit = 30; // Default to free plan (30 minutes)
+
+        if (userOrg?.organization_id) {
+          // Fetch organization details for plan limit
+          const { data: org } = await supabase
+            .from('organizations')
+            .select('max_minutes_monthly, plan_type')
+            .eq('id', userOrg.organization_id)
+            .single();
+
+          if (org?.max_minutes_monthly) {
+            planLimit = org.max_minutes_monthly;
+          }
+        }
+
         // Fetch recent calls (last 5)
         const { data: callsData, error: callsError } = await supabase
           .from('calls')
@@ -135,27 +157,57 @@ export default function Dashboard() {
         const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
 
-        // Current month calls
-        const { data: currentMonthCalls } = await supabase
-          .from('calls')
-          .select('id, duration')
-          .eq('user_id', user.id)
-          .eq('status', 'completed')
-          .gte('created_at', startOfMonth.toISOString());
+        // Current month calls - for all organization members if user is in an org
+        const callsQuery = userOrg?.organization_id
+          ? supabase
+              .from('calls')
+              .select('id, duration, user_id')
+              .eq('status', 'completed')
+              .gte('created_at', startOfMonth.toISOString())
+              .in('user_id',
+                (await supabase
+                  .from('user_organizations')
+                  .select('user_id')
+                  .eq('organization_id', userOrg.organization_id)).data?.map(u => u.user_id) || []
+              )
+          : supabase
+              .from('calls')
+              .select('id, duration')
+              .eq('user_id', user.id)
+              .eq('status', 'completed')
+              .gte('created_at', startOfMonth.toISOString());
 
-        // Last month calls
-        const { data: lastMonthCalls } = await supabase
-          .from('calls')
-          .select('id, duration')
-          .eq('user_id', user.id)
-          .eq('status', 'completed')
-          .gte('created_at', startOfLastMonth.toISOString())
-          .lte('created_at', endOfLastMonth.toISOString());
+        const { data: currentMonthCalls } = await callsQuery;
+
+        // Last month calls - using same logic
+        const lastMonthQuery = userOrg?.organization_id
+          ? supabase
+              .from('calls')
+              .select('id, duration, user_id')
+              .eq('status', 'completed')
+              .gte('created_at', startOfLastMonth.toISOString())
+              .lte('created_at', endOfLastMonth.toISOString())
+              .in('user_id',
+                (await supabase
+                  .from('user_organizations')
+                  .select('user_id')
+                  .eq('organization_id', userOrg.organization_id)).data?.map(u => u.user_id) || []
+              )
+          : supabase
+              .from('calls')
+              .select('id, duration')
+              .eq('user_id', user.id)
+              .eq('status', 'completed')
+              .gte('created_at', startOfLastMonth.toISOString())
+              .lte('created_at', endOfLastMonth.toISOString());
+
+        const { data: lastMonthCalls } = await lastMonthQuery;
 
         const callsThisMonth = currentMonthCalls?.length || 0;
         const callsLastMonth = lastMonthCalls?.length || 0;
 
         // Calculate minutes used (for billing)
+        // NOTE: Assuming call.duration is stored in SECONDS based on AssemblyAI integration
         const totalMinutesThisMonth = (currentMonthCalls || []).reduce(
           (sum, call) => sum + (call.duration ? call.duration / 60 : 0),
           0
@@ -184,7 +236,7 @@ export default function Dashboard() {
           hoursSavedThisMonth,
           hoursSavedLastMonth,
           minutesUsed: Math.round(totalMinutesThisMonth),
-          minutesTotal: 500, // Plan limit (can be fetched from user subscription)
+          minutesTotal: planLimit, // Now using actual plan limit from organization
           hourlyRate: 75, // Average hourly rate (can be customized per user)
         });
 

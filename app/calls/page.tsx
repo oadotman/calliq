@@ -33,6 +33,17 @@ import {
 import Link from "next/link";
 import { useAuth } from "@/lib/AuthContext";
 import { createClient } from "@/lib/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Call {
   id: string;
@@ -55,6 +66,11 @@ export default function CallsPage() {
   const [selectedRep, setSelectedRep] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedCallIds, setSelectedCallIds] = useState<string[]>([]);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [callToDelete, setCallToDelete] = useState<string | null>(null);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { toast } = useToast();
   const itemsPerPage = 10;
 
   // Fetch calls from database
@@ -120,6 +136,100 @@ export default function CallsPage() {
     }, 300);
     return () => clearTimeout(timer);
   }, [searchInput]);
+
+  // Delete handlers
+  const handleDeleteCall = async (callId: string) => {
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/calls/${callId}/delete`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete call');
+      }
+
+      // Remove call from local state
+      setCalls(prevCalls => prevCalls.filter(call => call.id !== callId));
+
+      toast({
+        title: "Call deleted",
+        description: "The call has been successfully deleted.",
+      });
+
+      setDeleteDialogOpen(false);
+      setCallToDelete(null);
+    } catch (error) {
+      console.error('Error deleting call:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete call",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedCallIds.length === 0) return;
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch('/api/calls/bulk/delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ callIds: selectedCallIds }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete calls');
+      }
+
+      // Remove calls from local state
+      setCalls(prevCalls =>
+        prevCalls.filter(call => !selectedCallIds.includes(call.id))
+      );
+
+      toast({
+        title: "Calls deleted",
+        description: `${selectedCallIds.length} calls have been successfully deleted.`,
+      });
+
+      setSelectedCallIds([]);
+      setBulkDeleteDialogOpen(false);
+    } catch (error) {
+      console.error('Error deleting calls:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete calls",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const initiateDelete = (callId: string) => {
+    setCallToDelete(callId);
+    setDeleteDialogOpen(true);
+  };
+
+  const initiateBulkDelete = () => {
+    if (selectedCallIds.length === 0) {
+      toast({
+        title: "No calls selected",
+        description: "Please select calls to delete",
+        variant: "destructive",
+      });
+      return;
+    }
+    setBulkDeleteDialogOpen(true);
+  };
 
   // Filter calls
   const filteredCalls = useMemo(() => {
@@ -294,6 +404,7 @@ export default function CallsPage() {
                   size="sm"
                   variant="outline"
                   className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-300 rounded-lg"
+                  onClick={initiateBulkDelete}
                 >
                   <Trash2 className="w-4 h-4 mr-1" />
                   Delete Selected
@@ -457,7 +568,10 @@ export default function CallsPage() {
                                   <Download className="w-4 h-4 mr-2" />
                                   Export
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="rounded-lg text-red-600">
+                                <DropdownMenuItem
+                                  className="rounded-lg text-red-600"
+                                  onClick={() => initiateDelete(call.id)}
+                                >
                                   <Trash2 className="w-4 h-4 mr-2" />
                                   Delete
                                 </DropdownMenuItem>
@@ -547,6 +661,66 @@ export default function CallsPage() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the call
+              and all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => callToDelete && handleDeleteCall(callToDelete)}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedCallIds.length} calls?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the selected
+              calls and all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                `Delete ${selectedCallIds.length} calls`
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

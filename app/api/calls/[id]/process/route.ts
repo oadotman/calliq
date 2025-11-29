@@ -236,8 +236,11 @@ export async function POST(
         status: 'completed',
         processing_progress: 100,
         processing_message: 'All done! Your call is ready to review.',
+        duration: transcriptionResult.audio_duration
+          ? Math.round(transcriptionResult.audio_duration / 1000) // Convert ms to seconds
+          : call.duration || null,
         duration_minutes: transcriptionResult.audio_duration
-          ? Math.ceil(transcriptionResult.audio_duration / 60)
+          ? Math.ceil(transcriptionResult.audio_duration / 1000 / 60) // Convert ms to minutes
           : null,
         customer_company: (extraction.raw as any).customerCompany || call.customer_company,
         next_steps: extraction.nextSteps?.join('\n') || null,

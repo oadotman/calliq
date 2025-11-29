@@ -286,8 +286,26 @@ export default function CallDetailPage() {
     if (!isProcessing) return;
 
     let lastKnownStatus = callDetail.call.status;
+    let pollCount = 0;
+    const maxPolls = 120; // Max 10 minutes (120 * 5 seconds)
+    let consecutiveErrors = 0;
+    const maxConsecutiveErrors = 3;
 
     const pollInterval = setInterval(async () => {
+      pollCount++;
+
+      // Stop polling after max attempts
+      if (pollCount >= maxPolls) {
+        console.error('Polling timeout - stopping after', pollCount, 'attempts');
+        clearInterval(pollInterval);
+        toast({
+          title: "Processing timeout",
+          description: "Call processing is taking longer than expected. Please refresh the page.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       try {
         const supabase = createClient();
         const { data: updatedCall, error } = await supabase
@@ -296,7 +314,24 @@ export default function CallDetailPage() {
           .eq('id', callDetail.call.id)
           .single();
 
-        if (!error && updatedCall) {
+        if (error) {
+          consecutiveErrors++;
+          if (consecutiveErrors >= maxConsecutiveErrors) {
+            console.error('Too many consecutive errors - stopping polling');
+            clearInterval(pollInterval);
+            toast({
+              title: "Connection error",
+              description: "Unable to check call status. Please refresh the page.",
+              variant: "destructive",
+            });
+          }
+          return;
+        }
+
+        // Reset error count on success
+        consecutiveErrors = 0;
+
+        if (updatedCall) {
           // Check if status changed to completed/failed
           const justCompleted =
             (updatedCall.status === 'completed' || updatedCall.status === 'failed') &&
@@ -307,8 +342,10 @@ export default function CallDetailPage() {
           // Always update the call data
           setCallDetail(prev => prev ? { ...prev, call: updatedCall } : null);
 
-          // If completed or failed, fetch all related data
+          // If completed or failed, stop polling and fetch all related data
           if (updatedCall.status === 'completed' || updatedCall.status === 'failed') {
+            clearInterval(pollInterval); // Stop polling immediately
+
             const { data: transcriptData } = await supabase
               .from('transcripts')
               .select('*')
@@ -347,7 +384,7 @@ export default function CallDetailPage() {
               fields: fieldsData || []
             });
 
-            // Log completion for debugging
+            // Show toast on completion
             if (justCompleted) {
               console.log('Call processing completed!', {
                 status: updatedCall.status,
@@ -357,16 +394,38 @@ export default function CallDetailPage() {
                 insightsCount: insightsData?.length || 0,
                 fieldsCount: fieldsData?.length || 0,
               });
+
+              toast({
+                title: updatedCall.status === 'completed' ? "Processing complete!" : "Processing failed",
+                description: updatedCall.processing_message || "Call processing has finished.",
+                variant: updatedCall.status === 'completed' ? "default" : "destructive",
+              });
             }
+          }
+
+          // Also stop if call is in an unexpected state
+          if (!processingStates.includes(updatedCall.status)) {
+            console.log('Call in unexpected state, stopping polling:', updatedCall.status);
+            clearInterval(pollInterval);
           }
         }
       } catch (error) {
         console.error('Error polling call status:', error);
+        consecutiveErrors++;
+        if (consecutiveErrors >= maxConsecutiveErrors) {
+          console.error('Too many consecutive errors - stopping polling');
+          clearInterval(pollInterval);
+          toast({
+            title: "Connection error",
+            description: "Unable to check call status. Please refresh the page.",
+            variant: "destructive",
+          });
+        }
       }
     }, 5000);
 
     return () => clearInterval(pollInterval);
-  }, [callDetail]);
+  }, [callDetail, toast]);
 
   // Handle copy to clipboard
   const handleCopy = async (text: string, label: string) => {
