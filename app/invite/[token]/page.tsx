@@ -31,7 +31,7 @@ interface Invitation {
 export default function AcceptInvitationPage() {
   const params = useParams();
   const token = params?.token as string;
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, refreshUser } = useAuth();
   const router = useRouter();
 
   const [invitation, setInvitation] = useState<Invitation | null>(null);
@@ -52,13 +52,13 @@ export default function AcceptInvitationPage() {
 
       // Fetch invitation
       const { data: invite, error: fetchError } = await supabase
-        .from('team_invitations')
+        .from('invitations')
         .select(`
           *,
           organization:organizations(*)
         `)
         .eq('token', token)
-        .is('accepted_at', null)
+        .eq('status', 'pending')
         .single();
 
       if (fetchError || !invite) {
@@ -116,10 +116,10 @@ export default function AcceptInvitationPage() {
 
         // Mark invitation as accepted
         await supabase
-          .from('team_invitations')
+          .from('invitations')
           .update({
+            status: 'accepted',
             accepted_at: new Date().toISOString(),
-            accepted_by: user.id,
           })
           .eq('id', invite.id);
 
@@ -138,9 +138,15 @@ export default function AcceptInvitationPage() {
 
         setStatus('success');
 
+        // Refresh user context to include new organization
+        if (refreshUser) {
+          await refreshUser();
+        }
+
         // Redirect to dashboard after 2 seconds
         setTimeout(() => {
           router.push('/');
+          router.refresh(); // Force page refresh to update navigation
         }, 2000);
 
       } catch (error: any) {

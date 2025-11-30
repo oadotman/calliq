@@ -46,8 +46,13 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    console.log('🔵 Signup API: Request body parsed', { email: body.email, fullName: body.fullName, hasOrgName: !!body.organizationName });
-    const { email, password, fullName, organizationName } = body;
+    console.log('🔵 Signup API: Request body parsed', {
+      email: body.email,
+      fullName: body.fullName,
+      hasOrgName: !!body.organizationName,
+      hasInviteToken: !!body.inviteToken
+    });
+    const { email, password, fullName, organizationName, inviteToken } = body;
 
     // Validate required fields
     if (!email || !password || !fullName) {
@@ -101,76 +106,127 @@ export async function POST(req: NextRequest) {
     const userId = authData.user.id;
     console.log('✅ Signup API: User created', { userId });
 
-    // Step 2: Create organization
-    const orgSlug = `org-${userId.substring(0, 8)}`;
-    console.log('🔵 Signup API: Creating organization', {
-      orgName: cleanOrgName,
-      orgSlug,
-      userId,
-      billingEmail: cleanEmail
-    });
+    // Check if this is an invited signup
+    let orgData = null;
+    let membershipRole = 'owner';
+    let isInvitedSignup = false;
 
-    // Verify admin client is configured correctly
-    console.log('🔵 Signup API: Admin client config check', {
-      hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-      hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-      serviceKeyPrefix: process.env.SUPABASE_SERVICE_ROLE_KEY?.substring(0, 20)
-    });
+    if (inviteToken) {
+      console.log('🔵 Signup API: Checking invitation token', { inviteToken });
 
-    const { data: orgData, error: orgError } = await supabaseAdmin
-      .from('organizations')
-      .insert({
-        name: cleanOrgName,
-        slug: orgSlug,
-        plan_type: 'free',
-        max_members: 1,
-        max_minutes_monthly: 30,
-        billing_email: cleanEmail,
-        subscription_status: 'active'
-      })
-      .select()
-      .single();
+      // Verify the invitation exists and is valid
+      const { data: invite, error: inviteError } = await supabaseAdmin
+        .from('invitations')
+        .select('*, organizations(*)')
+        .eq('token', inviteToken)
+        .eq('email', cleanEmail)
+        .eq('status', 'pending')
+        .single();
 
-    if (orgError) {
-      console.error('🔴 Signup API: Organization creation error:', {
-        message: orgError.message,
-        details: orgError.details,
-        hint: orgError.hint,
-        code: orgError.code,
-        fullError: JSON.stringify(orgError, null, 2)
-      });
+      if (!inviteError && invite) {
+        console.log('✅ Signup API: Valid invitation found', {
+          inviteId: invite.id,
+          orgId: invite.organization_id,
+          role: invite.role
+        });
 
-      // Rollback: Delete the user if org creation fails
-      console.log('🔵 Signup API: Rolling back - deleting user');
-      const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
-      if (deleteError) {
-        console.error('🔴 Signup API: Failed to delete user during rollback:', deleteError);
+        isInvitedSignup = true;
+        orgData = invite.organizations;
+        membershipRole = invite.role || 'member';
+
+        // Mark invitation as accepted
+        await supabaseAdmin
+          .from('invitations')
+          .update({ status: 'accepted' })
+          .eq('id', invite.id);
+      } else {
+        console.warn('⚠️ Signup API: Invalid invitation token', { inviteError });
+        // Continue with normal signup if invitation is invalid
       }
-
-      return NextResponse.json(
-        {
-          error: 'Failed to create organization. Please try again.',
-          debugInfo: process.env.NODE_ENV === 'development' ? {
-            message: orgError.message,
-            code: orgError.code,
-            details: orgError.details,
-            hint: orgError.hint
-          } : undefined
-        },
-        { status: 500 }
-      );
     }
 
-    console.log('✅ Signup API: Organization created', { orgId: orgData.id });
+    // Step 2: Create organization (only if not invited)
+    if (!isInvitedSignup) {
+      const orgSlug = `org-${userId.substring(0, 8)}`;
+      console.log('🔵 Signup API: Creating organization', {
+        orgName: cleanOrgName,
+        orgSlug,
+        userId,
+        billingEmail: cleanEmail
+      });
 
-    // Step 3: Link user to organization as owner
-    console.log('🔵 Signup API: Creating membership');
+      // Verify admin client is configured correctly
+      console.log('🔵 Signup API: Admin client config check', {
+        hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+        hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+        serviceKeyPrefix: process.env.SUPABASE_SERVICE_ROLE_KEY?.substring(0, 20)
+      });
+
+      const { data: newOrgData, error: orgError } = await supabaseAdmin
+        .from('organizations')
+        .insert({
+          name: cleanOrgName,
+          slug: orgSlug,
+          plan_type: 'free',
+          max_members: 1,
+          max_minutes_monthly: 30,
+          billing_email: cleanEmail,
+          subscription_status: 'active'
+        })
+        .select()
+        .single();
+
+      if (orgError) {
+        console.error('🔴 Signup API: Organization creation error:', {
+          message: orgError.message,
+          details: orgError.details,
+          hint: orgError.hint,
+          code: orgError.code,
+          fullError: JSON.stringify(orgError, null, 2)
+        });
+
+        // Rollback: Delete the user if org creation fails
+        console.log('🔵 Signup API: Rolling back - deleting user');
+        const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+        if (deleteError) {
+          console.error('🔴 Signup API: Failed to delete user during rollback:', deleteError);
+        }
+
+        return NextResponse.json(
+          {
+            error: 'Failed to create organization. Please try again.',
+            debugInfo: process.env.NODE_ENV === 'development' ? {
+              message: orgError.message,
+              code: orgError.code,
+              details: orgError.details,
+              hint: orgError.hint
+            } : undefined
+          },
+          { status: 500 }
+        );
+      }
+
+      orgData = newOrgData;
+    }
+
+    console.log('✅ Signup API: Organization ready', {
+      orgId: orgData.id,
+      isInvited: isInvitedSignup,
+      role: membershipRole
+    });
+
+    // Step 3: Link user to organization with appropriate role
+    console.log('🔵 Signup API: Creating membership', {
+      userId,
+      orgId: orgData.id,
+      role: membershipRole
+    });
     const { error: membershipError } = await supabaseAdmin
       .from('user_organizations')
       .insert({
         user_id: userId,
         organization_id: orgData.id,
-        role: 'owner',
+        role: membershipRole,
       });
 
     if (membershipError) {
@@ -182,9 +238,13 @@ export async function POST(req: NextRequest) {
         fullError: JSON.stringify(membershipError, null, 2)
       });
 
-      // Rollback: Delete org and user
-      console.log('🔵 Signup API: Rolling back - deleting org and user');
-      await supabaseAdmin.from('organizations').delete().eq('id', orgData.id);
+      // Rollback: Delete user and org (only if we created it)
+      console.log('🔵 Signup API: Rolling back - deleting user');
+      if (!isInvitedSignup) {
+        // Only delete the org if we created it
+        console.log('🔵 Signup API: Deleting created organization');
+        await supabaseAdmin.from('organizations').delete().eq('id', orgData.id);
+      }
       await supabaseAdmin.auth.admin.deleteUser(userId);
 
       return NextResponse.json(

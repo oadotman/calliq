@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,9 +9,9 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { authHelpers } from '@/lib/supabase'
 import { useAuth } from '@/lib/AuthContext'
-import { Phone, Loader2, CheckCircle2 } from 'lucide-react'
+import { Phone, Loader2, CheckCircle2, Users } from 'lucide-react'
 
-export default function SignUpPage() {
+function SignUpForm() {
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -22,14 +22,32 @@ export default function SignUpPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { user } = useAuth()
+
+  // Check for invitation parameters
+  const inviteEmail = searchParams?.get('email')
+  const returnTo = searchParams?.get('returnTo')
+  const isInvited = !!inviteEmail && !!returnTo
+
+  // Pre-fill email if coming from invitation
+  useEffect(() => {
+    if (inviteEmail) {
+      setEmail(inviteEmail)
+    }
+  }, [inviteEmail])
 
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      router.push('/')
+      // If coming from invitation, redirect to the invitation page
+      if (returnTo) {
+        router.push(returnTo)
+      } else {
+        router.push('/')
+      }
     }
-  }, [user, router])
+  }, [user, router, returnTo])
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -59,6 +77,12 @@ export default function SignUpPage() {
     }
 
     try {
+      // Extract invitation token from returnTo URL if present
+      let inviteToken: string | undefined
+      if (returnTo && returnTo.startsWith('/invite/')) {
+        inviteToken = returnTo.replace('/invite/', '')
+      }
+
       // Call custom signup API that creates user + organization
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
@@ -68,6 +92,7 @@ export default function SignUpPage() {
           password,
           fullName,
           organizationName: organizationName || `${fullName}'s Organization`,
+          inviteToken, // Pass invitation token if present
         }),
       })
 
@@ -85,9 +110,15 @@ export default function SignUpPage() {
 
       setSuccess(true)
       setLoading(false)
-      // Redirect to login after 2 seconds
+      // Redirect after 2 seconds
       setTimeout(() => {
-        router.push('/login?message=Account created successfully! Please sign in.')
+        if (returnTo && inviteToken) {
+          // If coming from invitation, redirect to login with return URL
+          router.push(`/login?message=Account created successfully! Please sign in to join the team.&returnTo=${encodeURIComponent(returnTo)}`)
+        } else {
+          // Normal signup flow
+          router.push('/login?message=Account created successfully! Please sign in.')
+        }
       }, 2000)
     } catch (err: any) {
       setError(err.message)
@@ -268,5 +299,20 @@ export default function SignUpPage() {
         </form>
       </Card>
     </div>
+  )
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-4">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-600" />
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <SignUpForm />
+    </Suspense>
   )
 }

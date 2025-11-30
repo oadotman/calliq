@@ -19,6 +19,7 @@ interface AuthContextType {
   organization: OrganizationData | null
   loading: boolean
   signOut: () => Promise<void>
+  refreshUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -27,6 +28,7 @@ const AuthContext = createContext<AuthContextType>({
   organization: null,
   loading: true,
   signOut: async () => {},
+  refreshUser: async () => {},
 })
 
 export const useAuth = () => {
@@ -47,25 +49,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Fetch organization data for a user
   const fetchOrganization = async (userId: string) => {
     try {
-      const { data: userOrg } = await supabase
+      // Fetch all user organizations, ordered by created_at (oldest first, likely the primary org)
+      const { data: userOrgs } = await supabase
         .from('user_organizations')
-        .select('organization_id')
+        .select('organization_id, role')
         .eq('user_id', userId)
-        .single()
+        .order('created_at', { ascending: true })
 
-      if (userOrg) {
+      if (userOrgs && userOrgs.length > 0) {
+        // Use the first organization (primary organization)
+        const primaryOrgId = userOrgs[0].organization_id
+
         const { data: org } = await supabase
           .from('organizations')
           .select('id, name, plan_type, max_members, max_minutes_monthly')
-          .eq('id', userOrg.organization_id)
+          .eq('id', primaryOrgId)
           .single()
 
         if (org) {
+          console.log('AuthContext: Organization fetched', { orgId: org.id, name: org.name, plan: org.plan_type })
           setOrganization(org)
         }
+      } else {
+        console.log('AuthContext: No organizations found for user')
+        setOrganization(null)
       }
     } catch (error) {
       console.error('Error fetching organization:', error)
+      setOrganization(null)
+    }
+  }
+
+  // Refresh user data
+  const refreshUser = async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (session?.user) {
+      setUser(session.user)
+      await fetchOrganization(session.user.id)
     }
   }
 
@@ -129,7 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, organization, loading, signOut }}>
+    <AuthContext.Provider value={{ user, session, organization, loading, signOut, refreshUser }}>
       {children}
     </AuthContext.Provider>
   )

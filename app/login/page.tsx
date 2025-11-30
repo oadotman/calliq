@@ -1,21 +1,33 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { authHelpers } from '@/lib/supabase'
-import { Phone, Loader2 } from 'lucide-react'
+import { Phone, Loader2, CheckCircle2 } from 'lucide-react'
 
-export default function LoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // Get message and returnTo from URL params
+  const message = searchParams?.get('message')
+  const returnTo = searchParams?.get('returnTo')
+
+  useEffect(() => {
+    if (message) {
+      setSuccessMessage(message)
+    }
+  }, [message])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -37,11 +49,12 @@ export default function LoginPage() {
 
       if (data?.session) {
         console.log('Login successful, session:', data.session)
-        console.log('Redirecting to dashboard...')
+        const redirectPath = returnTo || '/'
+        console.log('Redirecting to:', redirectPath)
 
         // Small delay to ensure auth state is updated
         setTimeout(() => {
-          router.push('/')
+          router.push(redirectPath)
           // Force a page refresh to ensure AuthContext picks up the new session
           router.refresh()
         }, 100)
@@ -69,6 +82,12 @@ export default function LoginPage() {
         </CardHeader>
         <form onSubmit={handleLogin}>
           <CardContent className="space-y-4">
+            {successMessage && (
+              <div className="p-3 text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0" />
+                <span>{successMessage}</span>
+              </div>
+            )}
             {error && (
               <div className="p-3 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
                 {error}
@@ -134,5 +153,20 @@ export default function LoginPage() {
         </form>
       </Card>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-4">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-600" />
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   )
 }
