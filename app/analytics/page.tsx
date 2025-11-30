@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { TopBar } from "@/components/layout/TopBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Clock,
@@ -270,7 +269,6 @@ export default function AnalyticsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
-        <TopBar />
         <div className="flex items-center justify-center p-8 lg:p-16">
           <div className="text-center">
             <Loader2 className="w-12 h-12 animate-spin text-violet-600 mx-auto mb-4" />
@@ -284,7 +282,6 @@ export default function AnalyticsPage() {
   if (!analytics) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
-        <TopBar />
         <div className="flex items-center justify-center p-8 lg:p-16">
           <div className="text-center">
             <p className="text-slate-600 font-medium">No analytics data available.</p>
@@ -309,8 +306,6 @@ export default function AnalyticsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
-      <TopBar />
-
       <div className="p-4 lg:p-8 space-y-8 animate-in fade-in duration-200">
         {/* Page Header */}
         <div className="relative group">

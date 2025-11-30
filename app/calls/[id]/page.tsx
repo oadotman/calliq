@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { TopBar } from "@/components/layout/TopBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -894,7 +893,6 @@ Call_Duration__c: ${call.duration || 0}
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
-        <TopBar showUploadButton={false} />
         <div className="flex items-center justify-center p-8 lg:p-16">
           <div className="text-center">
             <Loader2 className="w-12 h-12 animate-spin text-violet-600 mx-auto mb-4" />
@@ -912,7 +910,6 @@ Call_Duration__c: ${call.duration || 0}
   if (error || !callDetail) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
-        <TopBar showUploadButton={false} />
         <div className="flex items-center justify-center p-8 lg:p-16">
           <div className="text-center">
             <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
@@ -957,8 +954,6 @@ Call_Duration__c: ${call.duration || 0}
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
-      <TopBar showUploadButton={false} />
-
       {/* Hidden audio element for playback */}
       {call.file_url && (
         <audio

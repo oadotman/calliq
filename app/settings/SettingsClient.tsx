@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { TopBar } from "@/components/layout/TopBar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -149,8 +148,6 @@ export function SettingsClient({ user, billing, organizationId, userId }: Settin
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-blue-950/30">
-      <TopBar />
-
       <div className="p-4 lg:p-8 space-y-6 animate-in fade-in duration-200">
         {/* Modern Header with Glassmorphism */}
         <div className="relative group">

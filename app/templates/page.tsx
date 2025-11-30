@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
-import { TopBar } from "@/components/layout/TopBar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -736,7 +735,6 @@ export default function TemplatesPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
-        <TopBar />
         <div className="flex items-center justify-center p-8 lg:p-16">
           <div className="text-center">
             <Loader2 className="w-12 h-12 animate-spin text-violet-600 mx-auto mb-4" />
@@ -753,8 +751,6 @@ export default function TemplatesPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
-      <TopBar />
-
       <div className="px-8 py-6">
         {/* Header Section */}
         <div className="mb-10">

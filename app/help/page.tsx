@@ -1,6 +1,5 @@
 "use client";
 
-import { TopBar } from "@/components/layout/TopBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,8 +52,6 @@ export default function HelpPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
-      <TopBar />
-
       <div className="p-4 lg:p-8 space-y-8 animate-in fade-in duration-200">
         <div className="max-w-5xl mx-auto">
           {/* Modern Header */}

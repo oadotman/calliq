@@ -20,6 +20,18 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
   const publicPages = ['/', '/landing']
   const isPublicPage = publicPages.some(page => pathname === page || pathname?.startsWith(page + '/'))
 
+  // Log for debugging
+  useEffect(() => {
+    console.log('AuthLayout render state:', {
+      loading,
+      hasUser: !!user,
+      userId: user?.id,
+      pathname,
+      isAuthPage,
+      isPublicPage
+    })
+  }, [loading, user, pathname, isAuthPage, isPublicPage])
+
   // Handle redirects based on auth state
   useEffect(() => {
     console.log('AuthLayout: Checking redirects', { loading, hasUser: !!user, isAuthPage, isPublicPage, pathname })
@@ -38,19 +50,6 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
     }
   }, [user, loading, isAuthPage, isPublicPage, router, pathname])
 
-  // For public pages, don't show loading - render immediately
-  // Only show loading spinner for protected pages that need auth check
-  if (loading && !isPublicPage && !isAuthPage) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
-        <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
   // Render auth pages and public pages without sidebar but with footer
   if (isAuthPage || isPublicPage) {
     return (
@@ -64,7 +63,20 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
     )
   }
 
+  // For protected pages, show loading spinner while auth is being checked
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
   // Render protected pages with sidebar (only if user is authenticated)
+  // If loading is false and user exists, show the page with sidebar
   if (user) {
     return (
       <>
@@ -81,6 +93,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
     )
   }
 
-  // Show nothing while redirecting (this prevents flash of unauthorized content)
+  // If loading is false and no user, show nothing while redirecting
+  // (redirect logic in useEffect will handle sending to login)
   return null
 }

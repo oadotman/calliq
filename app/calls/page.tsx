@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { TopBar } from "@/components/layout/TopBar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -286,7 +285,6 @@ export default function CallsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950/30">
-        <TopBar />
         <div className="flex items-center justify-center p-8 lg:p-16">
           <div className="text-center">
             <Loader2 className="w-12 h-12 animate-spin text-violet-600 dark:text-violet-400 mx-auto mb-4" />
@@ -299,8 +297,6 @@ export default function CallsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950/30">
-      <TopBar />
-
       <div className="p-4 lg:p-8 space-y-6 animate-in fade-in duration-200">
         {/* Header */}
         <div className="relative group">
