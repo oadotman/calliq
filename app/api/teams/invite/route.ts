@@ -4,7 +4,7 @@
 // =====================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { sanitizeEmail, sanitizeInput } from '@/lib/sanitize-simple';
 import { inviteRateLimiter } from '@/lib/rateLimit';
 import { randomBytes } from 'crypto';
@@ -93,26 +93,31 @@ export async function POST(req: NextRequest) {
     const organization = membership.organization as any;
 
     // Check if user with this email is already a member
-    const { data: existingUser } = await supabase
-      .from('auth.users')
-      .select('id')
-      .eq('email', email)
-      .maybeSingle();
+    // We'll use admin client to check if the user exists
+    try {
+      const adminClient = createAdminClient();
+      const { data: userList } = await adminClient.auth.admin.listUsers();
 
-    if (existingUser) {
-      const { data: existingMember } = await supabase
-        .from('user_organizations')
-        .select('id')
-        .eq('user_id', existingUser.id)
-        .eq('organization_id', organizationId)
-        .maybeSingle();
+      const existingUser = userList?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
 
-      if (existingMember) {
-        return NextResponse.json(
-          { error: 'User is already a member of this organization' },
-          { status: 400 }
-        );
+      if (existingUser) {
+        const { data: existingMember } = await supabase
+          .from('user_organizations')
+          .select('id')
+          .eq('user_id', existingUser.id)
+          .eq('organization_id', organizationId)
+          .maybeSingle();
+
+        if (existingMember) {
+          return NextResponse.json(
+            { error: 'User is already a member of this organization' },
+            { status: 400 }
+          );
+        }
       }
+    } catch (userCheckError) {
+      // If we can't check for existing user, continue anyway
+      console.log('Could not check for existing user, continuing:', userCheckError);
     }
 
     // Check if invitation already exists

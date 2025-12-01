@@ -56,6 +56,7 @@ export default function TeamSettingsPage() {
 
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [fetchingData, setFetchingData] = useState(false);
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
@@ -71,15 +72,28 @@ export default function TeamSettingsPage() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+
     if (user && mounted) {
-      fetchTeamData();
+      // Prevent multiple simultaneous fetches
+      const fetchData = async () => {
+        if (!cancelled) {
+          await fetchTeamData();
+        }
+      };
+      fetchData();
     }
+
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, mounted]); // Only re-fetch when user ID changes
 
   async function fetchTeamData() {
-    if (!user) return;
+    if (!user || fetchingData) return; // Prevent concurrent fetches
 
+    setFetchingData(true);
     setLoading(true); // Ensure loading is set to true at start
 
     try {
@@ -96,16 +110,14 @@ export default function TeamSettingsPage() {
         console.error('Error fetching membership:', membershipError);
         // Don't show error toast - just silently handle
         setOrganization(null); // Explicitly set organization to null
-        setLoading(false);
-        return;
+        return; // Let the finally block handle loading state
       }
 
       // Handle case where membership query returns null (no organization)
       if (!membership || !membership.organization_id) {
         console.log('No organization membership found for user');
         setOrganization(null); // Explicitly set organization to null
-        setLoading(false);
-        return;
+        return; // Let the finally block handle loading state
       }
 
       // At this point we know membership exists with organization_id
@@ -121,15 +133,13 @@ export default function TeamSettingsPage() {
       if (orgError) {
         console.error('Error fetching organization:', orgError);
         setOrganization(null);
-        setLoading(false);
-        return;
+        return; // Let the finally block handle loading state
       }
 
       if (!org) {
         console.warn('Organization not found for membership');
         setOrganization(null);
-        setLoading(false);
-        return;
+        return; // Let the finally block handle loading state
       }
 
       setOrganization(org as Organization);
@@ -181,6 +191,7 @@ export default function TeamSettingsPage() {
       });
     } finally {
       setLoading(false);
+      setFetchingData(false);
     }
   }
 
