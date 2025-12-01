@@ -3,7 +3,7 @@
 // Must stay in sync with database/008_team_management.sql
 // =====================================================
 
-export type PlanType = 'free' | 'solo' | 'team_starter' | 'team_pro' | 'team_enterprise' | 'enterprise';
+export type PlanType = 'free' | 'solo' | 'starter' | 'professional' | 'enterprise' | 'custom';
 
 export interface PlanDetails {
   id: PlanType;
@@ -64,9 +64,9 @@ export const PLANS: Record<PlanType, PlanDetails> = {
     ],
     cta: 'Start Free Trial',
   },
-  team_starter: {
-    id: 'team_starter',
-    name: 'Team Starter',
+  starter: {
+    id: 'starter',
+    name: 'Starter',
     price: 149,
     priceAnnual: 1484, // $149 * 12 * 0.83
     priceDisplay: '$149/mo',
@@ -86,9 +86,9 @@ export const PLANS: Record<PlanType, PlanDetails> = {
     isPopular: true,
     cta: 'Start Free Trial',
   },
-  team_pro: {
-    id: 'team_pro',
-    name: 'Team Pro',
+  professional: {
+    id: 'professional',
+    name: 'Professional',
     price: 299,
     priceAnnual: 2978, // $299 * 12 * 0.83
     priceDisplay: '$299/mo',
@@ -106,9 +106,9 @@ export const PLANS: Record<PlanType, PlanDetails> = {
     ],
     cta: 'Start Free Trial',
   },
-  team_enterprise: {
-    id: 'team_enterprise',
-    name: 'Team Enterprise',
+  enterprise: {
+    id: 'enterprise',
+    name: 'Enterprise',
     price: 499,
     priceAnnual: 4968, // $499 * 12 * 0.83
     priceDisplay: '$499/mo',
@@ -127,9 +127,9 @@ export const PLANS: Record<PlanType, PlanDetails> = {
     ],
     cta: 'Start Free Trial',
   },
-  enterprise: {
-    id: 'enterprise',
-    name: 'Enterprise',
+  custom: {
+    id: 'custom',
+    name: 'Custom',
     price: 0, // Custom pricing
     priceAnnual: 0,
     priceDisplay: 'Custom',
@@ -217,26 +217,26 @@ export function getRecommendedPlan(
   if (teamSize === 1) {
     if (minutesUsed <= 30) return 'free';
     if (minutesUsed <= 1500) return 'solo';
-    return 'team_starter'; // Suggest team plan if solo user needs more
+    return 'starter'; // Suggest team plan if solo user needs more
   }
 
   // For teams
   if (teamSize <= 5) {
-    if (minutesUsed <= 6000) return 'team_starter';
-    if (minutesUsed <= 15000) return 'team_pro';
-    return 'team_enterprise';
+    if (minutesUsed <= 6000) return 'starter';
+    if (minutesUsed <= 15000) return 'professional';
+    return 'enterprise';
   }
 
   if (teamSize <= 10) {
-    if (minutesUsed <= 15000) return 'team_pro';
-    return 'team_enterprise';
+    if (minutesUsed <= 15000) return 'professional';
+    return 'enterprise';
   }
 
   if (teamSize <= 20) {
-    return 'team_enterprise';
+    return 'enterprise';
   }
 
-  return 'enterprise';
+  return 'custom';
 }
 
 // Get all available plans for pricing page
@@ -244,9 +244,9 @@ export function getPublicPlans(): PlanDetails[] {
   return [
     PLANS.free,
     PLANS.solo,
-    PLANS.team_starter,
-    PLANS.team_pro,
-    PLANS.team_enterprise,
+    PLANS.starter,
+    PLANS.professional,
+    PLANS.enterprise,
   ];
 }
 

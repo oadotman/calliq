@@ -31,13 +31,13 @@ export function TopBar({ showUploadButton = true }: TopBarProps) {
         return "Free Plan";
       case "solo":
         return "Solo Plan";
-      case "team_starter":
-        return "Team Starter";
-      case "team_pro":
-        return "Team Pro";
-      case "team_enterprise":
-        return "Team Enterprise";
+      case "starter":
+        return "Starter";
+      case "professional":
+        return "Professional";
       case "enterprise":
+        return "Enterprise";
+      case "custom":
         return "Enterprise";
       default:
         return "Free Plan";

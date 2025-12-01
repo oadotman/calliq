@@ -257,11 +257,17 @@ function getPlanTypeFromPriceId(priceId?: string): string {
   // Map Paddle price IDs to plan types
   // Update these mappings when you create plans in Paddle dashboard
   const priceIdMap: Record<string, string> = {
-    // Sandbox IDs (replace with actual IDs)
-    'pri_01hzq...': 'solo',
-    'pri_01hzr...': 'team_starter',
-    'pri_01hzs...': 'team_pro',
-    'pri_01hzt...': 'team_enterprise',
+    // Map actual Paddle price IDs from environment variables
+    // Monthly plans
+    [process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_SOLO_MONTHLY || '']: 'solo',
+    [process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_STARTER_MONTHLY || '']: 'starter',
+    [process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_PROFESSIONAL_MONTHLY || '']: 'professional',
+    [process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_ENTERPRISE_MONTHLY || '']: 'enterprise',
+    // Annual plans (map to same plan type)
+    [process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_SOLO_ANNUAL || '']: 'solo',
+    [process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_STARTER_ANNUAL || '']: 'starter',
+    [process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_PROFESSIONAL_ANNUAL || '']: 'professional',
+    [process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_ENTERPRISE_ANNUAL || '']: 'enterprise',
   };
 
   return priceIdMap[priceId] || 'free';

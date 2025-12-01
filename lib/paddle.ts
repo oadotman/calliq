@@ -28,23 +28,32 @@ export const paddleConfig = {
 // Plan ID mapping (these will be created in Paddle dashboard)
 export const paddlePlanIds = {
   sandbox: {
-    solo: 'pri_01hzq...',  // Replace with actual Paddle price ID
-    team_starter: 'pri_01hzq...',
-    team_pro: 'pri_01hzq...',
-    team_enterprise: 'pri_01hzq...',
+    solo_monthly: 'pri_01hzq...',  // Replace with actual Paddle price ID
+    solo_annual: 'pri_01hzq...',
+    starter_monthly: 'pri_01hzq...',
+    starter_annual: 'pri_01hzq...',
+    professional_monthly: 'pri_01hzq...',
+    professional_annual: 'pri_01hzq...',
+    enterprise_monthly: 'pri_01hzq...',
+    enterprise_annual: 'pri_01hzq...',
   },
   production: {
-    solo: 'pri_01hzq...',  // Replace with actual Paddle price ID
-    team_starter: 'pri_01hzq...',
-    team_pro: 'pri_01hzq...',
-    team_enterprise: 'pri_01hzq...',
+    solo_monthly: process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_SOLO_MONTHLY || '',
+    solo_annual: process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_SOLO_ANNUAL || '',
+    starter_monthly: process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_STARTER_MONTHLY || '',
+    starter_annual: process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_STARTER_ANNUAL || '',
+    professional_monthly: process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_PROFESSIONAL_MONTHLY || '',
+    professional_annual: process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_PROFESSIONAL_ANNUAL || '',
+    enterprise_monthly: process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_ENTERPRISE_MONTHLY || '',
+    enterprise_annual: process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_ENTERPRISE_ANNUAL || '',
   },
 };
 
-export function getPaddlePlanId(planType: string): string {
+export function getPaddlePlanId(planType: string, billingPeriod: 'monthly' | 'annual' = 'monthly'): string {
   const env = paddleConfig.environment;
   const plans = paddlePlanIds[env] as any;
-  return plans[planType] || '';
+  const planKey = `${planType}_${billingPeriod}`;
+  return plans[planKey] || '';
 }
 
 /**

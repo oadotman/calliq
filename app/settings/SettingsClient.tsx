@@ -133,13 +133,13 @@ export function SettingsClient({ user, billing, organizationId, userId }: Settin
         return "bg-slate-100 text-slate-700 border-slate-200";
       case "solo":
         return "bg-blue-100 text-blue-700 border-blue-200";
-      case "team_starter":
+      case "starter":
         return "bg-violet-100 text-violet-700 border-violet-200";
-      case "team_pro":
+      case "professional":
         return "bg-purple-100 text-purple-700 border-purple-200";
-      case "team_enterprise":
-        return "bg-indigo-100 text-indigo-700 border-indigo-200";
       case "enterprise":
+        return "bg-indigo-100 text-indigo-700 border-indigo-200";
+      case "custom":
         return "bg-gradient-to-r from-violet-100 to-purple-100 text-violet-700 border-violet-200";
       default:
         return "bg-slate-100 text-slate-700 border-slate-200";
