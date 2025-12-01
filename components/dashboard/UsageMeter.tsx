@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { AlertTriangle, TrendingUp, Clock, Crown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useAuth } from "@/lib/AuthContext";
 
 interface UsageData {
   minutesUsed: number;
@@ -22,17 +23,23 @@ interface UsageData {
 
 export function UsageMeter() {
   const router = useRouter();
+  const { organization } = useAuth();
   const [usage, setUsage] = useState<UsageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchUsage();
-  }, []);
+  }, [organization]); // Re-fetch when organization changes
 
   async function fetchUsage() {
     try {
-      const response = await fetch('/api/usage');
+      // Pass organizationId if available to ensure we get correct org's usage
+      const url = organization?.id
+        ? `/api/usage?organizationId=${organization.id}`
+        : '/api/usage';
+
+      const response = await fetch(url);
       const data = await response.json();
 
       if (!response.ok) {
