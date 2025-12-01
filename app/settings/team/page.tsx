@@ -173,13 +173,21 @@ export default function TeamSettingsPage() {
 
       // Get pending invitations (only if admin/owner)
       if (['owner', 'admin'].includes(membership.role)) {
-        const response = await fetch(
-          `/api/teams/invite?organizationId=${membership.organization_id}`
-        );
+        try {
+          const response = await fetch(
+            `/api/teams/invite?organizationId=${membership.organization_id}`
+          );
 
-        if (response.ok) {
-          const data = await response.json();
-          setInvitations(data.invitations || []);
+          if (response.ok) {
+            const data = await response.json();
+            setInvitations(data.invitations || []);
+          } else {
+            console.error('Failed to fetch invitations:', response.status, response.statusText);
+            setInvitations([]); // Set empty array on error to prevent issues
+          }
+        } catch (inviteError) {
+          console.error('Error fetching invitations:', inviteError);
+          setInvitations([]); // Set empty array on error
         }
       }
     } catch (error) {
@@ -198,7 +206,7 @@ export default function TeamSettingsPage() {
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!inviteEmail || !organization) return;
+    if (!inviteEmail || !organization || inviting || fetchingData) return; // Prevent if already processing
 
     setInviting(true);
 
@@ -226,7 +234,13 @@ export default function TeamSettingsPage() {
 
       setInviteEmail('');
       setInviteRole('member');
-      fetchTeamData(); // Refresh invitations list
+
+      // Wait a bit before refreshing to ensure the database is updated
+      setTimeout(() => {
+        if (!fetchingData) { // Only fetch if not already fetching
+          fetchTeamData();
+        }
+      }, 500);
 
     } catch (error: any) {
       toast({

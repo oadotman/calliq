@@ -39,9 +39,14 @@ export default function AcceptInvitationPage() {
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
+    // Add a flag to prevent multiple simultaneous invitation acceptances
+    let isProcessing = false;
+
     if (authLoading) return;
 
     async function acceptInvitation() {
+      if (isProcessing) return;
+      isProcessing = true;
       if (!token) {
         setStatus('error');
         setErrorMessage('Invalid invitation link');

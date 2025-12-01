@@ -51,7 +51,8 @@
       "Bash(timeout /t 20 /nobreak)",
       "Bash(timeout /t 3 /nobreak)",
       "WebSearch",
-      "WebFetch(domain:supabase.com)"
+      "WebFetch(domain:supabase.com)",
+      "Bash(temp_landing.txt)"
     ],
     "deny": [],
     "ask": []
