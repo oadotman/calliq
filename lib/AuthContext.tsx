@@ -80,6 +80,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  // Declare processInvitationsInBackground first (forward declaration)
+  const processInvitationsInBackgroundRef = useRef<(userId: string, userEmail: string) => void>()
+
   // Fetch organization data with error handling
   const fetchOrganization = useCallback(async (userId: string, userEmail?: string) => {
     try {
@@ -105,17 +108,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .limit(1) // Just get the most recent one
 
       if (userOrgs && userOrgs.length > 0 && userOrgs[0].organization) {
-        const org = userOrgs[0].organization as OrganizationData
+        const orgData = userOrgs[0].organization
+        const org = Array.isArray(orgData) ? orgData[0] : orgData
         console.log('✅ Organization found:', org.name)
-        safeSetState(setOrganization)(org)
+        safeSetState(setOrganization)(org as OrganizationData)
       } else {
         console.log('⚠️ No organization found for user')
         safeSetState(setOrganization)(null)
       }
 
       // Process invitations in background without blocking
-      if (userEmail) {
-        processInvitationsInBackground(userId, userEmail)
+      if (userEmail && processInvitationsInBackgroundRef.current) {
+        processInvitationsInBackgroundRef.current(userId, userEmail)
       }
 
     } catch (error) {
@@ -125,7 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [safeSetState])
 
   // Process invitations without blocking the UI
-  const processInvitationsInBackground = async (userId: string, userEmail: string) => {
+  const processInvitationsInBackground = useCallback(async (userId: string, userEmail: string) => {
     try {
       console.log('📬 Processing invitations in background for:', userEmail)
 
@@ -170,7 +174,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('❌ Error processing invitations:', error)
       // Don't block on invitation errors
     }
-  }
+  }, [fetchOrganization])
+
+  // Assign the ref after creation to solve circular dependency
+  processInvitationsInBackgroundRef.current = processInvitationsInBackground
 
   // Initialize auth state
   const initializeAuth = useCallback(async () => {
