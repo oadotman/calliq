@@ -40,7 +40,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { format } from "date-fns";
 import { AudioTrimModal } from "@/components/modals/AudioTrimModal";
-import { EmailGenerationModal } from "@/components/modals/EmailGenerationModal";
+import { EnhancedEmailModal } from "@/components/modals/EnhancedEmailModal";
 import { generateCallPDF, downloadPDF } from "@/lib/pdf-export";
 
 // =====================================================
@@ -1542,13 +1542,12 @@ Call_Duration__c: ${call.duration || 0}
         />
       )}
 
-      {/* Email Generation Modal */}
+      {/* Enhanced Email Generation Modal */}
       {callDetail && (
-        <EmailGenerationModal
+        <EnhancedEmailModal
           isOpen={showEmailModal}
           onClose={() => setShowEmailModal(false)}
-          callId={call.id}
-          customerName={call.customer_name}
+          callData={callDetail}
         />
       )}
     </div>

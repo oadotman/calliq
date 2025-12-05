@@ -106,7 +106,7 @@ export default function LandingPage() {
               </span>
             </h1>
             <p className="text-xl md:text-2xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto leading-relaxed">
-              Upload your sales call → Get perfectly formatted CRM entries → Copy, paste, done.<br />
+              Upload your sales call → SynQall transcribes it → 60-second extraction → Perfect CRM-ready data.<br />
               <span className="font-semibold text-slate-900 dark:text-slate-100">No integrations. No IT. Just accurate data.</span>
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -208,41 +208,48 @@ export default function LandingPage() {
         <div className="container mx-auto max-w-5xl">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-slate-100 mb-6">
-              Turn Every Call Into Perfect CRM Data—<span className="text-violet-600 dark:text-violet-400">in 60 Seconds</span>
+              Turn Every Call Into Perfect CRM Data—<span className="text-violet-600 dark:text-violet-400">in 60 Seconds After Transcription</span>
             </h2>
             <p className="text-xl text-slate-600 dark:text-slate-400 leading-relaxed max-w-3xl mx-auto">
-              SynQall transcribes your calls and formats the output into your exact CRM structure.<br />
-              Your reps simply <span className="font-semibold text-slate-900 dark:text-slate-100">review and paste</span>.
+              SynQall automatically transcribes your call and converts it into your exact CRM structure.<br />
+              Your reps just <span className="font-semibold text-slate-900 dark:text-slate-100">review and paste</span>.
             </p>
           </div>
-          <div className="grid md:grid-cols-4 gap-4 mb-12">
-            <div className="text-center p-6 bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950 dark:to-purple-950 rounded-2xl border-2 border-violet-200 dark:border-violet-700">
-              <div className="w-12 h-12 bg-violet-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-white font-bold text-lg">1</span>
+          <div className="grid md:grid-cols-5 gap-3 mb-12">
+            <div className="text-center p-4 bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950 dark:to-purple-950 rounded-2xl border-2 border-violet-200 dark:border-violet-700">
+              <div className="w-10 h-10 bg-violet-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-white font-bold">1</span>
               </div>
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-2">Upload</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400">Drop your recording or meeting link</p>
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">Upload</h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400">Drop your recording or meeting link</p>
             </div>
-            <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950 rounded-2xl border-2 border-blue-200 dark:border-blue-700">
-              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-white font-bold text-lg">2</span>
+            <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950 rounded-2xl border-2 border-blue-200 dark:border-blue-700">
+              <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-white font-bold">2</span>
               </div>
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-2">60-second processing</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400">AI extracts all CRM fields</p>
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">Transcription</h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400">SynQall generates a clean, accurate transcript</p>
             </div>
-            <div className="text-center p-6 bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950 dark:to-green-950 rounded-2xl border-2 border-emerald-200 dark:border-emerald-700">
-              <div className="w-12 h-12 bg-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-white font-bold text-lg">3</span>
+            <div className="text-center p-4 bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-950 dark:to-cyan-950 rounded-2xl border-2 border-teal-200 dark:border-teal-700">
+              <div className="w-10 h-10 bg-teal-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-white font-bold">3</span>
               </div>
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-2">Review</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400">Check formatted data</p>
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">60-Second Extraction</h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400">Extract all CRM fields instantly after transcription</p>
             </div>
-            <div className="text-center p-6 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950 dark:to-orange-950 rounded-2xl border-2 border-amber-200 dark:border-amber-700">
-              <div className="w-12 h-12 bg-amber-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-white font-bold text-lg">4</span>
+            <div className="text-center p-4 bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950 dark:to-green-950 rounded-2xl border-2 border-emerald-200 dark:border-emerald-700">
+              <div className="w-10 h-10 bg-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-white font-bold">4</span>
               </div>
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-2">Paste</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400">Copy to your CRM, done</p>
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">Review</h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400">Check your formatted CRM-ready output</p>
+            </div>
+            <div className="text-center p-4 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950 dark:to-orange-950 rounded-2xl border-2 border-amber-200 dark:border-amber-700">
+              <div className="w-10 h-10 bg-amber-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-white font-bold">5</span>
+              </div>
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">Paste</h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400">Copy into your CRM — done</p>
             </div>
           </div>
           <Card className="bg-gradient-to-br from-violet-600 to-purple-600 text-white border-0 shadow-2xl">
@@ -253,7 +260,7 @@ export default function LandingPage() {
                   <p className="text-violet-100">Active work time</p>
                 </div>
                 <div>
-                  <div className="text-4xl font-bold mb-2">90%+</div>
+                  <div className="text-4xl font-bold mb-2">95%+</div>
                   <p className="text-violet-100">Detail accuracy</p>
                 </div>
                 <div>
@@ -262,6 +269,10 @@ export default function LandingPage() {
                 </div>
               </div>
               <p className="text-center mt-6 text-lg font-medium">
+                <span className="font-bold">Total Active Work Time: 90 seconds</span><br />
+                <span className="text-violet-100">(because reps only review → not type)</span>
+              </p>
+              <p className="text-center mt-4 text-lg font-medium">
                 Your team instantly recovers 15–20 hours weekly, and your CRM becomes a reliable source of truth.
               </p>
             </CardContent>
@@ -319,7 +330,7 @@ export default function LandingPage() {
                 </div>
                 <div className="flex justify-between items-center p-3 bg-emerald-50 dark:bg-emerald-950/50 rounded-lg">
                   <span className="font-medium text-slate-700 dark:text-slate-300">Accuracy</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-500">90%+</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-500">95%+</span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-emerald-50 dark:bg-emerald-950/50 rounded-lg">
                   <span className="font-medium text-slate-700 dark:text-slate-300">Context retention</span>
@@ -456,7 +467,9 @@ export default function LandingPage() {
               <CardContent className="space-y-2">
                 <div className="flex items-start gap-2">
                   <Check className="w-5 h-5 text-emerald-600 dark:text-emerald-500 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-slate-600 dark:text-slate-400">Follow-up email drafts</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">Follow-up email drafts</span> (auto-generated from the call)
+                  </p>
                 </div>
                 <div className="flex items-start gap-2">
                   <Check className="w-5 h-5 text-emerald-600 dark:text-emerald-500 flex-shrink-0 mt-0.5" />
@@ -591,15 +604,15 @@ export default function LandingPage() {
               </CardContent>
             </Card>
 
-            {/* Auto-Deletion */}
+            {/* Smart Data Retention */}
             <Card className="border-2 border-slate-200 dark:border-slate-700 hover:border-emerald-200 dark:hover:border-emerald-700 hover:shadow-xl transition-all">
               <CardContent className="pt-8 pb-6 text-center">
                 <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                   <Clock className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100 mb-2">Auto-Deletion</h3>
+                <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100 mb-2">Smart Retention</h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400">
-                  Automatic data purging after 90 days for compliance
+                  Audio deleted after 7 days • CRM data kept • Logs anonymized at 90 days
                 </p>
               </CardContent>
             </Card>
