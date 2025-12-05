@@ -347,18 +347,22 @@ export async function POST(
     // STEP 5: UPDATE CALL WITH FINAL DATA
     // =====================================================
 
+    const durationSeconds = transcriptionResult.audio_duration
+      ? Math.round(transcriptionResult.audio_duration / 1000) // Convert ms to seconds
+      : call.duration || null;
+
+    const durationMinutes = durationSeconds
+      ? Math.ceil(durationSeconds / 60) // Convert seconds to minutes
+      : null;
+
     await supabase
       .from('calls')
       .update({
         status: 'completed',
         processing_progress: 100,
         processing_message: 'All done! Your call is ready to review.',
-        duration: transcriptionResult.audio_duration
-          ? Math.round(transcriptionResult.audio_duration / 1000) // Convert ms to seconds
-          : call.duration || null,
-        duration_minutes: transcriptionResult.audio_duration
-          ? Math.ceil(transcriptionResult.audio_duration / 1000 / 60) // Convert ms to minutes
-          : null,
+        duration: durationSeconds,
+        duration_minutes: durationMinutes,
         customer_company: (extraction.raw as any).customerCompany || call.customer_company,
         next_steps: extraction.nextSteps?.join('\n') || null,
         sentiment_type: extraction.sentiment || null,
@@ -367,6 +371,36 @@ export async function POST(
       .eq('id', callId);
 
     console.log('[Process] ✅ Call updated - COMPLETE');
+
+    // =====================================================
+    // STEP 6: RECORD USAGE METRICS FOR BILLING
+    // =====================================================
+
+    if (durationMinutes && durationMinutes > 0) {
+      // Record usage metrics for the organization
+      const { error: metricsError } = await supabase
+        .from('usage_metrics')
+        .insert({
+          organization_id: call.organization_id,
+          user_id: call.user_id,
+          metric_type: 'call_minutes',
+          metric_value: durationMinutes,
+          metadata: {
+            call_id: callId,
+            duration_seconds: durationSeconds,
+            duration_minutes: durationMinutes,
+            customer_name: call.customer_name,
+            sales_rep: call.sales_rep,
+            processed_at: new Date().toISOString(),
+          },
+        });
+
+      if (metricsError) {
+        console.error('[Process] ⚠️ Failed to record usage metrics:', metricsError);
+      } else {
+        console.log(`[Process] ✅ Recorded ${durationMinutes} minutes usage for organization`);
+      }
+    }
     console.log('[Process] ========================================');
 
     // Create notification
