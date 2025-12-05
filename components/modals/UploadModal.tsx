@@ -63,7 +63,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [recordingUrl, setRecordingUrl] = useState("");
   const [isImporting, setIsImporting] = useState(false);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("default");
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [customTemplates, setCustomTemplates] = useState<any[]>([]);
   const [showTemplateCreator, setShowTemplateCreator] = useState(false);
   const [newTemplateName, setNewTemplateName] = useState("");
@@ -217,6 +217,12 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
       const customers = participants.filter((p) => p.role === "customer");
       const salesReps = participants.filter((p) => p.role === "sales_rep");
 
+      // Only send templateId if it's a custom template (UUID), not a system template
+      const templateToSend = selectedTemplateId &&
+        !['default', 'salesforce', 'hubspot', 'pipedrive'].includes(selectedTemplateId)
+        ? selectedTemplateId
+        : null;
+
       // Prepare metadata
       const metadata = {
         customerName: customers.length > 0 ? customers[0].name : undefined,
@@ -226,7 +232,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
         salesRep: salesReps.length > 0 ? salesReps[0].name : undefined,
         callDate: new Date().toISOString(),
         participants: participants.filter(p => p.name.trim()),
-        templateId: selectedTemplateId, // Add template ID to metadata
+        templateId: templateToSend, // Only send custom template IDs
       };
 
       // Upload directly to Supabase Storage (zero memory usage)
@@ -519,7 +525,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
               Create Template
             </Button>
           </div>
-          <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
+          <Select value={selectedTemplateId || "default"} onValueChange={setSelectedTemplateId}>
             <SelectTrigger className="w-full bg-white">
               <SelectValue placeholder="Choose a template..." />
             </SelectTrigger>
