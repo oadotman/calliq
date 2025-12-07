@@ -84,10 +84,17 @@ export async function POST(
 
     const { submitTranscriptionJob } = await import('@/lib/assemblyai');
 
+    // Get participant count from metadata if available
+    const participantCount = call.metadata?.participants?.length || 2;
+    const speakersExpected = Math.max(2, participantCount); // At least 2 speakers
+
+    console.log('[Process] Participants detected:', participantCount);
+    console.log('[Process] Speakers expected for transcription:', speakersExpected);
+
     const transcriptionResult = await submitTranscriptionJob(
       {
         audioUrl,
-        speakersExpected: 2,
+        speakersExpected: speakersExpected,
         trimStart: call.trim_start || undefined,
         trimEnd: call.trim_end || undefined,
       },

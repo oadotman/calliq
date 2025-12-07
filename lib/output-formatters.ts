@@ -3,6 +3,14 @@
 // Clean, copy-paste ready formats for all major CRMs
 // =====================================================
 
+interface Participant {
+  id?: string;
+  name: string;
+  email?: string;
+  company?: string;
+  role: "customer" | "sales_rep" | "other";
+}
+
 interface CallData {
   call: {
     customer_name: string | null;
@@ -12,6 +20,9 @@ interface CallData {
     duration: number | null;
     sentiment_type: string | null;
     next_steps: string | null;
+    metadata?: {
+      participants?: Participant[];
+    };
   };
   fields: Array<{
     field_name: string;
@@ -22,6 +33,12 @@ interface CallData {
   insights: Array<{
     insight_type: string;
     insight_text: string;
+  }>;
+  participantAnalytics?: Array<{
+    name: string;
+    talkTimePercentage: number;
+    wordCount: number;
+    utteranceCount: number;
   }>;
 }
 
@@ -73,6 +90,18 @@ export const formatPlainText = (data: CallData): string => {
   const callOutcome = getField(fields, 'call_outcome');
   const urgency = getField(fields, 'urgency');
 
+  // Format participants
+  const participants = call.metadata?.participants || [];
+  const participantsList = participants.length > 0
+    ? participants.map(p => `  • ${p.name} (${p.role === 'sales_rep' ? 'Sales Rep' : p.role === 'customer' ? 'Customer' : 'Other'}${p.company ? `, ${p.company}` : ''}${p.email ? `, ${p.email}` : ''})`).join('\n')
+    : '  • No participants recorded';
+
+  // Format participant analytics
+  const analytics = data.participantAnalytics || [];
+  const analyticsText = analytics.length > 0
+    ? analytics.map(a => `  • ${a.name}: ${Math.round(a.talkTimePercentage)}% talk time, ${a.wordCount} words, ${a.utteranceCount} utterances`).join('\n')
+    : '';
+
   return `CALL SUMMARY
 ====================
 Customer: ${call.customer_name || 'Not specified'}
@@ -81,6 +110,11 @@ Date: ${formatDate(call.call_date)}
 Duration: ${call.duration ? Math.floor(call.duration / 60) : 0} minutes
 Outcome: ${callOutcome || 'Not specified'}
 Urgency: ${urgency || 'Not specified'}
+
+PARTICIPANTS (${participants.length})
+====================
+${participantsList}
+${analyticsText ? `\nCONVERSATION ANALYTICS\n====================\n${analyticsText}` : ''}
 
 SUMMARY
 ====================
@@ -136,6 +170,12 @@ export const formatHubSpot = (data: CallData): string => {
   // Clean budget for amount field
   const cleanBudget = budget.replace(/[^0-9]/g, '') || '0';
 
+  // Format participants for notes
+  const participants = call.metadata?.participants || [];
+  const participantsText = participants.length > 0
+    ? participants.map(p => `${p.name} (${p.role === 'sales_rep' ? 'Sales Rep' : p.role === 'customer' ? 'Customer' : 'Other'}${p.company ? `, ${p.company}` : ''})`).join(', ')
+    : '';
+
   return `Deal Name: ${call.customer_name || 'Unknown'} - ${formatDate(call.call_date)}
 Amount: ${cleanBudget}
 Stage: ${callOutcome === 'Positive' ? 'Qualified to Buy' : 'Appointment Scheduled'}
@@ -150,6 +190,7 @@ ${nextSteps || 'Follow up required'}
 Contact Notes:
 Pain Points: ${painPoints || 'None identified'}
 Decision Maker: ${decisionMaker || 'Not identified'}
+Call Participants: ${participantsText || 'Not recorded'}
 Call Duration: ${call.duration ? Math.floor(call.duration / 60) : 0} minutes
 Call Sentiment: ${call.sentiment_type || 'Neutral'}`;
 };
@@ -168,6 +209,12 @@ export const formatSalesforce = (data: CallData): string => {
 
   const cleanBudget = budget.replace(/[^0-9]/g, '') || '0';
 
+  // Format participants for notes
+  const participants = call.metadata?.participants || [];
+  const participantsText = participants.length > 0
+    ? participants.map(p => `${p.name} (${p.role === 'sales_rep' ? 'Sales Rep' : p.role === 'customer' ? 'Customer' : 'Other'}${p.company ? `, ${p.company}` : ''})`).join(', ')
+    : 'Not recorded';
+
   return `Opportunity Name: ${call.customer_name || 'Unknown'} - Opportunity
 Amount: ${cleanBudget}
 Stage: ${callOutcome === 'Positive' ? 'Qualification' : 'Prospecting'}
@@ -184,6 +231,7 @@ Key Information:
 • Pain Points: ${painPoints || 'None identified'}
 • Budget Range: ${budget || 'TBD'}
 • Timeline: ${timeline || 'TBD'}
+• Call Participants: ${participantsText}
 • Call Duration: ${call.duration ? Math.floor(call.duration / 60) : 0} min
 • Sentiment: ${call.sentiment_type || 'Neutral'}`;
 };

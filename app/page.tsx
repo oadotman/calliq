@@ -116,9 +116,9 @@ export default function LandingPage() {
                   <span className="ml-2 px-2 py-0.5 bg-white/20 rounded text-sm">3 Calls Free</span>
                 </Button>
               </Link>
-              <Button size="lg" variant="outline" className="border-2 border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 px-8 py-6 text-lg font-semibold rounded-xl">
+              <Button size="lg" variant="outline" className="border-2 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800 px-8 py-6 text-lg font-semibold rounded-xl">
                 <Play className="w-5 h-5 mr-2" />
-                Watch 2-min Demo
+                Watch Demo
               </Button>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-8 pt-8 text-sm font-medium text-slate-600 dark:text-slate-400">
@@ -1142,11 +1142,10 @@ export default function LandingPage() {
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </Link>
-            <Link href="/contact">
-              <Button size="lg" variant="outline" className="border-2 border-white text-white hover:bg-white/10 px-8 py-6 text-lg font-semibold rounded-xl">
-                Schedule a Demo
-              </Button>
-            </Link>
+            <Button size="lg" variant="outline" className="border-2 border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 px-8 py-6 text-lg font-semibold rounded-xl">
+              <Play className="w-5 h-5 mr-2" />
+              Watch Demo
+            </Button>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-8 text-sm font-medium">
             <div className="flex items-center gap-2">

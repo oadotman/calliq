@@ -55,7 +55,8 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
       <>
         <div className="flex flex-col min-h-screen">
           <main className="flex-1">{children}</main>
-          <Footer />
+          {/* Don't show Footer on landing page as it has its own footer */}
+          {pathname !== '/' && <Footer />}
         </div>
         <CookieConsent />
       </>

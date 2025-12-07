@@ -32,6 +32,9 @@ import {
   Loader2,
   Scissors,
   Mic,
+  Users,
+  MessageSquare,
+  Building2,
 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/components/ui/use-toast";
@@ -46,6 +49,14 @@ import { generateCallPDF, downloadPDF } from "@/lib/pdf-export";
 // =====================================================
 // TYPESCRIPT INTERFACES
 // =====================================================
+
+interface Participant {
+  id: string;
+  name: string;
+  email: string;
+  company: string;
+  role: "customer" | "sales_rep" | "other";
+}
 
 interface CallRecord {
   id: string;
@@ -63,6 +74,9 @@ interface CallRecord {
   processing_progress: number | null;
   processing_message: string | null;
   template_id: string | null;
+  metadata?: {
+    participants?: Participant[];
+  };
   template?: {
     id: string;
     name: string;
@@ -1003,6 +1017,107 @@ Call_Duration__c: ${call.duration || 0}
 
   const { call, transcript, insights } = callDetail;
 
+  // Extract participants from metadata
+  const participants = call.metadata?.participants || [];
+
+  // Create speaker mapping (map speaker labels to participant names)
+  const createSpeakerMapping = () => {
+    const mapping: Record<string, string> = {};
+
+    // First, try to map by role
+    const salesReps = participants.filter(p => p.role === "sales_rep");
+    const customers = participants.filter(p => p.role === "customer");
+
+    // Common speaker labels from AssemblyAI
+    const speakerLabels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+
+    // Map first speaker (usually A) to sales rep if available
+    if (salesReps.length > 0) {
+      mapping['A'] = salesReps[0].name || 'Sales Rep';
+      mapping['Speaker A'] = salesReps[0].name || 'Sales Rep';
+    }
+
+    // Map subsequent speakers to customers
+    let customerIndex = 0;
+    for (let i = 1; i < speakerLabels.length && customerIndex < customers.length; i++) {
+      const label = speakerLabels[i];
+      mapping[label] = customers[customerIndex].name || `Customer ${customerIndex + 1}`;
+      mapping[`Speaker ${label}`] = customers[customerIndex].name || `Customer ${customerIndex + 1}`;
+      customerIndex++;
+    }
+
+    // Map any remaining participants
+    let otherIndex = 0;
+    const others = participants.filter(p => p.role === "other");
+    for (let i = customers.length + 1; i < speakerLabels.length && otherIndex < others.length; i++) {
+      const label = speakerLabels[i];
+      mapping[label] = others[otherIndex].name || `Participant ${i}`;
+      mapping[`Speaker ${label}`] = others[otherIndex].name || `Participant ${i}`;
+      otherIndex++;
+    }
+
+    return mapping;
+  };
+
+  const speakerMapping = createSpeakerMapping();
+
+  // Calculate participant analytics
+  const calculateParticipantAnalytics = () => {
+    if (!transcript?.utterances || transcript.utterances.length === 0) {
+      return [];
+    }
+
+    const analytics: Record<string, {
+      name: string;
+      talkTime: number;
+      wordCount: number;
+      utteranceCount: number;
+      sentiment: { positive: number; neutral: number; negative: number };
+    }> = {};
+
+    transcript.utterances.forEach(utterance => {
+      const speakerName = speakerMapping[utterance.speaker] || utterance.speaker;
+
+      if (!analytics[speakerName]) {
+        analytics[speakerName] = {
+          name: speakerName,
+          talkTime: 0,
+          wordCount: 0,
+          utteranceCount: 0,
+          sentiment: { positive: 0, neutral: 0, negative: 0 }
+        };
+      }
+
+      // Calculate talk time
+      const duration = (utterance.end_time - utterance.start_time);
+      analytics[speakerName].talkTime += duration;
+
+      // Count words
+      analytics[speakerName].wordCount += utterance.text.split(/\s+/).length;
+
+      // Count utterances
+      analytics[speakerName].utteranceCount++;
+
+      // Track sentiment
+      const sentiment = utterance.sentiment?.toLowerCase() || 'neutral';
+      if (sentiment === 'positive') analytics[speakerName].sentiment.positive++;
+      else if (sentiment === 'negative') analytics[speakerName].sentiment.negative++;
+      else analytics[speakerName].sentiment.neutral++;
+    });
+
+    // Convert to array and calculate percentages
+    const totalTalkTime = Object.values(analytics).reduce((sum, a) => sum + a.talkTime, 0);
+
+    return Object.values(analytics).map(participant => ({
+      ...participant,
+      talkTimePercentage: totalTalkTime > 0 ? (participant.talkTime / totalTalkTime) * 100 : 0,
+      avgWordsPerUtterance: participant.utteranceCount > 0 ?
+        Math.round(participant.wordCount / participant.utteranceCount) : 0
+    }));
+  };
+
+  const participantAnalytics = calculateParticipantAnalytics();
+
   const sentimentConfig = {
     positive: { emoji: "😊", bg: "bg-green-100", text: "text-green-600" },
     neutral: { emoji: "😐", bg: "bg-gray-100", text: "text-gray-600" },
@@ -1193,6 +1308,163 @@ Call_Duration__c: ${call.duration || 0}
           </div>
         </div>
 
+        {/* Participants Section - Only show if participants exist */}
+        {participants.length > 0 && (
+          <Card className="border border-gray-200 shadow-sm">
+            <CardHeader className="bg-gradient-to-r from-violet-50 to-purple-50 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-xl font-bold text-gray-900">
+                  <Users className="w-5 h-5 text-violet-600" />
+                  Call Participants ({participants.length})
+                </CardTitle>
+                {participantAnalytics.length > 0 && (
+                  <Badge className="bg-violet-100 text-violet-700">
+                    {Math.round(participantAnalytics.reduce((sum, p) => sum + p.talkTime, 0) / 60)} min total talk time
+                  </Badge>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {participants.map((participant, index) => {
+                  const analytics = participantAnalytics.find(a =>
+                    a.name === participant.name ||
+                    a.name.includes(participant.name)
+                  );
+
+                  return (
+                    <div
+                      key={participant.id || index}
+                      className="relative p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow"
+                    >
+                      {/* Role Badge */}
+                      <Badge
+                        className={cn(
+                          "absolute top-2 right-2 text-xs",
+                          participant.role === "sales_rep"
+                            ? "bg-purple-100 text-purple-700"
+                            : participant.role === "customer"
+                            ? "bg-blue-100 text-blue-700"
+                            : "bg-gray-100 text-gray-700"
+                        )}
+                      >
+                        {participant.role === "sales_rep" ? "Sales Rep" :
+                         participant.role === "customer" ? "Customer" : "Other"}
+                      </Badge>
+
+                      {/* Participant Info */}
+                      <div className="space-y-2 mb-3">
+                        <h4 className="font-semibold text-gray-900">
+                          {participant.name || "Unknown"}
+                        </h4>
+                        {participant.email && (
+                          <p className="text-sm text-gray-600">{participant.email}</p>
+                        )}
+                        {participant.company && (
+                          <p className="text-sm text-gray-600 flex items-center gap-1">
+                            <Building2 className="w-3 h-3" />
+                            {participant.company}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Analytics if available */}
+                      {analytics && (
+                        <div className="pt-3 border-t border-gray-100 space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">Talk Time</span>
+                            <span className="font-medium">
+                              {Math.round(analytics.talkTime / 60)}m ({Math.round(analytics.talkTimePercentage)}%)
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">Words Spoken</span>
+                            <span className="font-medium">{analytics.wordCount.toLocaleString()}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">Utterances</span>
+                            <span className="font-medium">{analytics.utteranceCount}</span>
+                          </div>
+
+                          {/* Sentiment Bar */}
+                          <div className="mt-2">
+                            <div className="text-xs text-gray-600 mb-1">Sentiment</div>
+                            <div className="flex h-2 rounded-full overflow-hidden bg-gray-100">
+                              {analytics.sentiment.positive > 0 && (
+                                <div
+                                  className="bg-green-500"
+                                  style={{
+                                    width: `${(analytics.sentiment.positive / analytics.utteranceCount) * 100}%`
+                                  }}
+                                  title={`Positive: ${analytics.sentiment.positive}`}
+                                />
+                              )}
+                              {analytics.sentiment.neutral > 0 && (
+                                <div
+                                  className="bg-gray-400"
+                                  style={{
+                                    width: `${(analytics.sentiment.neutral / analytics.utteranceCount) * 100}%`
+                                  }}
+                                  title={`Neutral: ${analytics.sentiment.neutral}`}
+                                />
+                              )}
+                              {analytics.sentiment.negative > 0 && (
+                                <div
+                                  className="bg-red-500"
+                                  style={{
+                                    width: `${(analytics.sentiment.negative / analytics.utteranceCount) * 100}%`
+                                  }}
+                                  title={`Negative: ${analytics.sentiment.negative}`}
+                                />
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Overall Analytics Summary */}
+              {participantAnalytics.length > 0 && (
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 text-violet-600" />
+                    Conversation Analytics
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="text-center p-3 bg-gray-50 rounded-lg">
+                      <div className="text-2xl font-bold text-gray-900">
+                        {participantAnalytics.length}
+                      </div>
+                      <div className="text-xs text-gray-600">Active Speakers</div>
+                    </div>
+                    <div className="text-center p-3 bg-gray-50 rounded-lg">
+                      <div className="text-2xl font-bold text-gray-900">
+                        {Math.round(participantAnalytics.reduce((sum, p) => sum + p.talkTime, 0) / 60)}m
+                      </div>
+                      <div className="text-xs text-gray-600">Total Duration</div>
+                    </div>
+                    <div className="text-center p-3 bg-gray-50 rounded-lg">
+                      <div className="text-2xl font-bold text-gray-900">
+                        {participantAnalytics.reduce((sum, p) => sum + p.wordCount, 0).toLocaleString()}
+                      </div>
+                      <div className="text-xs text-gray-600">Total Words</div>
+                    </div>
+                    <div className="text-center p-3 bg-gray-50 rounded-lg">
+                      <div className="text-2xl font-bold text-gray-900">
+                        {participantAnalytics.reduce((sum, p) => sum + p.utteranceCount, 0)}
+                      </div>
+                      <div className="text-xs text-gray-600">Total Utterances</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Audio Player Section */}
         <Card className="border border-gray-200 shadow-sm">
           <CardContent className="p-6">
@@ -1325,7 +1597,28 @@ Call_Duration__c: ${call.duration || 0}
                 {transcript && transcript.utterances && transcript.utterances.length > 0 ? (
                   transcript.utterances.map((utterance, index) => {
                     const sentiment = sentimentConfig[utterance.sentiment as keyof typeof sentimentConfig] || sentimentConfig.neutral;
-                    const isRep = utterance.speaker.toLowerCase().includes('rep') || utterance.speaker === 'A';
+
+                    // Map speaker to participant name
+                    const speakerName = speakerMapping[utterance.speaker] || utterance.speaker;
+
+                    // Find the participant for this speaker
+                    const participant = participants.find(p =>
+                      p.name === speakerName ||
+                      speakerMapping[utterance.speaker] === p.name
+                    );
+
+                    const isRep = participant?.role === 'sales_rep' ||
+                                  utterance.speaker.toLowerCase().includes('rep') ||
+                                  utterance.speaker === 'A';
+
+                    // Get initials for avatar
+                    const getInitials = (name: string) => {
+                      const parts = name.split(' ');
+                      if (parts.length >= 2) {
+                        return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+                      }
+                      return name.substring(0, 2).toUpperCase();
+                    };
 
                     return (
                       <div key={utterance.id} className="flex gap-3 group">
@@ -1333,13 +1626,15 @@ Call_Duration__c: ${call.duration || 0}
                         <div className="flex-shrink-0">
                           <div
                             className={cn(
-                              "w-10 h-10 rounded-full flex items-center justify-center",
-                              isRep ? "bg-purple-600" : "bg-gray-300"
+                              "w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold",
+                              participant?.role === 'sales_rep' ? "bg-purple-600 text-white" :
+                              participant?.role === 'customer' ? "bg-blue-500 text-white" :
+                              isRep ? "bg-purple-600 text-white" : "bg-gray-300 text-gray-700"
                             )}
                           >
-                            <span className="text-white text-sm font-semibold">
-                              {isRep ? "R" : "P"}
-                            </span>
+                            {speakerName && speakerName !== utterance.speaker
+                              ? getInitials(speakerName)
+                              : utterance.speaker.substring(0, 2).toUpperCase()}
                           </div>
                         </div>
 
@@ -1348,8 +1643,13 @@ Call_Duration__c: ${call.duration || 0}
                           {/* Header */}
                           <div className="flex items-center gap-2 mb-1">
                             <span className="font-semibold text-sm text-gray-900">
-                              {isRep ? "Rep" : "Prospect"}
+                              {speakerName}
                             </span>
+                            {participant?.company && (
+                              <span className="text-xs text-gray-500">
+                                • {participant.company}
+                              </span>
+                            )}
                             <button
                               onClick={() => jumpToTimestamp(utterance.start_time)}
                               className="text-xs text-gray-500 hover:text-purple-600 font-medium transition-colors"
