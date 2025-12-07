@@ -60,7 +60,8 @@
       "Bash(node test-api-simulation.js:*)",
       "Bash(node scripts/cleanup-stuck-calls.js:*)",
       "Bash(npx shadcn-ui@latest add:*)",
-      "Bash(npx shadcn@latest add scroll-area --yes)"
+      "Bash(npx shadcn@latest add scroll-area --yes)",
+      "Bash(npx shadcn@latest add alert --yes)"
     ],
     "deny": [],
     "ask": []

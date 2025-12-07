@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ModernProgress } from "@/components/ui/modern-progress";
 import { motion } from "framer-motion";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+// Removed Tabs import - using dropdown instead
 import { cn } from "@/lib/utils";
 import {
   ArrowLeft,
@@ -45,6 +45,7 @@ import { format } from "date-fns";
 import { AudioTrimModal } from "@/components/modals/AudioTrimModal";
 import { EnhancedEmailModal } from "@/components/modals/EnhancedEmailModal";
 import { generateCallPDF, downloadPDF } from "@/lib/pdf-export";
+import { formatCRMOutput } from "@/lib/output-formatters";
 
 // =====================================================
 // TYPESCRIPT INTERFACES
@@ -756,14 +757,44 @@ export default function CallDetailPage() {
 
     const { call, fields, insights } = callDetail;
 
-    // Extract common fields
-    const getField = (name: string) => {
-      const field = fields.find(f => f.field_name.toLowerCase() === name.toLowerCase());
-      return field?.field_value || "N/A";
+    // Calculate participant analytics if available
+    const participantAnalytics = call.metadata?.participants?.map((p: any) => ({
+      name: p.name,
+      talkTimePercentage: p.talkTimePercentage || 0,
+      wordCount: p.wordCount || 0,
+      utteranceCount: p.utteranceCount || 0
+    }));
+
+    // Prepare data in the format expected by formatCRMOutput
+    // Extract customer_company and next_steps from fields since they're not in CallRecord
+    const customerCompanyField = fields.find(f => f.field_name === 'customer_company');
+    const nextStepsField = fields.find(f => f.field_name === 'next_steps');
+
+    const callData = {
+      call: {
+        customer_name: call.customer_name,
+        customer_company: customerCompanyField?.field_value || null,
+        sales_rep: call.sales_rep,
+        call_date: call.call_date,
+        duration: call.duration,
+        sentiment_type: call.sentiment_type,
+        next_steps: nextStepsField?.field_value || null,
+        metadata: call.metadata
+      },
+      fields,
+      insights,
+      participantAnalytics
     };
 
-    // Handle custom template format
-    if (format.startsWith('template_')) {
+    // For custom templates that aren't supported by the library yet,
+    // we'll keep the existing logic temporarily
+    if (format.startsWith('template_') && format !== 'template_plain') {
+      // Extract common fields
+      const getField = (name: string) => {
+        const field = fields.find(f => f.field_name.toLowerCase() === name.toLowerCase());
+        return field?.field_value || "N/A";
+      };
+
       const templateId = format.replace('template_', '');
       const template = customTemplates.find(t => t.id === templateId);
 
@@ -862,112 +893,8 @@ export default function CallDetailPage() {
       return output;
     }
 
-    switch (format) {
-      case "plain":
-        // Get sentiment emoji
-        const sentimentEmoji =
-          call.sentiment_type === "positive" ? "😊" :
-          call.sentiment_type === "negative" ? "😟" :
-          call.sentiment_type === "neutral" ? "😐" : "❓";
-
-        return `┌─────────────────────────────────────────────────┐
-│ 📞 CALL SUMMARY                                 │
-├─────────────────────────────────────────────────┤
-│ Customer:     ${(call.customer_name || "Unknown").padEnd(33)} │
-│ Company:      ${getField("company").padEnd(33)} │
-│ Sales Rep:    ${(call.sales_rep || "Unknown").padEnd(33)} │
-│ Date:         ${(format ? new Date(call.call_date).toLocaleDateString() : call.call_date).padEnd(33)} │
-│ Duration:     ${`${call.duration ? Math.floor(call.duration / 60) : 0} minutes`.padEnd(33)} │
-│ Sentiment:    ${`${sentimentEmoji} ${call.sentiment_type || "Unknown"}`.padEnd(32)} │
-│ Outcome:      ${getField("call_outcome").padEnd(33)} │
-└─────────────────────────────────────────────────┘
-
-🎯 KEY INSIGHTS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-⚠️ Pain Points:
-${insights.filter(i => i.insight_type === 'pain_point').map(i => `   • ${i.insight_text}`).join('\n') || '   • None identified'}
-
-🎯 Action Items:
-${insights.filter(i => i.insight_type === 'action_item').map(i => `   • ${i.insight_text}`).join('\n') || '   • None identified'}
-
-🏢 Competitors Mentioned:
-${insights.filter(i => i.insight_type === 'competitor').map(i => `   • ${i.insight_text}`).join('\n') || '   • None mentioned'}
-
-📊 EXTRACTED DATA
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-${fields.length > 0
-  ? fields.map(f => {
-      const icon =
-        f.field_name.toLowerCase().includes('budget') ? '💰' :
-        f.field_name.toLowerCase().includes('company') ? '🏢' :
-        f.field_name.toLowerCase().includes('email') ? '📧' :
-        f.field_name.toLowerCase().includes('phone') ? '📱' :
-        f.field_name.toLowerCase().includes('timeline') ? '⏰' :
-        f.field_name.toLowerCase().includes('decision') ? '👤' : '📋';
-
-      const displayName = f.field_name.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-      return `${icon} ${displayName}: ${f.field_value || "Not specified"}`;
-    }).join('\n')
-  : "📝 No fields extracted yet"}
-`;
-
-      case "hubspot":
-        return `// HubSpot Deal Properties
-
-dealname: "${call.customer_name || "Unknown"} - ${getField('Deal Title')}"
-amount: "${getField('Budget') || getField('Deal Value')}"
-dealstage: "${getField('Deal Stage') || 'qualifiedtobuy'}"
-pipeline: "default"
-closedate: "${getField('Close Date') || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}"
-hubspot_owner_id: "${call.sales_rep || 'unassigned'}"
-
-// Custom Properties
-next_steps: "${insights.find(i => i.insight_type === 'action_item')?.insight_text || 'Follow up required'}"
-pain_points: "${insights.filter(i => i.insight_type === 'pain_point').map(i => i.insight_text).join('; ')}"
-competitors: "${insights.filter(i => i.insight_type === 'competitor').map(i => i.insight_text).join(', ')}"
-sentiment: "${call.sentiment_type || 'neutral'}"
-call_duration: "${call.duration || 0}"
-`;
-
-      case "salesforce":
-        return `// Salesforce Opportunity Fields
-
-Name: "${call.customer_name || "Unknown"} - ${getField('Deal Title')}"
-Amount: ${getField('Budget')?.replace(/[^0-9]/g, '') || '0'}
-StageName: "${getField('Deal Stage') || 'Qualification'}"
-CloseDate: ${getField('Close Date') || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
-Type: "New Business"
-LeadSource: "Sales Call"
-
-// Custom Fields
-Next_Steps__c: "${insights.find(i => i.insight_type === 'action_item')?.insight_text || 'Follow up required'}"
-Pain_Points__c: "${insights.filter(i => i.insight_type === 'pain_point').map(i => i.insight_text).join('; ')}"
-Competitors__c: "${insights.filter(i => i.insight_type === 'competitor').map(i => i.insight_text).join(', ')}"
-Call_Sentiment__c: "${call.sentiment_type || 'Neutral'}"
-Call_Duration__c: ${call.duration || 0}
-`;
-
-      case "csv":
-        const csvFields = [
-          call.customer_name || "Unknown",
-          call.sales_rep || "Unknown",
-          new Date(call.call_date).toLocaleDateString(),
-          call.duration ? Math.floor(call.duration / 60).toString() : "0",
-          call.sentiment_type || "neutral",
-          getField('Budget'),
-          getField('Deal Stage'),
-          insights.filter(i => i.insight_type === 'pain_point').map(i => i.insight_text).join('; '),
-          insights.filter(i => i.insight_type === 'action_item').map(i => i.insight_text).join('; '),
-          insights.filter(i => i.insight_type === 'competitor').map(i => i.insight_text).join(', ')
-        ];
-        return `"Customer","Sales Rep","Call Date","Duration (min)","Sentiment","Budget","Deal Stage","Pain Points","Next Steps","Competitors"
-"${csvFields.join('","')}"`;
-
-      default:
-        return "";
-    }
+    // Use the library's formatCRMOutput for standard formats
+    return formatCRMOutput(callData, format);
   };
 
   // =====================================================
@@ -1710,95 +1637,53 @@ Call_Duration__c: ${call.duration || 0}
                 <FileText className="w-5 h-5 text-purple-600" />
                 <CardTitle className="text-2xl font-bold text-gray-900">CRM Output</CardTitle>
               </div>
-              {callDetail?.call.template && (
-                <Badge className="bg-purple-100 text-purple-800 border-purple-200">
-                  Template: {callDetail.call.template.name}
-                </Badge>
-              )}
+              <div className="flex items-center gap-4">
+                {callDetail?.call.template && (
+                  <Badge className="bg-purple-100 text-purple-800 border-purple-200">
+                    Template: {callDetail.call.template.name}
+                  </Badge>
+                )}
+                {/* Dropdown for selecting other CRM formats */}
+                <select
+                  value={activeTab.startsWith('template_') ? 'template' : activeTab}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === 'template' && callDetail?.call.template_id) {
+                      setActiveTab(`template_${callDetail.call.template_id}`);
+                    } else {
+                      setActiveTab(value);
+                    }
+                  }}
+                  className="px-3 py-1 text-sm border rounded-md bg-white"
+                >
+                  <option value="plain">Plain Text</option>
+                  {callDetail?.call.template && (
+                    <option value="template">{callDetail.call.template.name}</option>
+                  )}
+                  <option value="hubspot">HubSpot</option>
+                  <option value="salesforce">Salesforce</option>
+                  <option value="pipedrive">Pipedrive</option>
+                  <option value="monday">Monday.com</option>
+                  <option value="zoho">Zoho CRM</option>
+                  <option value="csv">CSV/Excel</option>
+                  <option value="email">Email</option>
+                </select>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="p-6">
-                <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className={`grid ${customTemplates.length > 0 ? `grid-cols-${Math.min(4 + customTemplates.length, 6)}` : 'grid-cols-4'} w-full mb-4 bg-gray-100 p-1 rounded-lg overflow-x-auto`}>
-                    <TabsTrigger
-                      value="plain"
-                      className="data-[state=active]:bg-purple-600 data-[state=active]:text-white rounded-md font-medium text-sm transition-all"
-                    >
-                      Plain
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="hubspot"
-                      className="data-[state=active]:bg-purple-600 data-[state=active]:text-white rounded-md font-medium text-sm transition-all"
-                    >
-                      HubSpot
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="salesforce"
-                      className="data-[state=active]:bg-purple-600 data-[state=active]:text-white rounded-md font-medium text-sm transition-all"
-                    >
-                      Salesforce
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="csv"
-                      className="data-[state=active]:bg-purple-600 data-[state=active]:text-white rounded-md font-medium text-sm transition-all"
-                    >
-                      CSV
-                    </TabsTrigger>
-                    {/* Custom Template Tabs */}
-                    {customTemplates.map(template => (
-                      <TabsTrigger
-                        key={template.id}
-                        value={`template_${template.id}`}
-                        className="data-[state=active]:bg-purple-600 data-[state=active]:text-white rounded-md font-medium text-sm transition-all"
-                      >
-                        {template.name}
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
-
-                  <TabsContent value="plain" className="mt-0">
-                    <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 min-h-[400px] max-h-[600px] overflow-y-auto">
-                      <pre className="text-base text-gray-900 whitespace-pre-wrap font-mono leading-relaxed">
-                        {generateCRMOutput("plain")}
-                      </pre>
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="hubspot" className="mt-0">
-                    <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 min-h-[400px] max-h-[600px] overflow-y-auto">
-                      <pre className="text-base text-gray-900 whitespace-pre-wrap font-mono leading-relaxed">
-                        {generateCRMOutput("hubspot")}
-                      </pre>
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="salesforce" className="mt-0">
-                    <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 min-h-[400px] max-h-[600px] overflow-y-auto">
-                      <pre className="text-base text-gray-900 whitespace-pre-wrap font-mono leading-relaxed">
-                        {generateCRMOutput("salesforce")}
-                      </pre>
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="csv" className="mt-0">
-                    <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 min-h-[400px] max-h-[600px] overflow-y-auto">
-                      <pre className="text-base text-gray-900 whitespace-pre-wrap font-mono leading-relaxed">
-                        {generateCRMOutput("csv")}
-                      </pre>
-                    </div>
-                  </TabsContent>
-
-                  {/* Custom Template TabsContent */}
-                  {customTemplates.map(template => (
-                    <TabsContent key={template.id} value={`template_${template.id}`} className="mt-0">
-                      <div className="bg-gradient-to-br from-purple-50 to-indigo-50 p-6 rounded-lg border border-purple-200 min-h-[400px] max-h-[600px] overflow-y-auto">
-                        <pre className="text-base text-gray-900 whitespace-pre-wrap font-mono leading-relaxed">
-                          {generateCRMOutput(`template_${template.id}`)}
-                        </pre>
-                      </div>
-                    </TabsContent>
-                  ))}
-                </Tabs>
+                {/* Single content area that changes based on activeTab */}
+                <div className="mt-4">
+                  <div className={`p-6 rounded-lg border ${
+                    activeTab.startsWith('template_')
+                      ? 'bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200'
+                      : 'bg-gray-50 border-gray-200'
+                  } min-h-[400px] max-h-[600px] overflow-y-auto`}>
+                    <pre className="text-base text-gray-900 whitespace-pre-wrap font-mono leading-relaxed">
+                      {generateCRMOutput(activeTab)}
+                    </pre>
+                  </div>
+                </div>
 
             {/* Action Buttons Row */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">

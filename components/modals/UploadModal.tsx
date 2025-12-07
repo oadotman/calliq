@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Dialog,
@@ -13,7 +13,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, FileAudio, X, Check, AlertCircle, Loader2, Link as LinkIcon, Plus, Users } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Upload, FileAudio, X, Check, AlertCircle, Loader2, Link as LinkIcon, Plus, Users, AlertTriangle } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { validateAudioFile, formatFileSize, getAudioDuration, type FileValidationResult } from "@/lib/fileValidation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -76,6 +77,11 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
   const { user, organization } = useAuth();
   const { upload: directUpload, uploading: isDirectUploading } = useDirectUpload();
 
+  // Upload protection state
+  const [isUploadInProgress, setIsUploadInProgress] = useState(false);
+  const [showUploadWarning, setShowUploadWarning] = useState(false);
+  const uploadAbortController = useRef<AbortController | null>(null);
+
   // Get user's plan details for duration validation
   const userPlan = organization?.plan_type || 'free';
   const planDetails = getPlanDetails(userPlan as any);
@@ -100,6 +106,84 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
 
     fetchTemplates();
   }, [user, isOpen]);
+
+  // Browser visibility detection and upload protection
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Handle page visibility change
+    const handleVisibilityChange = () => {
+      if (document.hidden && isUploadInProgress) {
+        // Browser minimized/tab switched during upload
+        console.warn('Browser hidden during upload - upload may be interrupted');
+
+        // Save current state to localStorage
+        const uploadState = {
+          files: files.filter(f => f.status === 'uploading'),
+          participants,
+          timestamp: Date.now()
+        };
+        localStorage.setItem('pendingUpload', JSON.stringify(uploadState));
+      } else if (!document.hidden) {
+        // Browser restored - check for interrupted uploads
+        const savedState = localStorage.getItem('pendingUpload');
+        if (savedState) {
+          const state = JSON.parse(savedState);
+          const timeSinceInterrupt = Date.now() - state.timestamp;
+
+          // If less than 5 minutes, show recovery option
+          if (timeSinceInterrupt < 5 * 60 * 1000) {
+            toast({
+              title: "Upload interrupted",
+              description: "Your upload was interrupted. Please try uploading again.",
+              variant: "destructive",
+              duration: 10000,
+            });
+          }
+          localStorage.removeItem('pendingUpload');
+        }
+      }
+    };
+
+    // Handle page unload (closing tab/window)
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isUploadInProgress) {
+        e.preventDefault();
+        e.returnValue = 'You have an upload in progress. Are you sure you want to leave?';
+        return e.returnValue;
+      }
+    };
+
+    // Handle browser back button
+    const handlePopState = (e: PopStateEvent) => {
+      if (isUploadInProgress) {
+        if (confirm('You have an upload in progress. Are you sure you want to leave?')) {
+          // User confirmed, clean up
+          if (uploadAbortController.current) {
+            uploadAbortController.current.abort();
+          }
+        } else {
+          // User canceled, push state back
+          window.history.pushState(null, '', window.location.href);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
+
+    // Push initial state for back button handling
+    if (isUploadInProgress) {
+      window.history.pushState(null, '', window.location.href);
+    }
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [isOpen, isUploadInProgress, files, participants, toast]);
 
   const addParticipant = () => {
     const newParticipant: Participant = {
@@ -206,6 +290,13 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
 
   const uploadFile = async (fileUpload: FileUpload) => {
     try {
+      // Set upload in progress
+      setIsUploadInProgress(true);
+      setShowUploadWarning(true);
+
+      // Create abort controller for this upload
+      uploadAbortController.current = new AbortController();
+
       // Update status to uploading
       setFiles((prev) =>
         prev.map((f) =>
@@ -275,6 +366,11 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
           description: `${fileUpload.name} is now being processed.`,
         });
 
+        // Clear upload state
+        setIsUploadInProgress(false);
+        setShowUploadWarning(false);
+        uploadAbortController.current = null;
+
         return result.call.id;
       } else {
         // Handle error
@@ -295,6 +391,11 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
           description: result.error || "Unknown error",
           variant: "destructive",
         });
+
+        // Clear upload state on error
+        setIsUploadInProgress(false);
+        setShowUploadWarning(false);
+        uploadAbortController.current = null;
 
         return null;
       }
@@ -318,6 +419,11 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
         description: error instanceof Error ? error.message : "Unknown error",
         variant: "destructive",
       });
+
+      // Clear upload state on error
+      setIsUploadInProgress(false);
+      setShowUploadWarning(false);
+      uploadAbortController.current = null;
 
       return null;
     }
@@ -451,15 +557,32 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
   };
 
   const handleClose = () => {
-    if (isProcessing || isImporting) {
-      toast({
-        title: "Upload in progress",
-        description: "Please wait for uploads to complete.",
-        variant: "destructive",
-      });
-      return;
+    // Check for any upload in progress
+    if (isProcessing || isImporting || isUploadInProgress) {
+      const message = isUploadInProgress
+        ? 'You have an upload in progress. Closing this window will interrupt the upload. Are you sure you want to close?'
+        : 'Processing in progress. Please wait for it to complete.';
+
+      if (isUploadInProgress) {
+        const confirmClose = confirm(message);
+        if (!confirmClose) {
+          return;
+        }
+        // User confirmed, abort upload
+        if (uploadAbortController.current) {
+          uploadAbortController.current.abort();
+        }
+      } else {
+        toast({
+          title: "Upload in progress",
+          description: "Please wait for uploads to complete.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
+    // Reset all state
     setFiles([]);
     setParticipants([
       {
@@ -471,6 +594,10 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
       },
     ]);
     setRecordingUrl("");
+    setIsUploadInProgress(false);
+    setShowUploadWarning(false);
+    uploadAbortController.current = null;
+    localStorage.removeItem('pendingUpload');
     onClose();
   };
 
@@ -518,6 +645,28 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
             Upload a file or import from a URL (Zoom, Drive, etc.)
           </DialogDescription>
         </DialogHeader>
+
+        {/* Upload Warning Alert */}
+        {showUploadWarning && (
+          <Alert className="border-orange-200 bg-orange-50 mb-4">
+            <AlertTriangle className="h-4 w-4 text-orange-600" />
+            <AlertTitle className="text-orange-800">Important: Upload in Progress</AlertTitle>
+            <AlertDescription className="text-orange-700">
+              <ul className="mt-2 space-y-1 text-sm">
+                <li>• Please keep this window open until the upload completes</li>
+                <li>• Do not minimize the browser or switch tabs</li>
+                <li>• Do not close or refresh the page</li>
+                <li>• The upload will be interrupted if you navigate away</li>
+              </ul>
+              {isUploadInProgress && (
+                <div className="mt-3 flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-orange-600" />
+                  <span className="text-sm font-medium">Upload in progress...</span>
+                </div>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Template Selection */}
         <div className="mb-6 p-4 bg-gradient-to-r from-violet-50 to-purple-50 border-2 border-violet-200 rounded-xl">

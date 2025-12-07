@@ -436,13 +436,26 @@ export async function POST(
 
     const supabase = createAdminClient();
 
-    await supabase
+    // Check current status before marking as failed
+    const { data: currentCall } = await supabase
       .from('calls')
-      .update({
-        status: 'failed',
-        assemblyai_error: error instanceof Error ? error.message : 'Unknown error',
-      })
-      .eq('id', callId);
+      .select('status')
+      .eq('id', callId)
+      .single();
+
+    // Only mark as failed if not already completed
+    // This prevents completed transcriptions from being marked as failed
+    if (currentCall?.status !== 'completed') {
+      await supabase
+        .from('calls')
+        .update({
+          status: 'failed',
+          assemblyai_error: error instanceof Error ? error.message : 'Unknown error',
+        })
+        .eq('id', callId);
+    } else {
+      console.log('[Process] ⚠️ Error occurred but transcription was already completed, not marking as failed');
+    }
 
     return NextResponse.json(
       {
