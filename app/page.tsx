@@ -236,6 +236,7 @@ export default function LandingPage() {
               </div>
               <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">60-Second Extraction</h3>
               <p className="text-xs text-slate-600 dark:text-slate-400">Extract all CRM fields instantly after transcription</p>
+              <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">Optional: You can also paste your typed notes to help improve the accuracy for certain CRM fields.</p>
             </div>
             <div className="text-center p-4 bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950 dark:to-green-950 rounded-2xl border-2 border-emerald-200 dark:border-emerald-700">
               <div className="w-10 h-10 bg-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -1039,6 +1040,10 @@ export default function LandingPage() {
               {
                 q: "Is my data secure?",
                 a: "Encrypted in transit and at rest, auto-delete options, no training on your data, and enterprise agreements available.",
+              },
+              {
+                q: "Can I include my own notes?",
+                a: "Yes. After the transcript is generated, you can optionally paste any typed notes you took during or after the call. SynQall uses both sources together to improve extraction accuracy. This step is 100% optional.",
               },
             ].map((faq, idx) => (
               <Card
