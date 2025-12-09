@@ -35,6 +35,9 @@ import {
   Users,
   MessageSquare,
   Building2,
+  ChevronDown,
+  ChevronUp,
+  StickyNote,
 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/components/ui/use-toast";
@@ -84,6 +87,7 @@ interface CallRecord {
     description: string | null;
     field_count: number;
   };
+  typed_notes?: string | null;
 }
 
 interface TranscriptUtterance {
@@ -164,6 +168,13 @@ export default function CallDetailPage() {
   // Custom templates state
   const [customTemplates, setCustomTemplates] = useState<any[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+
+  // Typed notes state
+  const [typedNotes, setTypedNotes] = useState<string>('');
+  const [notesExpanded, setNotesExpanded] = useState(false);
+  const [notesSaving, setNotesSaving] = useState(false);
+  const [notesSaved, setNotesSaved] = useState(false);
+  const notesDebounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   // =====================================================
   // FETCH CALL DETAIL DATA
@@ -258,6 +269,11 @@ export default function CallDetailPage() {
 
         if (isMounted) {
           setCallDetail(detail);
+
+          // Initialize typed notes if they exist
+          if (callData.typed_notes) {
+            setTypedNotes(callData.typed_notes);
+          }
 
           // Don't set duration from call data - let audio metadata handle it
           // The call.duration is in minutes while audio player needs seconds
@@ -696,6 +712,59 @@ export default function CallDetailPage() {
       audio.currentTime = seconds;
       setIsPlaying(true);
     }
+  };
+
+  // =====================================================
+  // TYPED NOTES HANDLERS
+  // =====================================================
+
+  const saveTypedNotes = async (notes: string) => {
+    if (!callDetail) return;
+
+    setNotesSaving(true);
+    setNotesSaved(false);
+
+    try {
+      const response = await fetch(`/api/calls/${callDetail.call.id}/notes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ notes }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save notes');
+      }
+
+      setNotesSaved(true);
+      setTimeout(() => setNotesSaved(false), 2000); // Show saved indicator for 2 seconds
+    } catch (error) {
+      console.error('Error saving notes:', error);
+      toast({
+        title: "Error saving notes",
+        description: "Failed to save your notes. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setNotesSaving(false);
+    }
+  };
+
+  const handleNotesChange = (value: string) => {
+    setTypedNotes(value);
+
+    // Clear existing timer
+    if (notesDebounceTimer.current) {
+      clearTimeout(notesDebounceTimer.current);
+    }
+
+    // Set new timer for auto-save (1.5 seconds after user stops typing)
+    notesDebounceTimer.current = setTimeout(() => {
+      if (value !== callDetail?.call.typed_notes) {
+        saveTypedNotes(value);
+      }
+    }, 1500);
   };
 
   // =====================================================
@@ -1628,6 +1697,77 @@ export default function CallDetailPage() {
                 )}
           </CardContent>
         </Card>
+
+        {/* Optional Typed Notes Section */}
+        {callDetail && (callDetail.call.status === 'completed' || callDetail.call.status === 'transcribed' || callDetail.call.status === 'processing' || callDetail.call.status === 'extracting') && (
+          <Card className="border border-gray-200 shadow-sm">
+            <CardHeader
+              className="bg-gray-50 border-b border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors"
+              onClick={() => setNotesExpanded(!notesExpanded)}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <StickyNote className="w-5 h-5 text-gray-600" />
+                  <CardTitle className="text-lg font-semibold text-gray-900">
+                    Typed Notes
+                  </CardTitle>
+                  <span className="text-sm text-gray-500">
+                    (Optional - Add any typed notes from the call to improve extraction accuracy)
+                  </span>
+                  {notesSaving && (
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      Saving...
+                    </div>
+                  )}
+                  {notesSaved && (
+                    <div className="flex items-center gap-2 text-sm text-green-600">
+                      <Check className="w-3 h-3" />
+                      Notes saved
+                    </div>
+                  )}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="p-1 h-auto"
+                >
+                  {notesExpanded ? (
+                    <ChevronUp className="w-5 h-5 text-gray-500" />
+                  ) : (
+                    <ChevronDown className="w-5 h-5 text-gray-500" />
+                  )}
+                </Button>
+              </div>
+            </CardHeader>
+
+            {notesExpanded && (
+              <CardContent className="p-6">
+                <div className="space-y-3">
+                  <p className="text-sm text-gray-600">
+                    Paste or type any notes you took during the call. These will be used to enhance the CRM extraction accuracy.
+                    The transcript remains the primary source - notes are only used for additional context.
+                  </p>
+                  <textarea
+                    value={typedNotes}
+                    onChange={(e) => handleNotesChange(e.target.value)}
+                    placeholder="Enter your typed notes here... (e.g., customer mentioned budget of $50k, considering Q2 implementation, main competitor is XYZ Corp)"
+                    className="w-full min-h-[150px] p-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-y text-gray-900 placeholder-gray-400"
+                    maxLength={5000}
+                  />
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-gray-500">
+                      {typedNotes.length} / 5000 characters
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Auto-saves as you type
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            )}
+          </Card>
+        )}
 
         {/* CRM Output Section - Full Width */}
         <Card className="border border-gray-200 shadow-sm">

@@ -39,6 +39,7 @@ export interface CRMExtractionConfig {
   speakerMapping: Record<string, string>;
   customerName?: string;
   callType?: string;
+  typedNotes?: string;
 }
 
 export interface CRMExtractionResult {
@@ -230,11 +231,23 @@ function buildExtractionPrompt(
 
   const context = contextInfo.length > 0 ? contextInfo.join('\n') + '\n\n' : '';
 
+  // Add typed notes section if provided
+  let notesSection = '';
+  if (config.typedNotes && config.typedNotes.trim()) {
+    notesSection = `
+TYPED NOTES (supplementary information - use for clarification only):
+${config.typedNotes}
+
+IMPORTANT: The conversation transcript is the PRIMARY source of truth. Use the typed notes only to clarify or add context. If there's any conflict between the transcript and notes, ALWAYS prioritize the transcript.
+
+`;
+  }
+
   return `${context}Analyze this sales call transcript and extract structured CRM data.
 
 CONVERSATION:
 ${conversation}
-
+${notesSection}
 Extract and return a JSON object with the following structure:
 {
   "summary": "2-3 sentence executive summary of the call",

@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
     // Check if invitation already exists (including accepted ones)
     const { data: existingInvites } = await supabase
       .from('team_invitations')
-      .select('id, expires_at, accepted_at')
+      .select('id, email, expires_at, accepted_at, created_at')
       .eq('organization_id', organizationId)
       .eq('email', email);
 
@@ -134,9 +134,19 @@ export async function POST(req: NextRequest) {
       );
 
       if (activeInvite) {
+        // Return a special status indicating invitation already exists
         return NextResponse.json(
-          { error: 'An active invitation already exists for this email' },
-          { status: 400 }
+          {
+            warning: 'An invitation has already been sent to this email address',
+            existingInvitation: {
+              id: activeInvite.id,
+              email: activeInvite.email,
+              expires_at: activeInvite.expires_at,
+              created_at: activeInvite.created_at
+            },
+            canResend: false
+          },
+          { status: 409 } // Conflict status
         );
       }
 
@@ -150,6 +160,8 @@ export async function POST(req: NextRequest) {
           .from('team_invitations')
           .delete()
           .in('id', oldInviteIds);
+
+        console.log(`Cleaned up ${oldInviteIds.length} old invitations for ${email}`);
       }
     }
 

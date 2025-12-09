@@ -33,7 +33,7 @@ export async function exportUserData(userId: string): Promise<UserDataExport> {
     // Fetch user profile
     const { data: userData } = await adminClient.auth.admin.getUserById(userId);
 
-    // Fetch calls
+    // Fetch calls (includes typed_notes field)
     const { data: calls } = await supabase
       .from('calls')
       .select('*')

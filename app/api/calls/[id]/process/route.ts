@@ -193,6 +193,7 @@ export async function POST(
       speakerMapping: speakerMapping,
       customerName: call.customer_name || undefined,
       callType: call.call_type || undefined,
+      typedNotes: call.typed_notes || undefined,
     });
 
     console.log('[Process] ✅ CRM data extracted');
