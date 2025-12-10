@@ -30,7 +30,7 @@ interface UploadModalProps {
   onClose: () => void;
 }
 
-type UploadStatus = "idle" | "validating" | "uploading" | "processing" | "success" | "error";
+type UploadStatus = "idle" | "validating" | "uploading" | "transcribing" | "extracting" | "processing" | "success" | "error";
 
 interface FileUpload {
   id: string;
@@ -83,10 +83,22 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
   const [isUploadInProgress, setIsUploadInProgress] = useState(false);
   const [showUploadWarning, setShowUploadWarning] = useState(false);
   const uploadAbortController = useRef<AbortController | null>(null);
+  const statusPollInterval = useRef<NodeJS.Timeout | null>(null);
 
   // Get user's plan details for duration validation
   const userPlan = organization?.plan_type || 'free';
   const planDetails = getPlanDetails(userPlan as any);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Clear status polling if active
+      if (statusPollInterval.current) {
+        clearInterval(statusPollInterval.current);
+        statusPollInterval.current = null;
+      }
+    };
+  }, []);
 
   // Fetch user's custom templates when modal opens
   useEffect(() => {
@@ -350,13 +362,13 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
       });
 
       if (result.success && result.call) {
-        // Update to success
+        // Update to transcribing status
         setFiles((prev) =>
           prev.map((f) =>
             f.id === fileUpload.id
               ? {
                   ...f,
-                  status: "success" as UploadStatus,
+                  status: "transcribing" as UploadStatus,
                   progress: 100,
                   callId: result.call.id,
                 }
@@ -374,10 +386,94 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
         setShowUploadWarning(false);
         uploadAbortController.current = null;
 
-        // Navigate to the call detail page immediately after successful upload
-        setTimeout(() => {
-          router.push(`/calls/${result.call.id}`);
-        }, 1000);
+        // Start polling for status updates
+        const supabase = createClient();
+        let pollCount = 0;
+        const maxPolls = 60; // Poll for up to 60 seconds
+
+        // Clear any existing poll interval
+        if (statusPollInterval.current) {
+          clearInterval(statusPollInterval.current);
+        }
+
+        statusPollInterval.current = setInterval(async () => {
+          pollCount++;
+
+          // Check call status
+          const { data: callData } = await supabase
+            .from('calls')
+            .select('status, processing_progress, processing_message')
+            .eq('id', result.call.id)
+            .single();
+
+          if (callData) {
+            // Update file status based on call status
+            if (callData.status === 'transcribing') {
+              setFiles((prev) =>
+                prev.map((f) =>
+                  f.id === fileUpload.id
+                    ? { ...f, status: "transcribing" as UploadStatus, progress: callData.processing_progress || 0 }
+                    : f
+                )
+              );
+            } else if (callData.status === 'extracting') {
+              setFiles((prev) =>
+                prev.map((f) =>
+                  f.id === fileUpload.id
+                    ? { ...f, status: "extracting" as UploadStatus, progress: callData.processing_progress || 0 }
+                    : f
+                )
+              );
+            } else if (callData.status === 'processing') {
+              setFiles((prev) =>
+                prev.map((f) =>
+                  f.id === fileUpload.id
+                    ? { ...f, status: "processing" as UploadStatus, progress: callData.processing_progress || 0 }
+                    : f
+                )
+              );
+            } else if (callData.status === 'completed' || callData.status === 'ready') {
+              setFiles((prev) =>
+                prev.map((f) =>
+                  f.id === fileUpload.id
+                    ? { ...f, status: "success" as UploadStatus, progress: 100 }
+                    : f
+                )
+              );
+              if (statusPollInterval.current) {
+                clearInterval(statusPollInterval.current);
+                statusPollInterval.current = null;
+              }
+
+              // Navigate to the call detail page
+              setTimeout(() => {
+                router.push(`/calls/${result.call.id}`);
+              }, 1000);
+            } else if (callData.status === 'failed') {
+              setFiles((prev) =>
+                prev.map((f) =>
+                  f.id === fileUpload.id
+                    ? { ...f, status: "error" as UploadStatus, error: "Processing failed" }
+                    : f
+                )
+              );
+              if (statusPollInterval.current) {
+                clearInterval(statusPollInterval.current);
+                statusPollInterval.current = null;
+              }
+            }
+          }
+
+          // Stop polling after max attempts
+          if (pollCount >= maxPolls) {
+            if (statusPollInterval.current) {
+              clearInterval(statusPollInterval.current);
+              statusPollInterval.current = null;
+            }
+            // Still navigate even if we timeout polling
+            router.push(`/calls/${result.call.id}`);
+          }
+        }, 1000); // Poll every second
 
         return result.call.id;
       } else {
@@ -605,6 +701,13 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
     setIsUploadInProgress(false);
     setShowUploadWarning(false);
     uploadAbortController.current = null;
+
+    // Clear status polling if active
+    if (statusPollInterval.current) {
+      clearInterval(statusPollInterval.current);
+      statusPollInterval.current = null;
+    }
+
     localStorage.removeItem('pendingUpload');
     onClose();
   };
@@ -614,6 +717,11 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
       case "validating":
         return <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />;
       case "uploading":
+        return <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />;
+      case "transcribing":
+        return <Loader2 className="w-5 h-5 text-purple-500 animate-spin" />;
+      case "extracting":
+        return <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />;
       case "processing":
         return <Loader2 className="w-5 h-5 text-primary animate-spin" />;
       case "success":
@@ -628,11 +736,15 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
   const getStatusText = (file: FileUpload) => {
     switch (file.status) {
       case "validating":
-        return "Validating...";
+        return "Validating file...";
       case "uploading":
-        return `Uploading... ${file.progress}%`;
+        return `📤 Uploading to server... ${file.progress}%`;
+      case "transcribing":
+        return `🎙️ Transcribing audio... ${file.progress}%`;
+      case "extracting":
+        return `✨ Extracting insights with AI... ${file.progress}%`;
       case "processing":
-        return "Processing transcript...";
+        return `⚡ Processing call data... ${file.progress || 0}%`;
       case "success":
         return "✅ Upload complete! Redirecting...";
       case "error":
@@ -775,10 +887,15 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
                     <div className="flex-shrink-0">{getStatusIcon(file.status)}</div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate text-slate-900 dark:text-slate-100">{file.name}</p>
-                      {file.status === "uploading" && (
+                      {(file.status === "uploading" || file.status === "transcribing" || file.status === "extracting" || file.status === "processing") && (
                         <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mt-2">
                           <div
-                            className="bg-primary h-1.5 rounded-full transition-all"
+                            className={`h-1.5 rounded-full transition-all ${
+                              file.status === "uploading" ? "bg-blue-500" :
+                              file.status === "transcribing" ? "bg-purple-500" :
+                              file.status === "extracting" ? "bg-indigo-500" :
+                              "bg-primary"
+                            }`}
                             style={{ width: `${file.progress}%` }}
                           ></div>
                         </div>
