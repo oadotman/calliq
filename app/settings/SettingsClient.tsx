@@ -280,22 +280,18 @@ export function SettingsClient({ user, billing, organizationId, userId }: Settin
                     </Badge>
                   </div>
                   <div className="flex items-center justify-between py-4 border-b border-slate-100 dark:border-slate-700">
-                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Minutes Used</span>
-                    <div className="flex items-center gap-3">
-                      <div className="w-32 h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-violet-600 to-purple-600 rounded-full transition-all duration-500"
-                          style={{ width: `${Math.min(billing.usagePercentage, 100)}%` }}
-                        />
-                      </div>
-                      <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                        {billing.minutesUsed.toLocaleString()} / {billing.minutesTotal.toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between py-4">
                     <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Next Billing Date</span>
                     <span className="text-sm font-medium text-slate-900 dark:text-slate-100">{billing.nextBillingDate}</span>
+                  </div>
+                  <div className="flex items-center justify-between py-4">
+                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Usage Details</span>
+                    <Button
+                      onClick={() => router.push("/dashboard")}
+                      variant="link"
+                      className="text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 p-0 h-auto font-medium"
+                    >
+                      View usage in Dashboard →
+                    </Button>
                   </div>
                   <div className="flex gap-3 pt-4">
                     <Button
