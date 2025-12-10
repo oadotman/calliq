@@ -356,7 +356,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
             f.id === fileUpload.id
               ? {
                   ...f,
-                  status: "processing" as UploadStatus,
+                  status: "success" as UploadStatus,
                   progress: 100,
                   callId: result.call.id,
                 }
@@ -365,14 +365,19 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
         );
 
         toast({
-          title: "Upload successful",
-          description: `${fileUpload.name} is now being processed.`,
+          title: "✅ Upload Complete!",
+          description: `${fileUpload.name} has been uploaded and is now being transcribed.`,
         });
 
         // Clear upload state
         setIsUploadInProgress(false);
         setShowUploadWarning(false);
         uploadAbortController.current = null;
+
+        // Navigate to the call detail page immediately after successful upload
+        setTimeout(() => {
+          router.push(`/calls/${result.call.id}`);
+        }, 1000);
 
         return result.call.id;
       } else {
@@ -563,8 +568,8 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
     // Check for any upload in progress
     if (isProcessing || isImporting || isUploadInProgress) {
       const message = isUploadInProgress
-        ? 'You have an upload in progress. Closing this window will interrupt the upload. Are you sure you want to close?'
-        : 'Processing in progress. Please wait for it to complete.';
+        ? '⚠️ WARNING: Upload is currently in progress!\n\n❌ Closing this dialog will COMPLETELY INTERRUPT the upload.\n❌ Your file will NOT be processed.\n❌ You will need to start over.\n\nAre you ABSOLUTELY SURE you want to close and lose your upload progress?'
+        : '⚠️ Processing in progress. Please wait for it to complete before closing.';
 
       if (isUploadInProgress) {
         const confirmClose = confirm(message);
@@ -577,8 +582,8 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
         }
       } else {
         toast({
-          title: "Upload in progress",
-          description: "Please wait for uploads to complete.",
+          title: "⚠️ Cannot close - Upload in progress",
+          description: "Please wait for the upload to complete. Do not close this window!",
           variant: "destructive",
         });
         return;
@@ -629,7 +634,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
       case "processing":
         return "Processing transcript...";
       case "success":
-        return "Complete!";
+        return "✅ Upload complete! Redirecting...";
       case "error":
         return file.error || "Upload failed";
       default:
@@ -643,7 +648,15 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Process Sales Call</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            Process Sales Call
+            {(isProcessing || isImporting || isUploadInProgress) && (
+              <span className="text-sm font-normal text-red-600 flex items-center gap-1">
+                <AlertCircle className="w-4 h-4" />
+                DO NOT CLOSE - Upload in progress
+              </span>
+            )}
+          </DialogTitle>
           <DialogDescription>
             Upload a file or import from a URL (Zoom, Drive, etc.)
           </DialogDescription>
@@ -651,20 +664,20 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
 
         {/* Upload Warning Alert */}
         {showUploadWarning && (
-          <Alert className="border-orange-200 bg-orange-50 mb-4">
-            <AlertTriangle className="h-4 w-4 text-orange-600" />
-            <AlertTitle className="text-orange-800">Important: Upload in Progress</AlertTitle>
-            <AlertDescription className="text-orange-700">
-              <ul className="mt-2 space-y-1 text-sm">
-                <li>• Please keep this window open until the upload completes</li>
-                <li>• Do not minimize the browser or switch tabs</li>
-                <li>• Do not close or refresh the page</li>
-                <li>• The upload will be interrupted if you navigate away</li>
+          <Alert className="border-red-500 bg-red-50 mb-4 animate-pulse">
+            <AlertTriangle className="h-5 w-5 text-red-600" />
+            <AlertTitle className="text-red-800 text-lg font-bold">⚠️ CRITICAL: Do Not Close This Window!</AlertTitle>
+            <AlertDescription className="text-red-700">
+              <ul className="mt-2 space-y-1 text-sm font-medium">
+                <li>• ❌ DO NOT close this dialog box</li>
+                <li>• ❌ DO NOT minimize or switch tabs</li>
+                <li>• ❌ DO NOT refresh or navigate away</li>
+                <li>• ✅ Keep this window open and active</li>
               </ul>
               {isUploadInProgress && (
-                <div className="mt-3 flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin text-orange-600" />
-                  <span className="text-sm font-medium">Upload in progress...</span>
+                <div className="mt-3 p-2 bg-red-100 rounded-md flex items-center gap-2">
+                  <Loader2 className="h-5 w-5 animate-spin text-red-600" />
+                  <span className="text-sm font-bold">UPLOAD IN PROGRESS - CLOSING WILL INTERRUPT THE PROCESS!</span>
                 </div>
               )}
             </AlertDescription>
