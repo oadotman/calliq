@@ -159,11 +159,12 @@ export default function Dashboard() {
         const callsLastMonth = lastMonthCalls?.length || 0;
 
         // Calculate minutes used from usage_metrics table
+        // Look for minutes_transcribed which tracks actual call minutes
         const { data: usageMetrics } = await supabase
           .from('usage_metrics')
           .select('metric_value')
           .eq('organization_id', orgId || user.id)
-          .eq('metric_type', 'call_minutes')
+          .eq('metric_type', 'minutes_transcribed')
           .gte('created_at', startOfMonth.toISOString())
           .lte('created_at', now.toISOString());
 

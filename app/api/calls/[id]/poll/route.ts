@@ -124,15 +124,22 @@ export async function GET(
         );
       }
 
-      // Update call status
+      // Update call status with proper duration tracking
+      const durationSeconds = transcript.audio_duration
+        ? Math.round(transcript.audio_duration / 1000)
+        : null;
+
+      const durationMinutes = durationSeconds
+        ? Math.ceil(durationSeconds / 60)
+        : null;
+
       await supabase
         .from('calls')
         .update({
           status: 'completed',
           processed_at: new Date().toISOString(),
-          duration: transcript.audio_duration
-            ? Math.round(transcript.audio_duration / 1000)
-            : null,
+          duration: durationSeconds,
+          duration_minutes: durationMinutes,
           sentiment_type: sentiment.type,
           sentiment_score: sentiment.score,
         })
@@ -148,37 +155,31 @@ export async function GET(
         call_id: call.id,
       });
 
-      // Record usage metrics
-      const minutes = transcript.audio_duration
-        ? transcript.audio_duration / 1000 / 60
-        : 0;
+      // Record usage metrics - use same metric_type as process endpoint
+      const minutes = durationMinutes || 0;
       const cost_cents = Math.round(minutes * 1.5);
 
-      await supabase.from('usage_metrics').insert([
-        {
-          user_id: user.id,
-          organization_id: call.organization_id,
-          metric_type: 'call_processed',
-          metric_value: 1,
-          call_id: call.id,
-          cost_cents,
-          metadata: {
-            provider: 'assemblyai',
-            duration_seconds: Math.round(transcript.audio_duration! / 1000),
+      // Only record metrics if we have actual minutes
+      if (minutes > 0 && call.organization_id) {
+        await supabase.from('usage_metrics').insert([
+          {
+            user_id: user.id,
+            organization_id: call.organization_id,
+            metric_type: 'minutes_transcribed', // Use the allowed metric type
+            metric_value: minutes,
+            cost_cents,
+            metadata: {
+              call_id: call.id, // Store call_id in metadata
+              provider: 'assemblyai',
+              duration_seconds: durationSeconds,
+              duration_minutes: minutes,
+              customer_name: call.customer_name,
+              sales_rep: call.sales_rep,
+              processed_at: new Date().toISOString(),
+            },
           },
-        },
-        {
-          user_id: user.id,
-          organization_id: call.organization_id,
-          metric_type: 'minutes_transcribed',
-          metric_value: minutes,
-          call_id: call.id,
-          cost_cents,
-          metadata: {
-            provider: 'assemblyai',
-          },
-        },
-      ]);
+        ]);
+      }
 
       // Phase 4: Trigger GPT-4o extraction automatically
       try {

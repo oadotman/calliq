@@ -414,7 +414,7 @@ export async function POST(
           .insert({
             organization_id: organizationId,
             user_id: call.user_id,
-            metric_type: 'call_minutes',
+            metric_type: 'minutes_transcribed', // Use the allowed metric type
             metric_value: durationMinutes,
             metadata: {
               call_id: callId,
