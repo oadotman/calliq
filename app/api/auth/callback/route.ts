@@ -37,8 +37,7 @@ export async function POST(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const next = searchParams.get('next') ?? '/dashboard'
 
-  const cookieStore = cookies()
-  const supabase = createClient(cookieStore)
+  const supabase = createServerClient()
 
   try {
     const formData = await request.formData()
