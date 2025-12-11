@@ -3,14 +3,16 @@
 // Clears invalid auth sessions and cookies
 // =====================================================
 
-import { createClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+
+export const runtime = 'nodejs';
 
 export async function GET(request: Request) {
   try {
     const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = createServerClient();
 
     // Clear the session
     await supabase.auth.signOut();
