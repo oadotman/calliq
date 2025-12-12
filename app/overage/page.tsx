@@ -33,15 +33,33 @@ export default function OveragePage() {
 
   // Get usage data
   useEffect(() => {
-    if (organization) {
-      const planDetails = getPlanDetails(organization.plan_type as any);
-      const used = organization.minutes_used_this_month || 0;
-      const overage = organization.overage_minutes_purchased || 0;
-      const total = planDetails.maxMinutes + overage;
+    async function fetchUsageData() {
+      if (organization) {
+        try {
+          // Fetch the full organization data with usage info
+          const response = await fetch('/api/usage');
+          const data = await response.json();
 
-      setMinutesUsed(used);
-      setMinutesTotal(total);
+          if (data.usage) {
+            setMinutesUsed(data.usage.minutesUsed || 0);
+            setMinutesTotal(data.usage.minutesLimit || 0);
+          } else {
+            // Fallback to plan defaults
+            const planDetails = getPlanDetails(organization.plan_type as any);
+            setMinutesUsed(0);
+            setMinutesTotal(planDetails.maxMinutes);
+          }
+        } catch (error) {
+          console.error('Error fetching usage:', error);
+          // Fallback to plan defaults
+          const planDetails = getPlanDetails(organization.plan_type as any);
+          setMinutesUsed(0);
+          setMinutesTotal(planDetails.maxMinutes);
+        }
+      }
     }
+
+    fetchUsageData();
   }, [organization]);
 
   const usagePercentage = Math.min((minutesUsed / minutesTotal) * 100, 100);
