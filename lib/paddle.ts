@@ -213,7 +213,30 @@ export function openPaddleCheckout(params: {
     }
 
     console.log('Opening Paddle checkout with config:', { priceId: params.planId, email: params.email });
-    (window as any).Paddle.Checkout.open(checkoutConfig);
+
+    // Open checkout and handle promise rejection
+    const checkoutPromise = (window as any).Paddle.Checkout.open(checkoutConfig);
+
+    if (checkoutPromise && checkoutPromise.catch) {
+      checkoutPromise.catch((error: any) => {
+        console.error('Paddle checkout error:', error);
+
+        // Check for common error types
+        if (error?.detail?.includes('403') || error?.message?.includes('403')) {
+          console.error('403 Error - Possible causes:');
+          console.error('1. Price ID not found or not associated with your vendor account');
+          console.error('2. Price not activated in Paddle dashboard');
+          console.error('3. Mismatched environment (using sandbox price with production vendor)');
+          console.error('Price ID attempted:', params.planId);
+          console.error('Vendor ID:', paddleConfig.vendorId);
+        }
+
+        // Call the close callback if provided
+        if (params.closeCallback) {
+          params.closeCallback();
+        }
+      });
+    }
   } catch (error) {
     console.error('Failed to open Paddle checkout:', error);
   }

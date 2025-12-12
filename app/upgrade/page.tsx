@@ -84,8 +84,19 @@ export default function UpgradePage() {
     try {
       const priceId = getPaddlePlanId(planId, billingPeriod);
 
-      if (!priceId) {
-        throw new Error('Invalid plan selection');
+      console.log(`Attempting to open checkout for ${planId} (${billingPeriod}):`, priceId);
+
+      if (!priceId || priceId === '') {
+        console.error(`Price ID not configured for ${planId}_${billingPeriod}`);
+        console.error('Make sure NEXT_PUBLIC_PADDLE_PRICE_ID_* environment variables are set');
+        toast({
+          title: "Configuration Error",
+          description: `Price ID not configured for this plan. Please contact support.`,
+          variant: "destructive",
+        });
+        setLoading(false);
+        setSelectedPlan(null);
+        return;
       }
 
       // Open Paddle checkout
