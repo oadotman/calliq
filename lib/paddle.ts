@@ -130,23 +130,26 @@ export function initializePaddle(callback?: () => void) {
     return;
   }
 
-  // Load Paddle.js v2 script - different URL for sandbox vs production
+  // For Paddle v2, always use the production CDN
+  // The environment (sandbox vs production) is determined by the vendor/seller ID
   const script = document.createElement('script');
-  const isSandbox = paddleConfig.environment === 'sandbox';
-  script.src = isSandbox
-    ? 'https://sandbox-cdn.paddle.com/paddle/v2/paddle.js'
-    : 'https://cdn.paddle.com/paddle/v2/paddle.js';
+  script.src = 'https://cdn.paddle.com/paddle/v2/paddle.js';
   script.async = true;
 
   script.onload = () => {
     if ((window as any).Paddle) {
-      // For v2 API, use Initialize method with seller ID only
-      // Environment is determined by which script URL we loaded
+      // For v2 API, use Initialize method with seller ID
+      // The vendor ID itself determines if it's sandbox or production
       if (paddleConfig.vendorId) {
-        (window as any).Paddle.Initialize({
-          seller: parseInt(paddleConfig.vendorId),
-        });
-        callback?.();
+        try {
+          (window as any).Paddle.Initialize({
+            seller: parseInt(paddleConfig.vendorId),
+          });
+          console.log('Paddle initialized with vendor ID:', paddleConfig.vendorId);
+          callback?.();
+        } catch (error) {
+          console.error('Failed to initialize Paddle:', error);
+        }
       } else {
         console.error('Paddle Vendor ID not configured');
       }
@@ -175,13 +178,45 @@ export function openPaddleCheckout(params: {
     return;
   }
 
-  (window as any).Paddle.Checkout.open({
-    items: [{ priceId: params.planId, quantity: 1 }],
-    customer: params.email ? { email: params.email } : undefined,
-    customData: params.customData,
-    successCallback: params.successCallback,
-    closeCallback: params.closeCallback,
-  });
+  try {
+    // Paddle v2 checkout configuration
+    const checkoutConfig: any = {
+      items: [{ priceId: params.planId, quantity: 1 }],
+    };
+
+    // Add customer email if provided
+    if (params.email) {
+      checkoutConfig.customer = { email: params.email };
+    }
+
+    // Add custom data if provided
+    if (params.customData) {
+      checkoutConfig.customData = params.customData;
+    }
+
+    // Add callbacks
+    if (params.successCallback) {
+      checkoutConfig.eventCallback = function(event: any) {
+        if (event.name === 'checkout.completed') {
+          params.successCallback!();
+        }
+        if (event.name === 'checkout.closed' && params.closeCallback) {
+          params.closeCallback();
+        }
+      };
+    } else if (params.closeCallback) {
+      checkoutConfig.eventCallback = function(event: any) {
+        if (event.name === 'checkout.closed') {
+          params.closeCallback!();
+        }
+      };
+    }
+
+    console.log('Opening Paddle checkout with config:', { priceId: params.planId, email: params.email });
+    (window as any).Paddle.Checkout.open(checkoutConfig);
+  } catch (error) {
+    console.error('Failed to open Paddle checkout:', error);
+  }
 }
 
 /**
