@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { PLANS, type PlanType } from "@/lib/pricing";
-import { initializePaddle, openPaddleCheckout, getPaddlePlanId } from "@/lib/paddle";
+import { initializePaddle, openPaddleCheckout, getPaddlePlanId, debugPaddleConfig } from "@/lib/paddle";
 import { Check, Sparkles, Loader2, CreditCard, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,8 +25,13 @@ export default function UpgradePage() {
 
   // Initialize Paddle when component mounts
   useEffect(() => {
+    // Debug current configuration
+    console.log('🔍 Debugging Paddle configuration on upgrade page load:');
+    debugPaddleConfig();
+
     initializePaddle(() => {
       setPaddleLoaded(true);
+      console.log('✅ Paddle initialized successfully');
     });
   }, []);
 

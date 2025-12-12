@@ -118,6 +118,46 @@ export function getPaddleOverageId(minutes: 500 | 1000 | 2500 | 5000): string {
 }
 
 /**
+ * Debug function to check current Paddle configuration
+ */
+export function debugPaddleConfig() {
+  console.log('===========================================');
+  console.log('CURRENT PADDLE CONFIGURATION');
+  console.log('===========================================');
+  console.log('Vendor ID:', paddleConfig.vendorId || 'NOT SET');
+  console.log('Environment:', paddleConfig.environment);
+  console.log('API Key:', paddleConfig.apiKey ? 'SET (hidden)' : 'NOT SET');
+  console.log('');
+  console.log('PRICE IDs CONFIGURED:');
+
+  const env = paddleConfig.environment === 'production' ? 'production' : 'sandbox';
+  const prices = paddlePlanIds[env];
+
+  Object.entries(prices).forEach(([key, value]) => {
+    if (value) {
+      console.log(`✅ ${key}: ${value}`);
+    } else {
+      console.log(`❌ ${key}: NOT SET`);
+    }
+  });
+
+  console.log('===========================================');
+
+  // Check if running with default/fallback values
+  if (!paddleConfig.vendorId) {
+    console.error('⚠️  WARNING: No vendor ID configured!');
+  }
+
+  const hasAnyPriceId = Object.values(prices).some(v => v && v !== '');
+  if (!hasAnyPriceId) {
+    console.error('⚠️  WARNING: No price IDs configured!');
+    console.error('You need to set NEXT_PUBLIC_PADDLE_PRICE_ID_* environment variables');
+  }
+
+  return { vendorId: paddleConfig.vendorId, environment: env, prices };
+}
+
+/**
  * Initialize Paddle.js on the client side
  * This should be called in a useEffect hook
  */
@@ -212,23 +252,59 @@ export function openPaddleCheckout(params: {
       };
     }
 
-    console.log('Opening Paddle checkout with config:', { priceId: params.planId, email: params.email });
+    console.log('Opening Paddle checkout with full config:');
+    console.log('- Price ID:', params.planId);
+    console.log('- Email:', params.email);
+    console.log('- Vendor ID:', paddleConfig.vendorId);
+    console.log('- Environment:', paddleConfig.environment);
+    console.log('- Full checkout config:', JSON.stringify(checkoutConfig, null, 2));
 
     // Open checkout and handle promise rejection
     const checkoutPromise = (window as any).Paddle.Checkout.open(checkoutConfig);
 
     if (checkoutPromise && checkoutPromise.catch) {
       checkoutPromise.catch((error: any) => {
-        console.error('Paddle checkout error:', error);
+        console.error('===========================================');
+        console.error('PADDLE CHECKOUT ERROR DETAILS');
+        console.error('===========================================');
+        console.error('Full error object:', error);
 
-        // Check for common error types
-        if (error?.detail?.includes('403') || error?.message?.includes('403')) {
-          console.error('403 Error - Possible causes:');
-          console.error('1. Price ID not found or not associated with your vendor account');
-          console.error('2. Price not activated in Paddle dashboard');
-          console.error('3. Mismatched environment (using sandbox price with production vendor)');
+        if (error?.response) {
+          console.error('Response status:', error.response.status);
+          console.error('Response data:', error.response.data);
+          console.error('Response headers:', error.response.headers);
+        }
+
+        if (error?.detail) {
+          console.error('Error detail:', error.detail);
+        }
+
+        if (error?.message) {
+          console.error('Error message:', error.message);
+        }
+
+        // Parse specific error types
+        if (error?.detail?.includes('403') || error?.message?.includes('403') || error?.response?.status === 403) {
+          console.error('');
+          console.error('🔴 403 FORBIDDEN - TROUBLESHOOTING:');
+          console.error('===========================================');
           console.error('Price ID attempted:', params.planId);
-          console.error('Vendor ID:', paddleConfig.vendorId);
+          console.error('Vendor ID configured:', paddleConfig.vendorId);
+          console.error('');
+          console.error('COMMON CAUSES:');
+          console.error('1. ❌ Price ID does not exist in your Paddle account');
+          console.error('2. ❌ Price ID belongs to a different Paddle vendor account');
+          console.error('3. ❌ Price is not activated/published in Paddle dashboard');
+          console.error('4. ❌ Using sandbox price ID with production vendor ID');
+          console.error('5. ❌ Using production price ID with sandbox vendor ID');
+          console.error('');
+          console.error('TO FIX:');
+          console.error('1. Log into Paddle dashboard');
+          console.error('2. Go to Catalog → Prices');
+          console.error('3. Search for price ID:', params.planId);
+          console.error('4. Verify it exists and is ACTIVE');
+          console.error('5. Verify it belongs to vendor:', paddleConfig.vendorId);
+          console.error('===========================================');
         }
 
         // Call the close callback if provided
