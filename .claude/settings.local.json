@@ -65,7 +65,8 @@
       "Bash(nul 2)",
       "Bash(npm run test:quick:*)",
       "Bash(pm2 restart:*)",
-      "Bash(node test-invitation-flow.js:*)"
+      "Bash(node test-invitation-flow.js:*)",
+      "Bash(npx shadcn@latest add progress --yes)"
     ],
     "deny": [],
     "ask": []

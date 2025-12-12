@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Clock, BarChart3 } from "lucide-react";
+import { Clock, BarChart3, Plus } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 interface UsageData {
   minutesUsed: number;
@@ -116,11 +118,33 @@ export function UsageMeter() {
       </div>
 
       {/* Remaining Minutes Text */}
-      <div className="mt-3 flex items-center gap-2">
-        <BarChart3 className="w-4 h-4 text-gray-500" />
-        <span className="text-sm text-gray-500">
-          {usage.remainingMinutes} minutes remaining this billing period
-        </span>
+      <div className="mt-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <BarChart3 className="w-4 h-4 text-gray-500" />
+          <span className="text-sm text-gray-500">
+            {usage.remainingMinutes} minutes remaining this billing period
+          </span>
+        </div>
+
+        {/* Show Add Minutes button when usage is high or exceeded, and not on free plan */}
+        {(usage.warningLevel === 'high' || usage.warningLevel === 'exceeded') &&
+         usage.planType !== 'free' && (
+          <Link href="/overage">
+            <Button
+              size="sm"
+              variant={usage.warningLevel === 'exceeded' ? 'destructive' : 'default'}
+              className={cn(
+                "gap-1.5",
+                usage.warningLevel === 'exceeded'
+                  ? "bg-red-600 hover:bg-red-700"
+                  : "bg-violet-600 hover:bg-violet-700"
+              )}
+            >
+              <Plus className="w-3 h-3" />
+              Add Minutes
+            </Button>
+          </Link>
+        )}
       </div>
     </div>
   );

@@ -15,6 +15,7 @@ import {
   ChevronDown,
   LogOut,
   Users,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -39,8 +40,11 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, signOut } = useAuth();
+  const { user, signOut, organization } = useAuth();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+  // Check if user should see upgrade button (everyone except enterprise users)
+  const shouldShowUpgrade = organization?.plan_type !== 'enterprise';
 
   const handleLogout = async () => {
     await signOut();
@@ -90,6 +94,21 @@ export function Sidebar() {
 
       {/* Bottom section */}
       <div className={styles.bottomSection}>
+        {/* Upgrade button for non-enterprise users */}
+        {shouldShowUpgrade && (
+          <Link
+            href="/upgrade"
+            onClick={() => setIsMobileOpen(false)}
+            className={cn(
+              styles.bottomLink,
+              "bg-gradient-to-r from-violet-600 to-purple-600 text-white hover:from-violet-700 hover:to-purple-700 mb-2"
+            )}
+          >
+            <Sparkles className={cn(styles.navIcon, "text-white")} />
+            <span className="font-semibold">Upgrade Plan</span>
+          </Link>
+        )}
+
         <Link
           href="/help"
           onClick={() => setIsMobileOpen(false)}

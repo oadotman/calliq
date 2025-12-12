@@ -463,7 +463,7 @@ export default function TeamSettingsPage() {
             <div className="space-y-2">
               <Button
                 className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-6 text-lg shadow-lg"
-                onClick={() => router.push('/settings?tab=billing')}
+                onClick={() => router.push('/upgrade')}
               >
                 <Crown className="w-5 h-5 mr-2" />
                 Upgrade to Team Plan

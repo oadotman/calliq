@@ -25,35 +25,96 @@ export const paddleConfig = {
   apiKey: process.env.PADDLE_API_KEY || '',
 };
 
-// Plan ID mapping (these will be created in Paddle dashboard)
+// Plan ID mapping
 export const paddlePlanIds = {
   sandbox: {
-    solo_monthly: 'pri_01hzq...',  // Replace with actual Paddle price ID
-    solo_annual: 'pri_01hzq...',
-    starter_monthly: 'pri_01hzq...',
-    starter_annual: 'pri_01hzq...',
-    professional_monthly: 'pri_01hzq...',
-    professional_annual: 'pri_01hzq...',
-    enterprise_monthly: 'pri_01hzq...',
-    enterprise_annual: 'pri_01hzq...',
+    // Monthly plans
+    solo_monthly: 'pri_sandbox_solo_monthly',  // Replace with actual sandbox IDs
+    starter_monthly: 'pri_sandbox_starter_monthly',
+    professional_monthly: 'pri_sandbox_professional_monthly',
+    enterprise_monthly: 'pri_sandbox_enterprise_monthly',
+    // Annual plans
+    solo_annual: 'pri_sandbox_solo_annual',
+    starter_annual: 'pri_sandbox_starter_annual',
+    professional_annual: 'pri_sandbox_professional_annual',
+    enterprise_annual: 'pri_sandbox_enterprise_annual',
+    // Overage packs
+    overage_500: 'pri_sandbox_overage_500',
+    overage_1000: 'pri_sandbox_overage_1000',
+    overage_2500: 'pri_sandbox_overage_2500',
+    overage_5000: 'pri_sandbox_overage_5000',
   },
   production: {
+    // Monthly plans
     solo_monthly: process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_SOLO_MONTHLY || '',
-    solo_annual: process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_SOLO_ANNUAL || '',
     starter_monthly: process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_STARTER_MONTHLY || '',
-    starter_annual: process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_STARTER_ANNUAL || '',
     professional_monthly: process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_PROFESSIONAL_MONTHLY || '',
-    professional_annual: process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_PROFESSIONAL_ANNUAL || '',
     enterprise_monthly: process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_ENTERPRISE_MONTHLY || '',
+    // Annual plans (17% discount)
+    solo_annual: process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_SOLO_ANNUAL || '',
+    starter_annual: process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_STARTER_ANNUAL || '',
+    professional_annual: process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_PROFESSIONAL_ANNUAL || '',
     enterprise_annual: process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_ENTERPRISE_ANNUAL || '',
+    // Overage packs
+    overage_500: process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_OVERAGE_500 || '',
+    overage_1000: process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_OVERAGE_1000 || '',
+    overage_2500: process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_OVERAGE_2500 || '',
+    overage_5000: process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_OVERAGE_5000 || '',
   },
 };
+
+// Overage pack details for easy display
+export const OVERAGE_PACKS = [
+  {
+    id: 'overage_500',
+    minutes: 500,
+    price: 10, // $10 for 500 minutes = $0.02/min
+    pricePerMinute: 0.02,
+    name: '500 Minutes',
+    description: 'Add 500 extra minutes to your monthly allowance'
+  },
+  {
+    id: 'overage_1000',
+    minutes: 1000,
+    price: 20, // $20 for 1000 minutes = $0.02/min
+    pricePerMinute: 0.02,
+    name: '1,000 Minutes',
+    description: 'Add 1,000 extra minutes to your monthly allowance'
+  },
+  {
+    id: 'overage_2500',
+    minutes: 2500,
+    price: 50, // $50 for 2500 minutes = $0.02/min
+    pricePerMinute: 0.02,
+    name: '2,500 Minutes',
+    description: 'Add 2,500 extra minutes to your monthly allowance',
+    popular: true
+  },
+  {
+    id: 'overage_5000',
+    minutes: 5000,
+    price: 100, // $100 for 5000 minutes = $0.02/min
+    pricePerMinute: 0.02,
+    name: '5,000 Minutes',
+    description: 'Add 5,000 extra minutes to your monthly allowance'
+  }
+];
 
 export function getPaddlePlanId(planType: string, billingPeriod: 'monthly' | 'annual' = 'monthly'): string {
   const env = paddleConfig.environment;
   const plans = paddlePlanIds[env] as any;
   const planKey = `${planType}_${billingPeriod}`;
   return plans[planKey] || '';
+}
+
+/**
+ * Get Paddle price ID for overage packs
+ */
+export function getPaddleOverageId(minutes: 500 | 1000 | 2500 | 5000): string {
+  const env = paddleConfig.environment;
+  const plans = paddlePlanIds[env] as any;
+  const overageKey = `overage_${minutes}`;
+  return plans[overageKey] || '';
 }
 
 /**

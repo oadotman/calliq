@@ -294,19 +294,29 @@ export function SettingsClient({ user, billing, organizationId, userId }: Settin
                     </Button>
                   </div>
                   <div className="flex gap-3 pt-4">
-                    <Button
-                      onClick={() => router.push("/settings/billing")}
-                      className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white shadow-lg shadow-violet-500/30 hover:shadow-xl hover:shadow-violet-500/50 transition-all duration-300 rounded-xl border-0 font-semibold"
-                    >
-                      Manage Subscription
-                    </Button>
-                    <Button
-                      onClick={() => router.push("/#pricing")}
-                      variant="outline"
-                      className="border-2 border-violet-200 dark:border-violet-700 hover:border-violet-300 dark:hover:border-violet-600 hover:bg-violet-50 dark:hover:bg-violet-900/20 text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 rounded-xl font-semibold transition-all duration-200"
-                    >
-                      Upgrade Plan
-                    </Button>
+                    {billing.planType !== 'free' && (
+                      <Button
+                        onClick={() => {
+                          // TODO: Implement Paddle customer portal integration
+                          toast({
+                            title: "Coming Soon",
+                            description: "Subscription management via Paddle is being set up.",
+                          });
+                        }}
+                        className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white shadow-lg shadow-violet-500/30 hover:shadow-xl hover:shadow-violet-500/50 transition-all duration-300 rounded-xl border-0 font-semibold"
+                      >
+                        Manage Subscription
+                      </Button>
+                    )}
+                    {billing.planType !== 'enterprise' && (
+                      <Button
+                        onClick={() => router.push("/upgrade")}
+                        variant="outline"
+                        className="border-2 border-violet-200 dark:border-violet-700 hover:border-violet-300 dark:hover:border-violet-600 hover:bg-violet-50 dark:hover:bg-violet-900/20 text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 rounded-xl font-semibold transition-all duration-200"
+                      >
+                        Upgrade Plan
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
