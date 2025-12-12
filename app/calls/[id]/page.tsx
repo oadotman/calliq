@@ -827,13 +827,9 @@ export default function CallDetailPage() {
 
     const { call, fields, insights } = callDetail;
 
-    // Calculate participant analytics if available
-    const participantAnalytics = call.metadata?.participants?.map((p: any) => ({
-      name: p.name,
-      talkTimePercentage: p.talkTimePercentage || 0,
-      wordCount: p.wordCount || 0,
-      utteranceCount: p.utteranceCount || 0
-    }));
+    // Use the real calculated analytics from the transcript, not metadata
+    // The calculateParticipantAnalytics() function provides actual data from utterances
+    const participantAnalytics = calculateParticipantAnalytics();
 
     // Prepare data in the format expected by formatCRMOutput
     // Extract customer_company and next_steps from fields since they're not in CallRecord

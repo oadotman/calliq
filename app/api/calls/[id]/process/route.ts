@@ -458,18 +458,12 @@ export async function POST(
       link: `/calls/${callId}`,
     });
 
-    return new Response(
-      JSON.stringify({
+    return NextResponse.json(
+      {
         success: true,
         message: 'Call processed successfully',
-      }),
-      {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Connection': 'close',
-        },
-      }
+      },
+      { status: 200 }
     );
 
   } catch (error) {

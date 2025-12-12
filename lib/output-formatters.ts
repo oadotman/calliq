@@ -107,7 +107,7 @@ export const formatPlainText = (data: CallData): string => {
 Customer: ${call.customer_name || 'Not specified'}
 Company: ${call.customer_company || getField(fields, 'customer_company') || 'Not specified'}
 Date: ${formatDate(call.call_date)}
-Duration: ${call.duration ? Math.floor(call.duration / 60) : 0} minutes
+Duration: ${call.duration_minutes || (call.duration ? Math.ceil(call.duration / 60) : 0)} minutes
 Outcome: ${callOutcome || 'Not specified'}
 Urgency: ${urgency || 'Not specified'}
 
@@ -191,7 +191,7 @@ Contact Notes:
 Pain Points: ${painPoints || 'None identified'}
 Decision Maker: ${decisionMaker || 'Not identified'}
 Call Participants: ${participantsText || 'Not recorded'}
-Call Duration: ${call.duration ? Math.floor(call.duration / 60) : 0} minutes
+Call Duration: ${call.duration_minutes || (call.duration ? Math.ceil(call.duration / 60) : 0)} minutes
 Call Sentiment: ${call.sentiment_type || 'Neutral'}`;
 };
 
@@ -262,7 +262,7 @@ Next Actions:
 ${nextSteps || 'Follow up required'}
 
 Call Details:
-Duration: ${call.duration ? Math.floor(call.duration / 60) : 0} minutes
+Duration: ${call.duration_minutes || (call.duration ? Math.ceil(call.duration / 60) : 0)} minutes
 Sentiment: ${call.sentiment_type || 'Neutral'}`;
 };
 
@@ -325,7 +325,7 @@ ${nextSteps || 'Follow up'}
 
 Additional Info:
 Call Date: ${formatDate(call.call_date)}
-Duration: ${call.duration ? Math.floor(call.duration / 60) : 0} minutes
+Duration: ${call.duration_minutes || (call.duration ? Math.ceil(call.duration / 60) : 0)} minutes
 Sentiment: ${call.sentiment_type || 'Neutral'}`;
 };
 
