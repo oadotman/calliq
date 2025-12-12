@@ -124,19 +124,37 @@ export function getPaddleOverageId(minutes: 500 | 1000 | 2500 | 5000): string {
 export function initializePaddle(callback?: () => void) {
   if (typeof window === 'undefined') return;
 
-  // Load Paddle.js script
-  const script = document.createElement('script');
-  script.src = paddleConfig.environment === 'production'
-    ? 'https://cdn.paddle.com/paddle/v2/paddle.js'
-    : 'https://cdn.paddle.com/paddle/paddle.js';
+  // Check if already loaded
+  if ((window as any).Paddle) {
+    callback?.();
+    return;
+  }
 
+  // Load Paddle.js v2 script
+  const script = document.createElement('script');
+  script.src = 'https://cdn.paddle.com/paddle/v2/paddle.js';
   script.async = true;
+
   script.onload = () => {
     if ((window as any).Paddle) {
-      (window as any).Paddle.Environment.set(paddleConfig.environment);
-      (window as any).Paddle.Setup({ vendor: parseInt(paddleConfig.vendorId) });
-      callback?.();
+      // Initialize Paddle v2 with environment
+      const environment = paddleConfig.environment === 'production' ? 'production' : 'sandbox';
+
+      // For v2 API, use Initialize method with token or seller ID
+      if (paddleConfig.vendorId) {
+        (window as any).Paddle.Initialize({
+          seller: parseInt(paddleConfig.vendorId),
+          environment: environment,
+        });
+        callback?.();
+      } else {
+        console.error('Paddle Vendor ID not configured');
+      }
     }
+  };
+
+  script.onerror = () => {
+    console.error('Failed to load Paddle.js');
   };
 
   document.head.appendChild(script);

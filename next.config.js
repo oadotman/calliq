@@ -66,15 +66,16 @@ const nextConfig = {
     const cspHeader = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.supabase.co https://cdn.paddle.com https://app.posthog.com https://*.sentry.io",
-      "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https://*.supabase.co https:",
-      "font-src 'self' data:",
-      "connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co wss://*.supabase.in https://api.assemblyai.com https://api.openai.com https://api.paddle.com https://app.posthog.com https://*.sentry.io https://*.inngest.com",
+      "style-src 'self' 'unsafe-inline' https://cdn.paddle.com",
+      "img-src 'self' data: blob: https://*.supabase.co https: https://cdn.paddle.com",
+      "font-src 'self' data: https://cdn.paddle.com",
+      "connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co wss://*.supabase.in https://api.assemblyai.com https://api.openai.com https://api.paddle.com https://cdn.paddle.com https://app.posthog.com https://*.sentry.io https://*.inngest.com",
       "media-src 'self' blob: https://*.supabase.co",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",
       "frame-ancestors 'none'",
+      "frame-src 'self' https://checkout.paddle.com https://sandbox-checkout.paddle.com",
       "upgrade-insecure-requests",
       isDev && "worker-src 'self' blob:", // Allow service workers in dev
     ].filter(Boolean).join('; ');
