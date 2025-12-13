@@ -130,7 +130,7 @@ export async function POST(req: NextRequest) {
             referred_user_id: userId,
             status: 'signed_up',
             signup_at: new Date().toISOString(),
-            product_type: 'calliq',
+            product_type: 'synqall',
           }, {
             onConflict: 'referred_email,product_type'
           })
@@ -142,13 +142,15 @@ export async function POST(req: NextRequest) {
           console.log('✅ Signup API: Referral tracked', { referralId });
 
           // Track signup in statistics
-          await supabaseAdmin.rpc('increment_counter', {
-            table_name: 'referral_statistics',
-            user_id: referral.referrer_id,
-            column_name: 'total_signups',
-          }).catch((err: any) => {
+          try {
+            await supabaseAdmin.rpc('increment_counter', {
+              table_name: 'referral_statistics',
+              user_id: referral.referrer_id,
+              column_name: 'total_signups',
+            });
+          } catch (err: any) {
             console.warn('Failed to update referral statistics:', err);
-          });
+          }
         } else {
           console.warn('⚠️ Signup API: Failed to track referral', { updateError });
         }
@@ -264,8 +266,8 @@ export async function POST(req: NextRequest) {
         if (referralInfo) {
           orgInsertData.referred_by = referralInfo.referrer_id;
           orgInsertData.referral_code_used = referralCode;
-          // Add initial bonus minutes from referral (60 minutes for first tier)
-          orgInsertData.bonus_minutes_balance = 60;
+          // Referred users get standard free tier (30 minutes), only referrers get rewards
+          // No bonus minutes for referred users
         }
       }
 

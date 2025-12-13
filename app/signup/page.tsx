@@ -178,7 +178,7 @@ function SignUpForm() {
                 <div className="flex items-center gap-2">
                   <Gift className="h-4 w-4 text-green-600 dark:text-green-400" />
                   <span className="text-green-700 dark:text-green-300">
-                    You've been referred! You'll receive 60 free minutes when you sign up.
+                    You've been referred! Sign up now to start with 30 free minutes.
                   </span>
                 </div>
               </div>

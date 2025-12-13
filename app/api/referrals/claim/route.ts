@@ -111,11 +111,12 @@ export async function POST(req: NextRequest) {
 
       // Apply to organization balance
       if (reward.reward_minutes > 0 || reward.reward_credits_cents > 0) {
+        const org = Array.isArray(userOrg.organization) ? userOrg.organization[0] : userOrg.organization;
         const { error: orgUpdateError } = await supabase
           .from('organizations')
           .update({
-            bonus_minutes_balance: userOrg.organization.bonus_minutes_balance + (reward.reward_minutes || 0),
-            bonus_credits_balance_cents: userOrg.organization.bonus_credits_balance_cents + (reward.reward_credits_cents || 0),
+            bonus_minutes_balance: (org?.bonus_minutes_balance || 0) + (reward.reward_minutes || 0),
+            bonus_credits_balance_cents: (org?.bonus_credits_balance_cents || 0) + (reward.reward_credits_cents || 0),
             updated_at: new Date().toISOString(),
           })
           .eq('id', userOrg.organization_id);
@@ -186,23 +187,33 @@ export async function POST(req: NextRequest) {
 
       // Update statistics
       if (totalMinutes > 0 || totalCredits > 0) {
-        await supabase
+        // Get current statistics
+        const { data: currentStats } = await supabase
           .from('referral_statistics')
-          .update({
-            total_minutes_claimed: supabase.raw(`total_minutes_claimed + ${totalMinutes}`),
-            total_credits_claimed_cents: supabase.raw(`total_credits_claimed_cents + ${totalCredits}`),
-            available_minutes: supabase.raw(`GREATEST(0, available_minutes - ${totalMinutes})`),
-            available_credits_cents: supabase.raw(`GREATEST(0, available_credits_cents - ${totalCredits})`),
-            updated_at: new Date().toISOString(),
-          })
-          .eq('user_id', user.id);
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+
+        if (currentStats) {
+          await supabase
+            .from('referral_statistics')
+            .update({
+              total_minutes_claimed: (currentStats.total_minutes_claimed || 0) + totalMinutes,
+              total_credits_claimed_cents: (currentStats.total_credits_claimed_cents || 0) + totalCredits,
+              available_minutes: Math.max(0, (currentStats.available_minutes || 0) - totalMinutes),
+              available_credits_cents: Math.max(0, (currentStats.available_credits_cents || 0) - totalCredits),
+              updated_at: new Date().toISOString(),
+            })
+            .eq('user_id', user.id);
+        }
 
         // Apply to organization balance
+        const org = Array.isArray(userOrg.organization) ? userOrg.organization[0] : userOrg.organization;
         await supabase
           .from('organizations')
           .update({
-            bonus_minutes_balance: supabase.raw(`bonus_minutes_balance + ${totalMinutes}`),
-            bonus_credits_balance_cents: supabase.raw(`bonus_credits_balance_cents + ${totalCredits}`),
+            bonus_minutes_balance: (org?.bonus_minutes_balance || 0) + totalMinutes,
+            bonus_credits_balance_cents: (org?.bonus_credits_balance_cents || 0) + totalCredits,
             updated_at: new Date().toISOString(),
           })
           .eq('id', userOrg.organization_id);
@@ -260,16 +271,7 @@ export async function GET(req: NextRequest) {
     // Get unclaimed rewards
     const { data: unclaimedRewards, error: rewardsError } = await supabase
       .from('referral_rewards')
-      .select(`
-        *,
-        referral:referrals!referral_id (
-          referred_email,
-          referred_user:auth.users!referred_user_id (
-            email,
-            raw_user_meta_data
-          )
-        )
-      `)
+      .select('*')
       .eq('user_id', user.id)
       .eq('claimed', false)
       .order('created_at', { ascending: false });

@@ -102,16 +102,19 @@ export function ReferralHistory() {
         label: "Pending",
         variant: "secondary" as const,
         icon: Clock,
+        className: "",
       },
       clicked: {
         label: "Clicked",
         variant: "outline" as const,
         icon: MousePointer,
+        className: "",
       },
       signed_up: {
         label: "Signed Up",
         variant: "default" as const,
         icon: UserPlus,
+        className: "",
       },
       active: {
         label: "Active",
@@ -129,6 +132,7 @@ export function ReferralHistory() {
         label: "Expired",
         variant: "secondary" as const,
         icon: AlertCircle,
+        className: "",
       },
     };
 

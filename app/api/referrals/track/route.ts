@@ -262,13 +262,7 @@ export async function GET(req: NextRequest) {
     // Get referral details (public info only)
     const { data: referral, error } = await supabase
       .from('referrals')
-      .select(`
-        id,
-        status,
-        referrer:auth.users!referrer_id (
-          raw_user_meta_data
-        )
-      `)
+      .select('id, status, referrer_id')
       .eq('referral_code', referralCode)
       .single();
 
@@ -288,7 +282,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       valid: true,
-      referrerName: referral.referrer?.raw_user_meta_data?.full_name || 'A friend',
+      referrerName: 'A friend',  // For privacy, we don't expose referrer details
       benefits: {
         minutes: tiers?.reward_minutes || 60,
         credits: tiers?.reward_credits_cents || 0,

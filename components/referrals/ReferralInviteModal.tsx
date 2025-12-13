@@ -29,7 +29,7 @@ export function ReferralInviteModal({
 }: ReferralInviteModalProps) {
   const [emails, setEmails] = useState<string[]>([""]);
   const [message, setMessage] = useState(
-    `Hi there!\n\nI've been using CallIQ for call recording and AI-powered transcription, and I think you'd find it really valuable for your business.\n\nWhen you sign up using my referral link, you'll get 60 free minutes to try it out!\n\nBest regards`
+    `Hi there!\n\nI've been using SynQall for call recording and AI-powered transcription, and I think you'd find it really valuable for your business.\n\nSign up using my referral link to get started with 30 free minutes!\n\nBest regards`
   );
   const [sending, setSending] = useState(false);
   const [errors, setErrors] = useState<{ [key: number]: string }>({});
@@ -102,58 +102,59 @@ export function ReferralInviteModal({
 
     setSending(true);
     const validEmails = emails.filter((email) => email.trim());
-    let successCount = 0;
-    let failedEmails: string[] = [];
 
-    for (const email of validEmails) {
-      try {
-        const response = await fetch("/api/referrals/generate", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: email.trim(),
-            productType: "calliq",
-          }),
-        });
-
-        if (response.ok) {
-          successCount++;
-
-          // Send email with custom message
-          // Note: In a real implementation, you might want to handle email sending
-          // on the backend for better security and reliability
-          const referralLink = `${window.location.origin}/signup?ref=${referralCode}`;
-          const mailtoLink = `mailto:${email}?subject=${encodeURIComponent(
-            "You're invited to try CallIQ!"
-          )}&body=${encodeURIComponent(`${message}\n\nSign up here: ${referralLink}`)}`;
-
-          // Open mailto link in a new window to avoid navigation
-          window.open(mailtoLink, "_blank");
-        } else {
-          const error = await response.json();
-          failedEmails.push(`${email}: ${error.error}`);
-        }
-      } catch (error) {
-        failedEmails.push(`${email}: Network error`);
-      }
-    }
-
-    setSending(false);
-
-    if (successCount > 0) {
-      toast({
-        title: "Success!",
-        description: `Sent ${successCount} invitation${successCount !== 1 ? "s" : ""}`,
+    try {
+      // Send all invitations through the new API endpoint
+      const response = await fetch("/api/referrals/send-invitation", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          emails: validEmails.map(email => email.trim()),
+          personalMessage: message !== `Hi there!\n\nI've been using SynQall for call recording and AI-powered transcription, and I think you'd find it really valuable for your business.\n\nSign up using my referral link to get started with 30 free minutes!\n\nBest regards` ? message : undefined,
+        }),
       });
-      onSuccess();
-    }
 
-    if (failedEmails.length > 0) {
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to send invitations");
+      }
+
+      setSending(false);
+
+      // Handle results
+      if (data.results.sent.length > 0) {
+        toast({
+          title: "Success!",
+          description: `Sent ${data.results.sent.length} invitation${data.results.sent.length !== 1 ? "s" : ""} via email`,
+        });
+        onSuccess();
+      }
+
+      if (data.results.alreadyReferred.length > 0) {
+        toast({
+          title: "Already Referred",
+          description: `${data.results.alreadyReferred.length} email${data.results.alreadyReferred.length !== 1 ? "s were" : " was"} already referred`,
+          variant: "default",
+        });
+      }
+
+      if (data.results.failed.length > 0) {
+        const failedMessages = data.results.failed.map((f: any) => `${f.email}: ${f.error}`);
+        toast({
+          title: "Some invitations failed",
+          description: failedMessages.join(", "),
+          variant: "destructive",
+        });
+      }
+
+    } catch (error: any) {
+      setSending(false);
       toast({
-        title: "Some invitations failed",
-        description: failedEmails.join(", "),
+        title: "Error",
+        description: error.message || "Failed to send invitations",
         variant: "destructive",
       });
     }
