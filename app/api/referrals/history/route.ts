@@ -28,16 +28,10 @@ export async function GET(req: NextRequest) {
 
     const offset = (page - 1) * limit;
 
-    // Build query
+    // Build query - simplified without join on auth.users
     let query = supabase
       .from('referrals')
-      .select(`
-        *,
-        referred_user:auth.users!referred_user_id (
-          email,
-          raw_user_meta_data
-        )
-      `, { count: 'exact' })
+      .select('*', { count: 'exact' })
       .eq('referrer_id', user.id)
       .order('created_at', { ascending: false });
 

@@ -212,7 +212,18 @@ export default function ReferralsPage() {
 
       {/* Referral Link Section */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Your Referral Link</h3>
+        <div className="flex justify-between items-start mb-4">
+          <h3 className="text-lg font-semibold">Share Your Referral Link</h3>
+          <Button
+            onClick={() => setShowInviteModal(true)}
+            variant="default"
+            size="sm"
+            className="bg-violet-600 hover:bg-violet-700"
+          >
+            <Mail className="w-4 h-4 mr-2" />
+            Send Invitations
+          </Button>
+        </div>
         <div className="flex gap-3">
           <div className="flex-1">
             <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
