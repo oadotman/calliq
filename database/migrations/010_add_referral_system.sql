@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS referrals (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   referrer_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
-  referral_code TEXT UNIQUE NOT NULL,
+  referral_code TEXT NOT NULL,
   referred_email TEXT NOT NULL CHECK (referred_email = LOWER(referred_email)),
   referred_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   product_type TEXT DEFAULT 'synqall' CHECK (product_type IN ('calliq', 'synqall', 'other')),

@@ -69,7 +69,14 @@
       "Bash(npx shadcn@latest add progress --yes)",
       "WebFetch(domain:developer.paddle.com)",
       "WebFetch(domain:makerkit.dev)",
-      "Bash(node scripts/check-paddle-config.js:*)"
+      "Bash(node scripts/check-paddle-config.js:*)",
+      "Bash(node scripts/verify-usage-tracking.js:*)",
+      "Bash(node scripts/diagnose-usage-issue.js:*)",
+      "Bash(del nul 2)",
+      "Bash(NUL)",
+      "Bash(.gitignore)",
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(del test-referral-system.js)"
     ],
     "deny": [],
     "ask": []

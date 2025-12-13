@@ -53,30 +53,50 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Get user's referral code
-    const { data: existingReferral } = await supabase
+    // Get user's existing referral code if any
+    const { data: existingReferral, error: fetchError } = await supabase
       .from('referrals')
       .select('referral_code')
       .eq('referrer_id', user.id)
       .limit(1)
       .maybeSingle();
 
+    if (fetchError) {
+      console.error('Error fetching existing referral:', fetchError);
+    }
+
     let referralCode: string;
 
     if (existingReferral?.referral_code) {
       referralCode = existingReferral.referral_code;
+      console.log('Using existing referral code:', referralCode);
     } else {
-      // Generate new referral code
-      const { data: newCode } = await supabase
-        .rpc('generate_referral_code', { user_id: user.id });
+      // Generate a simple unique referral code
+      // Format: first part of email + random string
+      const emailPrefix = user.email?.split('@')[0]?.toLowerCase() || 'user';
+      const randomString = Math.random().toString(36).substring(2, 8);
+      referralCode = `${emailPrefix}-${randomString}`.toLowerCase();
 
-      if (!newCode) {
-        return NextResponse.json(
-          { error: 'Failed to generate referral code' },
-          { status: 500 }
-        );
+      // Make sure it's unique
+      let attempts = 0;
+      while (attempts < 10) {
+        const { data: existing } = await supabase
+          .from('referrals')
+          .select('id')
+          .eq('referral_code', referralCode)
+          .maybeSingle();
+
+        if (!existing) {
+          break; // Code is unique
+        }
+
+        // Generate a new code if not unique
+        const newRandom = Math.random().toString(36).substring(2, 8);
+        referralCode = `${emailPrefix}-${newRandom}`.toLowerCase();
+        attempts++;
       }
-      referralCode = newCode;
+
+      console.log('Generated new referral code:', referralCode);
     }
 
     // Get user's organization
@@ -144,9 +164,18 @@ export async function POST(req: NextRequest) {
           .single();
 
         if (createError) {
+          console.error('Failed to create referral for', cleanEmail, ':', {
+            error: createError,
+            message: createError.message,
+            code: createError.code,
+            details: createError.details,
+            hint: createError.hint,
+            userOrg,
+            referralCode,
+          });
           results.failed.push({
             email: cleanEmail,
-            error: 'Failed to create referral',
+            error: createError.message || createError.code || 'Failed to create referral',
           });
           continue;
         }
