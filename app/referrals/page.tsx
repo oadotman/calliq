@@ -468,7 +468,7 @@ export default function ReferralsPage() {
                     They Become Customers
                   </h4>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    When they upgrade to a paid plan, you both get rewarded
+                    When they upgrade to a paid plan, you get rewarded
                   </p>
                 </div>
               </div>

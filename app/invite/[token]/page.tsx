@@ -154,6 +154,13 @@ export default function AcceptInvitationPage() {
 
         console.log('✅ Invitation accepted successfully:', result);
 
+        // CRITICAL: Set the team organization as the current organization
+        // This ensures invited members start in the correct organization context
+        if (invite.organization_id) {
+          localStorage.setItem('currentOrganizationId', invite.organization_id);
+          console.log('✅ Set team organization as current:', invite.organization.name);
+        }
+
         // Check for duplicate free organizations
         console.log('🔍 Checking for duplicate free organizations');
         const { data: allUserOrgs } = await supabase

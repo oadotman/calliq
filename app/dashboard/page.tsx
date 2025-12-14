@@ -165,59 +165,75 @@ export default function Dashboard() {
         const callsThisMonth = currentMonthCalls?.length || 0;
         const callsLastMonth = lastMonthCalls?.length || 0;
 
-        // Calculate minutes used from usage_metrics table
-        // Look for minutes_transcribed which tracks actual call minutes
+        // Calculate minutes used directly from calls table
+        // Use duration_minutes field which is saved when calls are uploaded
         let totalMinutesThisMonth = 0;
 
         try {
           if (orgId) {
-            // For organizations, aggregate ALL team member usage
-            const { data: usageMetrics, error: usageError } = await supabase
-              .from('usage_metrics')
-              .select('metric_value, user_id')
+            // For organizations, aggregate ALL team member usage from calls
+            const { data: orgCalls, error: callsError } = await supabase
+              .from('calls')
+              .select('duration_minutes, user_id')
               .eq('organization_id', orgId)
-              .eq('metric_type', 'minutes_transcribed')
+              .eq('status', 'completed')
               .gte('created_at', startOfMonth.toISOString())
               .lte('created_at', now.toISOString());
 
-            if (!usageError && usageMetrics) {
-              totalMinutesThisMonth = usageMetrics.reduce(
-                (sum, metric) => sum + (metric.metric_value || 0),
+            if (!callsError && orgCalls) {
+              totalMinutesThisMonth = orgCalls.reduce(
+                (sum, call) => sum + (call.duration_minutes || 0),
                 0
               );
-              console.log(`Organization usage: ${totalMinutesThisMonth} minutes from ${usageMetrics.length} entries`);
+              console.log(`Organization usage from calls: ${totalMinutesThisMonth} minutes from ${orgCalls.length} calls`);
+
+              // Log details for debugging
+              const uniqueUsers = new Set(orgCalls.map(c => c.user_id));
+              console.log(`Unique users with calls: ${uniqueUsers.size}`);
+            } else if (callsError) {
+              console.error('Error fetching organization calls:', callsError);
             }
           } else {
-            // Fallback: If no org, check user-specific metrics or calculate from calls
-            const { data: usageMetrics, error: usageError } = await supabase
+            // Fallback: If no org, calculate from user's calls
+            const { data: userCalls, error: callsError } = await supabase
+              .from('calls')
+              .select('duration_minutes')
+              .eq('user_id', user.id)
+              .eq('status', 'completed')
+              .gte('created_at', startOfMonth.toISOString())
+              .lte('created_at', now.toISOString());
+
+            if (!callsError && userCalls) {
+              totalMinutesThisMonth = userCalls.reduce(
+                (sum, call) => sum + (call.duration_minutes || 0),
+                0
+              );
+              console.log(`Individual usage from calls: ${totalMinutesThisMonth} minutes`);
+            }
+          }
+
+          // Also check usage_metrics table as a secondary source
+          // (for backwards compatibility with older data)
+          if (totalMinutesThisMonth === 0) {
+            const { data: usageMetrics } = await supabase
               .from('usage_metrics')
               .select('metric_value')
-              .eq('user_id', user.id)
+              .eq(orgId ? 'organization_id' : 'user_id', orgId || user.id)
               .eq('metric_type', 'minutes_transcribed')
               .gte('created_at', startOfMonth.toISOString())
               .lte('created_at', now.toISOString());
 
-            if (!usageError && usageMetrics) {
+            if (usageMetrics && usageMetrics.length > 0) {
               totalMinutesThisMonth = usageMetrics.reduce(
                 (sum, metric) => sum + (metric.metric_value || 0),
                 0
               );
-              console.log(`Individual usage: ${totalMinutesThisMonth} minutes`);
-            } else {
-              // If no usage metrics, calculate from completed calls
-              totalMinutesThisMonth = (currentMonthCalls || []).reduce(
-                (sum, call) => sum + (call.duration || 0) / 60, // Convert seconds to minutes
-                0
-              );
-              console.log(`Calculated from calls: ${totalMinutesThisMonth} minutes`);
+              console.log(`Fallback to usage_metrics: ${totalMinutesThisMonth} minutes`);
             }
           }
         } catch (err) {
-          console.log('Error fetching usage metrics, using call duration fallback');
-          totalMinutesThisMonth = (currentMonthCalls || []).reduce(
-            (sum, call) => sum + (call.duration || 0) / 60,
-            0
-          );
+          console.error('Error calculating usage:', err);
+          totalMinutesThisMonth = 0;
         }
 
         // Calculate time saved (assuming 15 min saved per call)

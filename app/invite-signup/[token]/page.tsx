@@ -173,6 +173,13 @@ export default function InviteSignupPage() {
 
       setSuccess(true);
 
+      // CRITICAL: Set the team organization as the current organization
+      // This ensures invited members start in the correct organization context
+      if (invitation?.organization_id) {
+        localStorage.setItem('currentOrganizationId', invitation.organization_id);
+        console.log('✅ Set team organization as current:', invitation.organization.name);
+      }
+
       // Auto-login after successful signup
       const supabase = createClient();
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({

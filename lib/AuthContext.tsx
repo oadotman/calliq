@@ -17,18 +17,22 @@ interface AuthContextType {
   user: User | null
   session: Session | null
   organization: OrganizationData | null
+  organizations: OrganizationData[] // All organizations user belongs to
   loading: boolean
   signOut: () => Promise<void>
   refreshUser: () => Promise<void>
+  switchOrganization: (organizationId: string) => Promise<void> // Switch current organization
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
   organization: null,
+  organizations: [],
   loading: true,
   signOut: async () => {},
   refreshUser: async () => {},
+  switchOrganization: async () => {},
 })
 
 export const useAuth = () => {
@@ -43,6 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [organization, setOrganization] = useState<OrganizationData | null>(null)
+  const [organizations, setOrganizations] = useState<OrganizationData[]>([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
@@ -95,9 +100,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Fetch organization data with error handling
   const fetchOrganization = useCallback(async (userId: string, userEmail?: string) => {
     try {
-      console.log('🏢 Fetching organization for user:', userId)
+      console.log('🏢 Fetching organizations for user:', userId)
 
-      // Quick fetch without invitation processing to avoid delays
+      // Fetch ALL organizations the user belongs to
       const { data: userOrgs } = await getSupabase()
         .from('user_organizations')
         .select(`
@@ -114,15 +119,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         `)
         .eq('user_id', userId)
         .order('joined_at', { ascending: false })
-        .limit(1) // Just get the most recent one
 
-      if (userOrgs && userOrgs.length > 0 && userOrgs[0].organization) {
-        const orgData = userOrgs[0].organization
-        const org = Array.isArray(orgData) ? orgData[0] : orgData
-        console.log('✅ Organization found:', org.name, 'Plan:', org.plan_type, 'Limit:', org.max_minutes_monthly)
-        safeSetState(setOrganization)(org as OrganizationData)
+      if (userOrgs && userOrgs.length > 0) {
+        // Extract all organizations
+        const allOrgs = userOrgs
+          .map(uo => uo.organization)
+          .filter(org => org !== null)
+          .map(orgData => Array.isArray(orgData) ? orgData[0] : orgData) as OrganizationData[]
+
+        console.log(`✅ Found ${allOrgs.length} organization(s) for user`)
+        safeSetState(setOrganizations)(allOrgs)
+
+        // Get the current organization from localStorage or use the first one
+        const storedOrgId = typeof window !== 'undefined' ? localStorage.getItem('currentOrganizationId') : null
+        let currentOrg = storedOrgId ? allOrgs.find(org => org.id === storedOrgId) : null
+
+        // If stored org not found or no stored org, use the first one
+        if (!currentOrg && allOrgs.length > 0) {
+          currentOrg = allOrgs[0]
+          // Store it for next time
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('currentOrganizationId', currentOrg.id)
+          }
+        }
+
+        if (currentOrg) {
+          console.log('✅ Current organization:', currentOrg.name, 'Plan:', currentOrg.plan_type)
+          safeSetState(setOrganization)(currentOrg)
+        } else {
+          console.log('⚠️ No current organization selected')
+          safeSetState(setOrganization)(null)
+        }
       } else {
-        console.log('⚠️ No organization found for user')
+        console.log('⚠️ No organizations found for user')
+        safeSetState(setOrganizations)([])
         safeSetState(setOrganization)(null)
       }
 
@@ -132,7 +162,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
     } catch (error) {
-      console.error('❌ Error fetching organization:', error)
+      console.error('❌ Error fetching organizations:', error)
+      safeSetState(setOrganizations)([])
       safeSetState(setOrganization)(null)
     }
   }, [safeSetState, getSupabase])
@@ -279,11 +310,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = useCallback(async () => {
     try {
       await getSupabase().auth.signOut()
+      // Clear stored organization preference
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('currentOrganizationId')
+      }
       router.push('/login')
     } catch (error) {
       console.error('❌ Error signing out:', error)
     }
   }, [router, getSupabase])
+
+  // Switch organization
+  const switchOrganization = useCallback(async (organizationId: string) => {
+    const org = organizations.find(o => o.id === organizationId)
+    if (org) {
+      console.log('🔄 Switching to organization:', org.name)
+      safeSetState(setOrganization)(org)
+      // Store the selection
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('currentOrganizationId', organizationId)
+      }
+      // Refresh the page to ensure all data is loaded with new org context
+      router.refresh()
+    } else {
+      console.error('❌ Organization not found:', organizationId)
+    }
+  }, [organizations, safeSetState, router])
 
   useEffect(() => {
     mountedRef.current = true
@@ -326,9 +378,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user,
       session,
       organization,
+      organizations,
       loading,
       signOut,
-      refreshUser
+      refreshUser,
+      switchOrganization
     }}>
       {children}
     </AuthContext.Provider>

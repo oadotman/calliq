@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
       templateId, // Extract templateId from request
       audioDuration, // Extract audio duration in seconds
       typedNotes, // Extract typed notes from request
+      organizationId, // CRITICAL: Explicit organization ID from frontend
     } = body;
 
     // Validate required fields
@@ -60,16 +61,43 @@ export async function POST(req: NextRequest) {
       fileSize,
       audioDuration,
       durationMinutes: audioDuration ? Math.ceil(audioDuration / 60) : null,
+      organizationId: organizationId || 'not provided',
     });
 
-    // Get organization
-    const { data: userOrg } = await supabase
-      .from('user_organizations')
-      .select('organization_id')
-      .eq('user_id', userId)
-      .maybeSingle();
+    // CRITICAL FIX: Use the organization ID from the request
+    // If not provided (old clients), fall back to user's default organization
+    let finalOrganizationId = organizationId;
 
-    const organizationId = userOrg?.organization_id || null;
+    if (!finalOrganizationId) {
+      console.warn('⚠️ No organization ID provided in upload request - falling back to user default');
+
+      // Get user's default organization (their first/primary one)
+      const { data: userOrg } = await supabase
+        .from('user_organizations')
+        .select('organization_id')
+        .eq('user_id', userId)
+        .order('joined_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      finalOrganizationId = userOrg?.organization_id || null;
+    } else {
+      // Verify the user belongs to the specified organization
+      const { data: membership } = await supabase
+        .from('user_organizations')
+        .select('organization_id')
+        .eq('user_id', userId)
+        .eq('organization_id', finalOrganizationId)
+        .maybeSingle();
+
+      if (!membership) {
+        console.error('❌ User does not belong to specified organization');
+        return NextResponse.json(
+          { error: 'Invalid organization' },
+          { status: 403 }
+        );
+      }
+    }
 
     // Get public URL for the uploaded file
     const { data: { publicUrl } } = supabase.storage
@@ -86,7 +114,7 @@ export async function POST(req: NextRequest) {
       .from('calls')
       .insert({
         user_id: userId,
-        organization_id: organizationId,
+        organization_id: finalOrganizationId,
         file_name: fileName,
         file_size: fileSize,
         file_url: publicUrl,

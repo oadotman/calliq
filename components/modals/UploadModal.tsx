@@ -349,6 +349,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
         templateId: templateToSend, // Only send custom template IDs
         audioDuration: audioDuration, // Add duration to metadata
         typedNotes: typedNotes.trim() || undefined, // Add typed notes to metadata
+        organizationId: organization?.id, // CRITICAL: Pass current organization ID
       };
 
       // Upload directly to Supabase Storage (zero memory usage)

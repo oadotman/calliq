@@ -35,6 +35,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { UploadModal } from "@/components/modals/UploadModal";
+import { OrganizationSwitcher } from "@/components/OrganizationSwitcher";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -59,7 +60,7 @@ interface Call {
 }
 
 export default function CallsPage() {
-  const { user } = useAuth();
+  const { user, organization } = useAuth();
   const [calls, setCalls] = useState<Call[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchInput, setSearchInput] = useState("");
@@ -91,12 +92,23 @@ export default function CallsPage() {
       try {
         setLoading(true); // Ensure loading is set at start
         const supabase = createClient();
-        const { data, error } = await supabase
+
+        // Fetch calls based on organization context
+        let query = supabase
           .from('calls')
           .select('*')
-          .eq('user_id', user.id)
           .is('deleted_at', null)
           .order('created_at', { ascending: false });
+
+        // If user has organization, fetch by organization_id
+        // Otherwise fall back to user_id
+        if (organization?.id) {
+          query = query.eq('organization_id', organization.id);
+        } else {
+          query = query.eq('user_id', user.id);
+        }
+
+        const { data, error } = await query;
 
         if (!isMounted) return; // Don't update state if unmounted
 
@@ -152,7 +164,7 @@ export default function CallsPage() {
       }
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, organization]);
 
   // Debounced search
   useEffect(() => {
@@ -337,7 +349,10 @@ export default function CallsPage() {
                   {filteredCalls.length} call{filteredCalls.length !== 1 ? 's' : ''} total
                 </p>
               </div>
-              <div className="flex gap-3">
+              <div className="flex items-center gap-3">
+                <OrganizationSwitcher />
+                <div className="h-8 w-px bg-slate-200 dark:bg-slate-700" />
+                <div className="flex gap-3">
                 <Button
                   onClick={() => setIsUploadModalOpen(true)}
                   className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white shadow-lg shadow-violet-500/30 hover:shadow-xl hover:shadow-violet-500/50 transition-all duration-300 rounded-xl border-0 font-semibold group/btn"
@@ -349,6 +364,7 @@ export default function CallsPage() {
                   <Download className="w-4 h-4 mr-2 group-hover/btn:scale-110 transition-transform" />
                   Export All Data
                 </Button>
+                </div>
               </div>
             </div>
           </div>

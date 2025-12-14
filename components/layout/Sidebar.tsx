@@ -103,10 +103,11 @@ export function Sidebar() {
             onClick={() => setIsMobileOpen(false)}
             className={cn(
               styles.bottomLink,
-              "bg-gradient-to-r from-violet-600 to-purple-600 text-white hover:from-violet-700 hover:to-purple-700 mb-2"
+              "bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 mb-2"
             )}
+            style={{ color: 'white' }}
           >
-            <Sparkles className={cn(styles.navIcon, "text-white")} />
+            <Sparkles className={cn(styles.navIcon)} style={{ color: 'white' }} />
             <span className="font-semibold">Upgrade Plan</span>
           </Link>
         )}

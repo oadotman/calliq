@@ -25,6 +25,7 @@ export interface UploadMetadata {
   templateId?: string; // Add templateId to metadata type
   audioDuration?: number; // Duration in seconds
   typedNotes?: string; // Add typed notes to metadata
+  organizationId?: string; // CRITICAL: Explicit organization ID
 }
 
 export interface UploadResult {
