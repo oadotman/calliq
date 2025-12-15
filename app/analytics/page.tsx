@@ -48,7 +48,7 @@ interface AnalyticsData {
 }
 
 export default function AnalyticsPage() {
-  const { user } = useAuth();
+  const { user, organization } = useAuth();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -57,25 +57,25 @@ export default function AnalyticsPage() {
   // =====================================================
 
   useEffect(() => {
-    if (!user) {
-      setLoading(false); // Set loading to false if no user
+    if (!user || !organization) {
+      setLoading(false); // Set loading to false if no user or organization
       return;
     }
 
     let isMounted = true; // Add mounted flag
 
     async function fetchAnalytics() {
-      if (!user || !isMounted) return; // Check both user and mounted state
+      if (!user || !organization || !isMounted) return; // Check user, organization and mounted state
 
       setLoading(true); // Ensure loading is set
       try {
         const supabase = createClient();
 
-        // Fetch all user's calls with insights
+        // Fetch all organization's calls with insights
         const { data: callsData, error: callsError } = await supabase
           .from('calls')
           .select('*')
-          .eq('user_id', user.id)
+          .eq('organization_id', organization.id)
           .is('deleted_at', null)
           .order('created_at', { ascending: true });
 
@@ -270,7 +270,7 @@ export default function AnalyticsPage() {
     return () => {
       isMounted = false; // Mark as unmounted
     };
-  }, [user]);
+  }, [user, organization]);
 
   // =====================================================
   // LOADING STATE
@@ -283,6 +283,18 @@ export default function AnalyticsPage() {
           <div className="text-center">
             <Loader2 className="w-12 h-12 animate-spin text-violet-600 mx-auto mb-4" />
             <p className="text-slate-600 font-medium">Loading analytics...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!organization) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+        <div className="flex items-center justify-center p-8 lg:p-16">
+          <div className="text-center">
+            <p className="text-slate-600 font-medium">Please select an organization to view analytics.</p>
           </div>
         </div>
       </div>
