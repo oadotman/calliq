@@ -58,8 +58,7 @@ export async function GET(request: NextRequest) {
         )
       `)
       .order('calculated_at', { ascending: false })
-      .limit(limit)
-      .offset(offset);
+      .range(offset, offset + limit - 1);
 
     // Apply filters
     if (status !== 'all') {

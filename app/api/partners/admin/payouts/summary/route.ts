@@ -148,25 +148,36 @@ export async function GET(request: NextRequest) {
       .from('partner_commissions')
       .select(`
         partner_id,
-        partners!inner(
-          id,
-          full_name,
-          email
-        ),
         amount_cents
       `)
       .eq('status', 'approved')
       .is('payout_id', null);
+
+    // Get unique partner IDs
+    const partnerIds = [...new Set((partnersNeedingPayout.data || []).map(c => c.partner_id))];
+
+    // Get partner details
+    const { data: partnerDetails } = await supabase
+      .from('partners')
+      .select('id, full_name, email')
+      .in('id', partnerIds);
+
+    // Create a map of partner details
+    const partnerDetailsMap = new Map();
+    (partnerDetails || []).forEach(partner => {
+      partnerDetailsMap.set(partner.id, partner);
+    });
 
     // Group by partner
     const partnerPayoutMap = new Map();
     (partnersNeedingPayout.data || []).forEach(commission => {
       const partnerId = commission.partner_id;
       if (!partnerPayoutMap.has(partnerId)) {
+        const partnerInfo = partnerDetailsMap.get(partnerId) || {};
         partnerPayoutMap.set(partnerId, {
           partnerId,
-          partnerName: commission.partners?.full_name || commission.partners?.email || 'Unknown',
-          partnerEmail: commission.partners?.email || '',
+          partnerName: partnerInfo.full_name || partnerInfo.email || 'Unknown',
+          partnerEmail: partnerInfo.email || '',
           totalAmount: 0,
           commissionCount: 0
         });
