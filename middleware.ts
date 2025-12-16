@@ -8,10 +8,15 @@ export async function middleware(req: NextRequest) {
   console.log('Middleware: Processing request for', req.nextUrl.pathname)
 
   // =====================================================
+  // ADMIN ROUTES PROTECTION
+  // Protect all admin routes - check before partner routes
+  // =====================================================
+  const pathname = req.nextUrl.pathname;
+
+  // =====================================================
   // PARTNER ROUTES HANDLING
   // Handle partner-specific authentication and tracking
   // =====================================================
-  const pathname = req.nextUrl.pathname;
   if (pathname.startsWith('/partners') || pathname.startsWith('/api/partners')) {
     // Check for partner referral tracking
     const ref = req.nextUrl.searchParams.get('ref');
@@ -180,6 +185,45 @@ export async function middleware(req: NextRequest) {
     hasSession: !!session,
     hasUser: !!user
   })
+
+  // =====================================================
+  // ADMIN ROUTES ACCESS CHECK
+  // Check admin access for /admin routes (excluding partner routes)
+  // =====================================================
+  if (pathname.startsWith('/admin') && !pathname.startsWith('/admin/partners')) {
+    // Admin routes need authentication first
+    if (!user) {
+      console.log('Middleware: No user for admin route, redirecting to login');
+      const redirectUrl = new URL('/login', req.url);
+      redirectUrl.searchParams.set('redirect', req.nextUrl.pathname);
+      return NextResponse.redirect(redirectUrl);
+    }
+
+    // Check if user has admin/owner role
+    try {
+      const { data: userOrg } = await supabase
+        .from('user_organizations')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+
+      const isAdmin = userOrg?.role === 'owner' || userOrg?.role === 'admin';
+
+      if (!isAdmin) {
+        console.log('Middleware: User is not admin, showing access denied');
+        // Redirect to a custom error page or dashboard with error message
+        const errorUrl = new URL('/dashboard', req.url);
+        errorUrl.searchParams.set('error', 'admin_access_denied');
+        return NextResponse.redirect(errorUrl);
+      }
+    } catch (error) {
+      console.error('Middleware: Error checking admin role:', error);
+      // On error, redirect to dashboard with error
+      const errorUrl = new URL('/dashboard', req.url);
+      errorUrl.searchParams.set('error', 'admin_check_failed');
+      return NextResponse.redirect(errorUrl);
+    }
+  }
 
   // Include invite paths as public since they handle their own auth flow
   const publicPaths = ['/login', '/signup', '/forgot-password', '/reset-password', '/', '/api/auth/signup', '/api/health', '/invite/', '/invite-signup/']
