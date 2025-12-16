@@ -19,13 +19,30 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if user is admin
-    const { data: userOrg } = await supabase
+    const { data: userOrg, error: userOrgError } = await supabase
       .from('user_organizations')
       .select('role')
       .eq('user_id', user.id)
       .single();
 
-    if (userOrg?.role !== 'owner' && userOrg?.role !== 'admin') {
+    console.log('Admin check:', {
+      userId: user.id,
+      userEmail: user.email,
+      userOrg,
+      userOrgError,
+      role: userOrg?.role
+    });
+
+    if (userOrgError || !userOrg) {
+      console.error('Failed to fetch user organization:', userOrgError);
+      return NextResponse.json(
+        { error: 'Failed to verify admin access' },
+        { status: 500 }
+      );
+    }
+
+    if (userOrg.role !== 'owner' && userOrg.role !== 'admin') {
+      console.log('Access denied - user role:', userOrg.role);
       return NextResponse.json(
         { error: 'Admin access required' },
         { status: 403 }

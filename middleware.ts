@@ -188,9 +188,9 @@ export async function middleware(req: NextRequest) {
 
   // =====================================================
   // ADMIN ROUTES ACCESS CHECK
-  // Check admin access for /admin routes (excluding partner routes)
+  // Check admin access for ALL /admin routes
   // =====================================================
-  if (pathname.startsWith('/admin') && !pathname.startsWith('/admin/partners')) {
+  if (pathname.startsWith('/admin')) {
     // Admin routes need authentication first
     if (!user) {
       console.log('Middleware: No user for admin route, redirecting to login');
@@ -201,16 +201,30 @@ export async function middleware(req: NextRequest) {
 
     // Check if user has admin/owner role
     try {
-      const { data: userOrg } = await supabase
+      const { data: userOrg, error: userOrgError } = await supabase
         .from('user_organizations')
         .select('role')
         .eq('user_id', user.id)
         .single();
 
-      const isAdmin = userOrg?.role === 'owner' || userOrg?.role === 'admin';
+      console.log('Middleware: Admin check for path', pathname, {
+        userId: user.id,
+        userOrg,
+        userOrgError,
+        role: userOrg?.role
+      });
+
+      if (userOrgError || !userOrg) {
+        console.error('Middleware: Failed to fetch user org:', userOrgError);
+        const errorUrl = new URL('/dashboard', req.url);
+        errorUrl.searchParams.set('error', 'admin_check_failed');
+        return NextResponse.redirect(errorUrl);
+      }
+
+      const isAdmin = userOrg.role === 'owner' || userOrg.role === 'admin';
 
       if (!isAdmin) {
-        console.log('Middleware: User is not admin, showing access denied');
+        console.log('Middleware: User is not admin, role:', userOrg.role);
         // Redirect to a custom error page or dashboard with error message
         const errorUrl = new URL('/dashboard', req.url);
         errorUrl.searchParams.set('error', 'admin_access_denied');
