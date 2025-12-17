@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     locale: 'en_US',
     images: [
       {
-        url: '/og-image.png', // You should create this image (1200x630px)
+        url: 'https://synqall.com/og-image.png',
         width: 1200,
         height: 630,
         alt: 'SynQall - CRM Data Entry Automation',
@@ -57,7 +57,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'SynQall - AI-Powered CRM Data Entry Automation',
     description: 'Transform sales calls into CRM-ready data instantly. Save 15+ minutes per call.',
-    images: ['/og-image.png'], // Same as OG image
+    images: ['https://synqall.com/og-image.png'],
     creator: '@synqall',
   },
   robots: {
