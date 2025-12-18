@@ -197,7 +197,7 @@ export default function LandingPage() {
               <span className="text-slate-900 dark:text-slate-100">in Under 2 Minutes.</span>
             </h1>
             <p className="text-xl md:text-2xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto leading-relaxed">
-              Upload your sales call → SynQall transcribes it → 60-second extraction → Perfect CRM-ready data.<br />
+              Upload your sales call → SynQall transcribes it → 60 seconds extraction → Perfect CRM-ready data.<br />
               <span className="font-semibold text-slate-900 dark:text-slate-100">Zero IT involvement. Just accurate data.</span>
             </p>
 
@@ -336,7 +336,7 @@ export default function LandingPage() {
                 <span className="text-white font-bold">3</span>
               </div>
               <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">Instant Extraction</h3>
-              <p className="text-xs text-slate-600 dark:text-slate-400">≈60 sec to extract all CRM fields</p>
+              <p className="text-xs text-slate-600 dark:text-slate-400">60 seconds to extract all CRM fields</p>
               <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">Optional: You can also paste your typed notes to help improve the accuracy for certain CRM fields.</p>
             </div>
             <div className="text-center p-4 bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950 dark:to-green-950 rounded-2xl border-2 border-emerald-200 dark:border-emerald-700 hover-lift animate-fade-in-up animate-stagger-4">
@@ -359,10 +359,10 @@ export default function LandingPage() {
               <div className="grid md:grid-cols-3 gap-8 text-center">
                 <div>
                   <div className="text-4xl font-bold mb-2">{"< 2 minutes"}</div>
-                  <p className="text-violet-100">Total time (60s extraction + 30s review)</p>
+                  <p className="text-violet-100">Total time (60 seconds extraction + 30s review)</p>
                 </div>
                 <div>
-                  <div className="text-4xl font-bold mb-2">95%+</div>
+                  <div className="text-4xl font-bold mb-2">High</div>
                   <p className="text-violet-100">Detail accuracy</p>
                 </div>
                 <div>
@@ -432,7 +432,7 @@ export default function LandingPage() {
                 </div>
                 <div className="flex justify-between items-center p-3 bg-emerald-50 dark:bg-emerald-950/50 rounded-lg">
                   <span className="font-medium text-slate-700 dark:text-slate-300">Accuracy</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-500">95%+</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-500">High accuracy</span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-emerald-50 dark:bg-emerald-950/50 rounded-lg">
                   <span className="font-medium text-slate-700 dark:text-slate-300">Context retention</span>
@@ -461,10 +461,10 @@ export default function LandingPage() {
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-3">
                   <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Multi-Party Call Support</h3>
-                  <Badge className="bg-violet-600 text-white border-0">Industry First</Badge>
+                  <Badge className="bg-violet-600 text-white border-0">Key Feature</Badge>
                 </div>
                 <p className="text-lg text-slate-700 dark:text-slate-300 mb-4">
-                  The only platform that accurately handles calls with <span className="font-semibold text-violet-600 dark:text-violet-400">multiple stakeholders</span>. Add unlimited participants, assign roles, and get perfect speaker identification—even on complex enterprise deals.
+                  Handles complex calls with <span className="font-semibold text-violet-600 dark:text-violet-400">multiple stakeholders</span>. Add unlimited participants, assign roles, and get clear speaker identification—even on enterprise deals.
                 </p>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="flex items-start gap-2">
@@ -777,21 +777,6 @@ export default function LandingPage() {
               </CardContent>
             </Card>
 
-            {/* Encrypted at Rest */}
-            <Card className="border-2 border-slate-200 dark:border-slate-700 hover:border-emerald-200 dark:hover:border-emerald-700 hover:shadow-xl transition-all">
-              <CardContent className="pt-8 pb-6 text-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                </div>
-                <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100 mb-2">Encrypted at Rest</h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  AES-256 encryption for all stored data and recordings
-                </p>
-              </CardContent>
-            </Card>
-
             {/* Smart Data Retention */}
             <Card className="border-2 border-slate-200 dark:border-slate-700 hover:border-emerald-200 dark:hover:border-emerald-700 hover:shadow-xl transition-all">
               <CardContent className="pt-8 pb-6 text-center">
@@ -839,7 +824,7 @@ export default function LandingPage() {
               </div>
               <div className="flex items-center gap-3">
                 <Check className="w-5 h-5 text-emerald-600 dark:text-emerald-500 flex-shrink-0" />
-                <span className="text-slate-700 dark:text-slate-300">ISO 27001 aligned processes</span>
+                <span className="text-slate-700 dark:text-slate-300">Security-first architecture</span>
               </div>
               <div className="flex items-center gap-3">
                 <Check className="w-5 h-5 text-emerald-600 dark:text-emerald-500 flex-shrink-0" />
@@ -861,18 +846,15 @@ export default function LandingPage() {
                 Your CRM login details never touch our servers. Data is copied directly by you.
               </p>
             </div>
-            <p className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
-              Trusted by sales teams handling millions in pipeline value
-            </p>
-            <div className="flex items-center justify-center gap-4">
+            <div className="flex items-center justify-center gap-4 mt-8">
               <Badge className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700">
                 🔒 Bank-Level Encryption
               </Badge>
               <Badge className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700">
-                ✓ Annual Pen Testing
+                🛡️ Security-First Architecture
               </Badge>
               <Badge className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700">
-                🛡️ Zero Data Breaches
+                ✓ GDPR Compliant
               </Badge>
             </div>
           </div>
@@ -929,15 +911,39 @@ export default function LandingPage() {
                   </td>
                 </tr>
                 <tr className="hover:bg-slate-50 dark:hover:bg-slate-900">
-                  <td className="p-4 font-medium text-slate-700 dark:text-slate-300 border-b border-slate-100 dark:border-slate-700">Data Accuracy</td>
+                  <td className="p-4 font-medium text-slate-700 dark:text-slate-300 border-b border-slate-100 dark:border-slate-700">CRM-Ready Output</td>
                   <td className="text-center p-4 border-b border-slate-100 dark:border-slate-700">
-                    <span className="text-slate-600 dark:text-slate-400 font-semibold">85-90%</span>
+                    <span className="text-amber-600 dark:text-amber-400 font-semibold">Partial</span>
                   </td>
                   <td className="text-center p-4 border-b border-slate-100 dark:border-slate-700">
-                    <span className="text-slate-600 dark:text-slate-400 font-semibold">70-80%</span>
+                    <X className="w-5 h-5 text-red-600 dark:text-red-400 inline" />
                   </td>
                   <td className="text-center p-4 border-b border-slate-100 dark:border-slate-700 bg-violet-50/50 dark:bg-violet-950/30">
-                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold">95%+</span>
+                    <Check className="w-5 h-5 text-emerald-600 dark:text-emerald-400 inline" />
+                  </td>
+                </tr>
+                <tr className="hover:bg-slate-50 dark:hover:bg-slate-900">
+                  <td className="p-4 font-medium text-slate-700 dark:text-slate-300 border-b border-slate-100 dark:border-slate-700">Custom CRM Support</td>
+                  <td className="text-center p-4 border-b border-slate-100 dark:border-slate-700">
+                    <X className="w-5 h-5 text-red-600 dark:text-red-400 inline" />
+                  </td>
+                  <td className="text-center p-4 border-b border-slate-100 dark:border-slate-700">
+                    <Check className="w-5 h-5 text-emerald-600 dark:text-emerald-400 inline" />
+                  </td>
+                  <td className="text-center p-4 border-b border-slate-100 dark:border-slate-700 bg-violet-50/50 dark:bg-violet-950/30">
+                    <Check className="w-5 h-5 text-emerald-600 dark:text-emerald-400 inline" />
+                  </td>
+                </tr>
+                <tr className="hover:bg-slate-50 dark:hover:bg-slate-900">
+                  <td className="p-4 font-medium text-slate-700 dark:text-slate-300 border-b border-slate-100 dark:border-slate-700">No IT Required</td>
+                  <td className="text-center p-4 border-b border-slate-100 dark:border-slate-700">
+                    <X className="w-5 h-5 text-red-600 dark:text-red-400 inline" />
+                  </td>
+                  <td className="text-center p-4 border-b border-slate-100 dark:border-slate-700">
+                    <Check className="w-5 h-5 text-emerald-600 dark:text-emerald-400 inline" />
+                  </td>
+                  <td className="text-center p-4 border-b border-slate-100 dark:border-slate-700 bg-violet-50/50 dark:bg-violet-950/30">
+                    <Check className="w-5 h-5 text-emerald-600 dark:text-emerald-400 inline" />
                   </td>
                 </tr>
                 <tr className="hover:bg-slate-50 dark:hover:bg-slate-900">
@@ -950,18 +956,6 @@ export default function LandingPage() {
                   </td>
                   <td className="text-center p-4 border-b border-slate-100 dark:border-slate-700 bg-violet-50/50 dark:bg-violet-950/30">
                     <span className="text-emerald-600 dark:text-emerald-400 font-semibold">$$</span>
-                  </td>
-                </tr>
-                <tr className="hover:bg-slate-50 dark:hover:bg-slate-900">
-                  <td className="p-4 font-medium text-slate-700 dark:text-slate-300">IT Requirements</td>
-                  <td className="text-center p-4">
-                    <span className="text-red-600 dark:text-red-400 font-semibold">Heavy</span>
-                  </td>
-                  <td className="text-center p-4">
-                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold">None</span>
-                  </td>
-                  <td className="text-center p-4 bg-violet-50/50 dark:bg-violet-950/30">
-                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold">None</span>
                   </td>
                 </tr>
               </tbody>
@@ -1089,7 +1083,7 @@ export default function LandingPage() {
               },
               {
                 q: "How accurate is it?",
-                a: "Typically 90–95% for clear audio—much higher than rushed manual notes.",
+                a: "High accuracy for clear audio—much better than rushed manual notes. The accuracy improves when you add your own notes.",
               },
               {
                 q: "Is copy-paste really better than API integration?",
