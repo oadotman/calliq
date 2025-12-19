@@ -124,31 +124,10 @@ export default function AdminApplicationsPage() {
 
       if (!response.ok) throw new Error('Failed to process application');
 
-      const data = await response.json();
-
-      // Check if partner credentials were returned (email not configured)
-      if (data.partnerCredentials) {
-        toast({
-          title: 'Application Approved',
-          description: (
-            <div className="space-y-2 mt-2">
-              <p>Partner account created successfully!</p>
-              <div className="bg-gray-100 p-2 rounded text-sm">
-                <p><strong>Email:</strong> {data.partnerCredentials.email}</p>
-                <p><strong>Password:</strong> {data.partnerCredentials.tempPassword}</p>
-                <p><strong>Referral Code:</strong> {data.partnerCredentials.referralCode}</p>
-              </div>
-              <p className="text-xs text-orange-600">⚠️ {data.partnerCredentials.note}</p>
-            </div>
-          ),
-          duration: 10000, // Show for 10 seconds
-        });
-      } else {
-        toast({
-          title: 'Success',
-          description: `Application ${reviewAction === 'approve' ? 'approved' : reviewAction === 'reject' ? 'rejected' : 'marked for more info'}`,
-        });
-      }
+      toast({
+        title: 'Success',
+        description: `Application ${reviewAction === 'approve' ? 'approved' : reviewAction === 'reject' ? 'rejected' : 'marked for more info'}`,
+      });
 
       setShowReviewDialog(false);
       fetchApplications();

@@ -8,11 +8,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import { Resend } from 'resend';
 import bcrypt from 'bcryptjs';
 
-// Initialize Resend only if API key is configured
-const resend = process.env.RESEND_API_KEY &&
-               !process.env.RESEND_API_KEY.includes('REPLACE_WITH')
-               ? new Resend(process.env.RESEND_API_KEY)
-               : null;
+const resend = new Resend(process.env.RESEND_API_KEY!);
 
 function generateReferralCode(name: string): string {
   const prefix = name.substring(0, 3).toUpperCase();
@@ -133,53 +129,45 @@ export async function POST(
           churn_rate: 0,
         });
 
-      // Send welcome email if Resend is configured
-      if (resend) {
-        try {
-          await resend.emails.send({
-            from: process.env.RESEND_PARTNER_EMAIL || 'partners@synqall.com',
-            to: application.email,
-            subject: 'Welcome to the SynQall Partner Program!',
-            html: `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <h1 style="color: #1a73e8;">Welcome to the SynQall Partner Program!</h1>
-                <p>Hi ${application.full_name},</p>
-                <p>Great news! Your partner application has been approved.</p>
+      // Send welcome email
+      try {
+        await resend.emails.send({
+          from: process.env.RESEND_FROM_EMAIL || 'noreply@synqall.com',
+          to: application.email,
+          subject: 'Welcome to the SynQall Partner Program!',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h1 style="color: #1a73e8;">Welcome to the SynQall Partner Program!</h1>
+              <p>Hi ${application.full_name},</p>
+              <p>Great news! Your partner application has been approved.</p>
 
-                <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                  <h2 style="color: #333;">Your Partner Account Details</h2>
-                  <p><strong>Email:</strong> ${application.email}</p>
-                  <p><strong>Temporary Password:</strong> ${tempPassword}</p>
-                  <p><strong>Referral Code:</strong> ${referralCode}</p>
-                  <p><strong>Commission Rate:</strong> 25%</p>
-                </div>
-
-                <p><strong>Next Steps:</strong></p>
-                <ol>
-                  <li>Login to your partner dashboard: <a href="${process.env.NEXT_PUBLIC_APP_URL}/partners/login">Partner Portal</a></li>
-                  <li>Change your password in the settings</li>
-                  <li>Set up your payment information</li>
-                  <li>Start sharing your unique referral link</li>
-                </ol>
-
-                <p>Your unique referral link: <code>${process.env.NEXT_PUBLIC_APP_URL}/signup?ref=${referralCode}</code></p>
-
-                <p>If you have any questions, please don't hesitate to reach out to our partner support team.</p>
-
-                <p>Best regards,<br>The SynQall Team</p>
+              <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h2 style="color: #333;">Your Partner Account Details</h2>
+                <p><strong>Email:</strong> ${application.email}</p>
+                <p><strong>Temporary Password:</strong> ${tempPassword}</p>
+                <p><strong>Referral Code:</strong> ${referralCode}</p>
+                <p><strong>Commission Rate:</strong> 25%</p>
               </div>
-            `,
-          });
-        } catch (emailError) {
-          console.error('Failed to send welcome email:', emailError);
-          // Continue without failing the approval
-        }
-      } else {
-        console.log('Resend not configured. Partner credentials:', {
-          email: application.email,
-          tempPassword,
-          referralCode
+
+              <p><strong>Next Steps:</strong></p>
+              <ol>
+                <li>Login to your partner dashboard: <a href="${process.env.NEXT_PUBLIC_APP_URL}/partners/login">Partner Portal</a></li>
+                <li>Change your password in the settings</li>
+                <li>Set up your payment information</li>
+                <li>Start sharing your unique referral link</li>
+              </ol>
+
+              <p>Your unique referral link: <code>${process.env.NEXT_PUBLIC_APP_URL}/signup?ref=${referralCode}</code></p>
+
+              <p>If you have any questions, please don't hesitate to reach out to our partner support team.</p>
+
+              <p>Best regards,<br>The SynQall Team</p>
+            </div>
+          `,
         });
+      } catch (emailError) {
+        console.error('Failed to send welcome email:', emailError);
+        // Continue without failing the approval
       }
 
       // Log activity
@@ -192,74 +180,57 @@ export async function POST(
         });
 
     } else if (action === 'reject') {
-      // Send rejection email if Resend is configured
-      if (resend) {
-        try {
-          await resend.emails.send({
-            from: process.env.RESEND_PARTNER_EMAIL || 'partners@synqall.com',
-            to: application.email,
-            subject: 'SynQall Partner Application Update',
-            html: `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <h1 style="color: #1a73e8;">Partner Application Update</h1>
-                <p>Hi ${application.full_name},</p>
-                <p>Thank you for your interest in the SynQall Partner Program.</p>
-                <p>After careful review, we've decided not to move forward with your application at this time.</p>
-                ${notes ? `<p>Feedback: ${notes}</p>` : ''}
-                <p>We encourage you to reapply in the future as our program evolves and expands.</p>
-                <p>Best regards,<br>The SynQall Team</p>
-              </div>
-            `,
-          });
-        } catch (emailError) {
-          console.error('Failed to send rejection email:', emailError);
-        }
+      // Send rejection email
+      try {
+        await resend.emails.send({
+          from: process.env.RESEND_FROM_EMAIL || 'noreply@synqall.com',
+          to: application.email,
+          subject: 'SynQall Partner Application Update',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h1 style="color: #1a73e8;">Partner Application Update</h1>
+              <p>Hi ${application.full_name},</p>
+              <p>Thank you for your interest in the SynQall Partner Program.</p>
+              <p>After careful review, we've decided not to move forward with your application at this time.</p>
+              ${notes ? `<p>Feedback: ${notes}</p>` : ''}
+              <p>We encourage you to reapply in the future as our program evolves and expands.</p>
+              <p>Best regards,<br>The SynQall Team</p>
+            </div>
+          `,
+        });
+      } catch (emailError) {
+        console.error('Failed to send rejection email:', emailError);
       }
     } else if (action === 'more_info') {
-      // Send request for more info if Resend is configured
-      if (resend) {
-        try {
-          await resend.emails.send({
-            from: process.env.RESEND_PARTNER_EMAIL || 'partners@synqall.com',
-            to: application.email,
-            subject: 'SynQall Partner Application - Additional Information Needed',
-            html: `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <h1 style="color: #1a73e8;">Additional Information Needed</h1>
-                <p>Hi ${application.full_name},</p>
-                <p>Thank you for applying to the SynQall Partner Program.</p>
-                <p>To complete our review, we need some additional information:</p>
-                <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                  <p>${notes || 'Please provide more details about your experience and how you plan to promote SynQall.'}</p>
-                </div>
-                <p>Please reply to this email with the requested information.</p>
-                <p>Best regards,<br>The SynQall Team</p>
+      // Send request for more info
+      try {
+        await resend.emails.send({
+          from: process.env.RESEND_FROM_EMAIL || 'noreply@synqall.com',
+          to: application.email,
+          subject: 'SynQall Partner Application - Additional Information Needed',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h1 style="color: #1a73e8;">Additional Information Needed</h1>
+              <p>Hi ${application.full_name},</p>
+              <p>Thank you for applying to the SynQall Partner Program.</p>
+              <p>To complete our review, we need some additional information:</p>
+              <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <p>${notes || 'Please provide more details about your experience and how you plan to promote SynQall.'}</p>
               </div>
-            `,
-          });
-        } catch (emailError) {
-          console.error('Failed to send more info email:', emailError);
-        }
+              <p>Please reply to this email with the requested information.</p>
+              <p>Best regards,<br>The SynQall Team</p>
+            </div>
+          `,
+        });
+      } catch (emailError) {
+        console.error('Failed to send more info email:', emailError);
       }
     }
 
-    // Return response with partner credentials if approval and email not sent
-    const response: any = {
+    return NextResponse.json({
       success: true,
       message: `Application ${action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'updated'}`,
-    };
-
-    // Include credentials in response if email wasn't sent
-    if (action === 'approve' && !resend) {
-      response.partnerCredentials = {
-        email: application.email,
-        tempPassword,
-        referralCode,
-        note: 'Email service not configured. Please share these credentials with the partner manually.'
-      };
-    }
-
-    return NextResponse.json(response);
+    });
   } catch (error) {
     console.error('Review application error:', error);
     return NextResponse.json(
