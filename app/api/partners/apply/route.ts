@@ -165,9 +165,37 @@ export async function POST(req: NextRequest) {
       // Don't fail the request if email fails
     }
 
-    // Send notification to admin (you)
+    // Create notification for owner in the database
     try {
-      const adminEmail = process.env.PARTNER_ADMIN_EMAIL || 'partners@synqall.com';
+      // Get the owner user ID (you)
+      const { data: owner } = await supabase
+        .from('user_organizations')
+        .select('user_id')
+        .eq('role', 'owner')
+        .single();
+
+      if (owner) {
+        await supabase
+          .from('notifications')
+          .insert({
+            id: crypto.randomUUID(),
+            user_id: owner.user_id,
+            notification_type: 'partner_application',
+            title: 'New Partner Application',
+            message: `${application.full_name} from ${application.company_name || 'Individual'} has applied to become a partner.`,
+            link: '/admin/partners/applications',
+            is_read: false,
+            created_at: new Date().toISOString()
+          });
+      }
+    } catch (notifError) {
+      console.error('Failed to create owner notification:', notifError);
+      // Don't fail the request if notification fails
+    }
+
+    // Send notification email to admin (you)
+    try {
+      const adminEmail = process.env.PARTNER_ADMIN_EMAIL || 'adeliyitomiwa@yahoo.com';
       await sendPartnerApplicationEmail(
         adminEmail,
         'Admin',

@@ -150,7 +150,7 @@ export async function POST(
           referral_code: referralCode,
           status: 'active',
           tier: 'bronze',
-          commission_rate: 25,
+          commission_rate: 0.25,  // 25% as decimal (was causing numeric overflow)
           // Note: application_id column doesn't exist in partners table
         })
         .select()
