@@ -124,10 +124,31 @@ export default function AdminApplicationsPage() {
 
       if (!response.ok) throw new Error('Failed to process application');
 
-      toast({
-        title: 'Success',
-        description: `Application ${reviewAction === 'approve' ? 'approved' : reviewAction === 'reject' ? 'rejected' : 'marked for more info'}`,
-      });
+      const data = await response.json();
+
+      // Check if partner credentials were returned (email not configured)
+      if (data.partnerCredentials) {
+        toast({
+          title: 'Application Approved',
+          description: (
+            <div className="space-y-2 mt-2">
+              <p>Partner account created successfully!</p>
+              <div className="bg-gray-100 p-2 rounded text-sm">
+                <p><strong>Email:</strong> {data.partnerCredentials.email}</p>
+                <p><strong>Password:</strong> {data.partnerCredentials.tempPassword}</p>
+                <p><strong>Referral Code:</strong> {data.partnerCredentials.referralCode}</p>
+              </div>
+              <p className="text-xs text-orange-600">⚠️ {data.partnerCredentials.note}</p>
+            </div>
+          ),
+          duration: 10000, // Show for 10 seconds
+        });
+      } else {
+        toast({
+          title: 'Success',
+          description: `Application ${reviewAction === 'approve' ? 'approved' : reviewAction === 'reject' ? 'rejected' : 'marked for more info'}`,
+        });
+      }
 
       setShowReviewDialog(false);
       fetchApplications();
@@ -347,26 +368,126 @@ export default function AdminApplicationsPage() {
                                 </DialogDescription>
                               </DialogHeader>
                               <div className="space-y-4 max-h-[60vh] overflow-y-auto">
-                                <div>
-                                  <h4 className="font-semibold mb-2">Why Partner?</h4>
-                                  <p className="text-sm text-gray-600 whitespace-pre-wrap">
-                                    {application.why_partner}
-                                  </p>
+                                {/* Contact Information */}
+                                <div className="border-b pb-4">
+                                  <h4 className="font-semibold mb-3">Contact Information</h4>
+                                  <div className="grid grid-cols-2 gap-3 text-sm">
+                                    <div>
+                                      <span className="text-gray-500">Full Name:</span>
+                                      <p className="font-medium">{application.full_name}</p>
+                                    </div>
+                                    <div>
+                                      <span className="text-gray-500">Email:</span>
+                                      <p className="font-medium">{application.email}</p>
+                                    </div>
+                                    <div>
+                                      <span className="text-gray-500">Phone:</span>
+                                      <p className="font-medium">{application.phone || 'Not provided'}</p>
+                                    </div>
+                                    <div>
+                                      <span className="text-gray-500">Company:</span>
+                                      <p className="font-medium">{application.company_name || 'Not provided'}</p>
+                                    </div>
+                                    <div className="col-span-2">
+                                      <span className="text-gray-500">Website:</span>
+                                      {application.website ? (
+                                        <a
+                                          href={application.website}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="font-medium text-blue-600 hover:underline flex items-center gap-1"
+                                        >
+                                          {application.website}
+                                          <ExternalLink className="h-3 w-3" />
+                                        </a>
+                                      ) : (
+                                        <p className="font-medium">Not provided</p>
+                                      )}
+                                    </div>
+                                  </div>
                                 </div>
-                                {application.how_heard && (
-                                  <div>
-                                    <h4 className="font-semibold mb-2">How They Heard About Us</h4>
-                                    <p className="text-sm text-gray-600">{application.how_heard}</p>
+
+                                {/* Partner Details */}
+                                <div className="border-b pb-4">
+                                  <h4 className="font-semibold mb-3">Partner Details</h4>
+                                  <div className="space-y-3 text-sm">
+                                    <div>
+                                      <span className="text-gray-500">Partner Type:</span>
+                                      <p className="font-medium">{getPartnerTypeLabel(application.partner_type)}</p>
+                                    </div>
+                                    <div>
+                                      <span className="text-gray-500">Clients Per Year:</span>
+                                      <p className="font-medium">{application.clients_per_year || 'Not specified'}</p>
+                                    </div>
+                                    <div>
+                                      <span className="text-gray-500">CRMs Used:</span>
+                                      {application.crms_used && application.crms_used.length > 0 ? (
+                                        <div className="flex flex-wrap gap-1 mt-1">
+                                          {application.crms_used.map((crm) => (
+                                            <Badge key={crm} variant="secondary">
+                                              {crm}
+                                            </Badge>
+                                          ))}
+                                        </div>
+                                      ) : (
+                                        <p className="font-medium">Not specified</p>
+                                      )}
+                                    </div>
+                                    <div>
+                                      <span className="text-gray-500">Has Used SynQall:</span>
+                                      <p className="font-medium">{application.has_used_synqall ? 'Yes' : 'No'}</p>
+                                    </div>
                                   </div>
-                                )}
-                                {application.review_notes && (
-                                  <div>
-                                    <h4 className="font-semibold mb-2">Review Notes</h4>
-                                    <p className="text-sm text-gray-600">{application.review_notes}</p>
+                                </div>
+
+                                {/* Application Responses */}
+                                <div className="border-b pb-4">
+                                  <h4 className="font-semibold mb-3">Application Responses</h4>
+                                  <div className="space-y-3">
+                                    <div>
+                                      <span className="text-sm text-gray-500">Why do you want to partner with us?</span>
+                                      <p className="text-sm mt-1 text-gray-700 whitespace-pre-wrap">
+                                        {application.why_partner}
+                                      </p>
+                                    </div>
+                                    {application.how_heard && (
+                                      <div>
+                                        <span className="text-sm text-gray-500">How did you hear about us?</span>
+                                        <p className="text-sm mt-1 text-gray-700">{application.how_heard}</p>
+                                      </div>
+                                    )}
                                   </div>
-                                )}
-                                <div className="text-xs text-gray-500">
-                                  <p>IP: {application.ip_address || 'N/A'}</p>
+                                </div>
+
+                                {/* Metadata */}
+                                <div>
+                                  <h4 className="font-semibold mb-3">Submission Details</h4>
+                                  <div className="space-y-2 text-sm">
+                                    <div>
+                                      <span className="text-gray-500">Submitted:</span>
+                                      <p className="font-medium">
+                                        {new Date(application.submitted_at).toLocaleString()}
+                                      </p>
+                                    </div>
+                                    {application.reviewed_at && (
+                                      <div>
+                                        <span className="text-gray-500">Reviewed:</span>
+                                        <p className="font-medium">
+                                          {new Date(application.reviewed_at).toLocaleString()} by {application.reviewed_by}
+                                        </p>
+                                      </div>
+                                    )}
+                                    {application.review_notes && (
+                                      <div>
+                                        <span className="text-gray-500">Review Notes:</span>
+                                        <p className="font-medium mt-1">{application.review_notes}</p>
+                                      </div>
+                                    )}
+                                    <div>
+                                      <span className="text-gray-500">IP Address:</span>
+                                      <p className="font-medium">{application.ip_address || 'Not available'}</p>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             </DialogContent>

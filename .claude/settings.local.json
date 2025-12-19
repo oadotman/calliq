@@ -79,7 +79,9 @@
       "Bash(del test-referral-system.js)",
       "Bash(node verify-team-usage-tracking.js:*)",
       "Bash(node:*)",
-      "Bash(npx shadcn@latest init)"
+      "Bash(npx shadcn@latest init)",
+      "Bash(del publicfavicon.ico publicfavicon-16x16.png publicfavicon-32x32.png publicandroid-chrome-192x192.png publicandroid-chrome-512x512.png publicapple-touch-icon.png)",
+      "Bash(magick:*)"
     ],
     "deny": [],
     "ask": []
