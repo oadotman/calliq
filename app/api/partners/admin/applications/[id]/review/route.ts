@@ -90,7 +90,7 @@ export async function POST(
               action === 'reject' ? 'rejected' :
               'more_info_needed',
       reviewed_at: new Date().toISOString(),
-      reviewed_by: user.email,
+      reviewed_by: user.id,  // Changed from user.email to user.id (UUID)
       review_notes: notes,
     };
 
@@ -141,8 +141,8 @@ export async function POST(
         .from('partners')
         .insert({
           email: application.email,
-          name: application.full_name,
-          company: application.company_name,
+          full_name: application.full_name,  // Changed from 'name' to 'full_name'
+          company_name: application.company_name,  // Changed from 'company' to 'company_name'
           phone: application.phone,
           website: application.website,
           partner_type: application.partner_type,
@@ -151,7 +151,7 @@ export async function POST(
           status: 'active',
           tier: 'bronze',
           commission_rate: 25,
-          application_id: applicationId,
+          // Note: application_id column doesn't exist in partners table
         })
         .select()
         .single();
@@ -176,10 +176,22 @@ export async function POST(
         .insert({
           partner_id: partner.id,
           total_clicks: 0,
-          total_referrals: 0,
+          total_signups: 0,
+          total_trials: 0,
+          total_customers: 0,
           active_customers: 0,
-          lifetime_earnings: 0,
+          churned_customers: 0,
+          total_revenue_generated: 0,
+          total_commission_earned: 0,
+          total_commission_paid: 0,
+          total_commission_pending: 0,
+          total_commission_approved: 0,
+          average_customer_value: 0,
+          conversion_rate: 0,
           churn_rate: 0,
+          current_month_earnings: 0,
+          last_month_earnings: 0,
+          lifetime_earnings: 0,
         });
 
       if (statsError) {
@@ -240,8 +252,12 @@ export async function POST(
         .from('partner_activity_logs')
         .insert({
           partner_id: partner.id,
-          action: 'account_created',
-          details: 'Partner account created from approved application',
+          activity_type: 'account_created',  // Changed from 'action' to 'activity_type'
+          activity_details: {  // Changed from 'details' to 'activity_details' and made it JSON
+            description: 'Partner account created from approved application',
+            application_id: applicationId,
+            approved_by: user.email
+          },
         });
 
       if (logError) {
