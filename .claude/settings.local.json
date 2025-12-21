@@ -83,7 +83,8 @@
       "Bash(del publicfavicon.ico publicfavicon-16x16.png publicfavicon-32x32.png publicandroid-chrome-192x192.png publicandroid-chrome-512x512.png publicapple-touch-icon.png)",
       "Bash(magick:*)",
       "Bash(git reset:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(cmd /c:*)"
     ],
     "deny": [],
     "ask": []

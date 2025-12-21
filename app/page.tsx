@@ -108,6 +108,9 @@ export default function LandingPage() {
               <Link href="/partners" className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
                 Partners
               </Link>
+              <Link href="/blog" className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
+                Blog
+              </Link>
               <ThemeToggle />
               <Link href="/login">
                 <Button variant="ghost" className="text-sm font-medium">
@@ -161,6 +164,13 @@ export default function LandingPage() {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Partners
+              </Link>
+              <Link
+                href="/blog"
+                className="block px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Blog
               </Link>
               <div className="pt-3 pb-1 px-4">
                 <ThemeToggle />
@@ -1258,7 +1268,7 @@ export default function LandingPage() {
               <h3 className="font-bold mb-4">Company</h3>
               <ul className="space-y-2 text-sm text-slate-400">
                 <li><a href="#" className="hover:text-white transition-colors">About</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
+                <li><Link href="/blog" className="hover:text-white transition-colors">Blog</Link></li>
                 <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
               </ul>
             </div>
