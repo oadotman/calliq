@@ -45,7 +45,7 @@ export function getPostBySlug(slug: string): BlogPost | null {
       date: data.date || new Date().toISOString(),
       excerpt: data.excerpt || '',
       content,
-      author: data.author || 'CallIQ Team',
+      author: data.author || 'SynQall Team',
       categories: data.categories || [],
       tags: data.tags || [],
       featuredImage: data.featuredImage,
@@ -61,6 +61,7 @@ export function getPostBySlug(slug: string): BlogPost | null {
 // Get all posts (metadata only for listing)
 export function getAllPosts(): BlogPostMeta[] {
   const files = getPostFiles()
+  const now = new Date()
 
   const posts = files
     .map((file) => {
@@ -73,6 +74,7 @@ export function getAllPosts(): BlogPostMeta[] {
     })
     .filter((post): post is BlogPostMeta => post !== null)
     .filter((post) => post.published) // Only show published posts
+    .filter((post) => new Date(post.date) <= now) // Only show posts with dates in the past
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
   return posts

@@ -56,7 +56,7 @@ export default function BlogPostClient({ post, relatedPosts }: BlogPostClientPro
   const [copied, setCopied] = useState(false)
 
   // Share functionality
-  const shareUrl = `https://calliq.ai/blog/${post.slug}`
+  const shareUrl = `https://synqall.com/blog/${post.slug}`
   const shareTitle = post.title
 
   const handleCopyLink = () => {

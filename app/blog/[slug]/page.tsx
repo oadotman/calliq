@@ -15,13 +15,13 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
 
   if (!post) {
     return {
-      title: 'Post Not Found - CallIQ Blog',
+      title: 'Post Not Found - SynQall Blog',
       description: 'The blog post you are looking for could not be found.'
     }
   }
 
   return {
-    title: `${post.title} - CallIQ Blog`,
+    title: `${post.title} - SynQall Blog`,
     description: post.excerpt,
     openGraph: {
       title: post.title,
@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
       type: 'article',
       publishedTime: post.date,
       authors: [post.author],
-      url: `https://calliq.ai/blog/${post.slug}`,
+      url: `https://synqall.com/blog/${post.slug}`,
       images: post.featuredImage ? [{
         url: post.featuredImage,
         width: 1200,

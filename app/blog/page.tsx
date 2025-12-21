@@ -7,25 +7,25 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CalendarIcon, ClockIcon, UserIcon, ArrowRightIcon } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'Blog - CallIQ | AI-Powered Call Analytics Insights',
-  description: 'Learn about call analytics, AI transcription, sales optimization, and best practices for managing customer conversations with CallIQ.',
+  title: 'Blog - SynQall | AI-Powered Call Analytics Insights',
+  description: 'Learn about call analytics, AI transcription, sales optimization, and best practices for managing customer conversations with SynQall.',
   openGraph: {
-    title: 'CallIQ Blog - Insights on Call Analytics & AI',
+    title: 'SynQall Blog - Insights on Call Analytics & AI',
     description: 'Expert insights on call recording, transcription, and analytics to help you optimize your sales and customer service operations.',
     type: 'website',
-    url: 'https://calliq.ai/blog',
+    url: 'https://synqall.com/blog',
     images: [{
-      url: 'https://calliq.ai/og-blog.png',
+      url: 'https://synqall.com/og-blog.png',
       width: 1200,
       height: 630,
-      alt: 'CallIQ Blog'
+      alt: 'SynQall Blog'
     }]
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'CallIQ Blog - Call Analytics Insights',
+    title: 'SynQall Blog - Call Analytics Insights',
     description: 'Expert insights on call recording, transcription, and analytics.',
-    images: ['https://calliq.ai/og-blog.png']
+    images: ['https://synqall.com/og-blog.png']
   }
 }
 
@@ -41,7 +41,7 @@ export default function BlogPage() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
             <h1 className="text-5xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 mb-6">
-              CallIQ Blog
+              SynQall Blog
             </h1>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-8">
               Insights, tutorials, and best practices for leveraging AI-powered call analytics to transform your business conversations
