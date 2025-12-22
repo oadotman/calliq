@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getPostBySlug, getAllPosts, getRelatedPosts } from '@/lib/blog'
 import BlogPostClient from '@/components/blog/BlogPostClient'
+import BlogPostServer from '@/components/blog/BlogPostServer'
 
 interface BlogPostPageProps {
   params: {
@@ -63,5 +64,22 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
 
   const relatedPosts = getRelatedPosts(params.slug, 3)
 
-  return <BlogPostClient post={post} relatedPosts={relatedPosts} />
+  // Extract the metadata for the client component
+  const postMeta = {
+    slug: post.slug,
+    title: post.title,
+    date: post.date,
+    excerpt: post.excerpt,
+    author: post.author,
+    categories: post.categories,
+    tags: post.tags,
+    featuredImage: post.featuredImage,
+    readingTime: post.readingTime
+  }
+
+  return (
+    <BlogPostClient post={postMeta} relatedPosts={relatedPosts}>
+      <BlogPostServer content={post.content} />
+    </BlogPostClient>
+  )
 }
