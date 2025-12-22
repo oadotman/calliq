@@ -168,7 +168,7 @@ export default function BlogPostClient({ post, relatedPosts, children }: BlogPos
               <div className="flex-1">
                 <h4 className="font-semibold text-lg mb-2">{post.author}</h4>
                 <p className="text-gray-600 dark:text-gray-400">
-                  Contributing to CallIQ's mission to revolutionize call analytics with AI-powered insights
+                  Contributing to SynQall's mission to revolutionize call analytics with AI-powered insights
                   and helping businesses extract maximum value from their customer conversations.
                 </p>
               </div>

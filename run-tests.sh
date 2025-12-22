@@ -1,10 +1,10 @@
 #!/bin/bash
 # =====================================================
-# TEST RUNNER FOR CALLIQ
+# TEST RUNNER FOR SYNQALL
 # Runs unit tests and reports results
 # =====================================================
 
-echo "🧪 Running CallIQ Tests..."
+echo "🧪 Running SynQall Tests..."
 echo ""
 
 # Run unit tests

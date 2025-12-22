@@ -1,11 +1,11 @@
 #!/bin/bash
 # =====================================================
-# CALLIQ DEPLOYMENT SCRIPT FOR DATALIX DEBIAN
+# SYNQALL DEPLOYMENT SCRIPT FOR DATALIX DEBIAN
 # =====================================================
 
 set -e
 
-echo "🚀 CallIQ Deployment Script for Datalix Debian"
+echo "🚀 SynQall Deployment Script for Datalix Debian"
 echo "================================================"
 
 # Colors
@@ -15,8 +15,8 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-APP_USER="calliq"
-APP_DIR="/var/www/calliq"
+APP_USER="synqall"
+APP_DIR="/var/www/synqall"
 DOMAIN="synqall.com"
 
 # Check if running as root
@@ -65,9 +65,9 @@ echo "1. Upload your application code to $APP_DIR"
 echo "2. Copy .env.example to .env.production and configure"
 echo "3. Run: cd $APP_DIR && npm ci --only=production"
 echo "4. Run: npm run build"
-echo "5. Copy calliq.service to /etc/systemd/system/"
-echo "6. Copy nginx.conf to /etc/nginx/sites-available/calliq"
-echo "7. Run: systemctl enable calliq && systemctl start calliq"
+echo "5. Copy synqall.service to /etc/systemd/system/"
+echo "6. Copy nginx.conf to /etc/nginx/sites-available/synqall"
+echo "7. Run: systemctl enable synqall && systemctl start synqall"
 echo "8. Run: certbot --nginx -d $DOMAIN"
 echo ""
 echo -e "${YELLOW}For full instructions, see DEPLOYMENT.md${NC}"

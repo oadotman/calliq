@@ -24,8 +24,8 @@ Use this checklist to deploy to your Datalix Debian server.
 
 ## File Transfer
 
-- [ ] Upload project to `/var/www/calliq`
-- [ ] Set ownership: `sudo chown -R www-data:www-data /var/www/calliq`
+- [ ] Upload project to `/var/www/synqall`
+- [ ] Set ownership: `sudo chown -R www-data:www-data /var/www/synqall`
 - [ ] Verify `.env.production` exists on server
 - [ ] Check file permissions are correct
 
@@ -59,11 +59,11 @@ Use this checklist to deploy to your Datalix Debian server.
 
 ## Systemd Service
 
-- [ ] Copy `calliq.service` to `/etc/systemd/system/`
+- [ ] Copy `synqall.service` to `/etc/systemd/system/`
 - [ ] Reload systemd: `systemctl daemon-reload`
-- [ ] Start service: `systemctl start calliq`
-- [ ] Enable auto-start: `systemctl enable calliq`
-- [ ] Check status: `systemctl status calliq`
+- [ ] Start service: `systemctl start synqall`
+- [ ] Enable auto-start: `systemctl enable synqall`
+- [ ] Check status: `systemctl status synqall`
 
 ---
 
@@ -92,7 +92,7 @@ Use this checklist to deploy to your Datalix Debian server.
 
 ## Verification Tests
 
-- [ ] Service running: `systemctl status calliq`
+- [ ] Service running: `systemctl status synqall`
 - [ ] Health check works: `curl https://synqall.com/api/health`
 - [ ] Website loads: Visit https://synqall.com
 - [ ] SSL certificate valid (green padlock)
@@ -100,15 +100,15 @@ Use this checklist to deploy to your Datalix Debian server.
 - [ ] Login works
 - [ ] Upload audio file
 - [ ] Transcription completes
-- [ ] Check logs: `journalctl -u calliq -n 50`
+- [ ] Check logs: `journalctl -u synqall -n 50`
 
 ---
 
 ## Monitoring Setup (Optional)
 
-- [ ] Check nginx access logs: `/var/log/nginx/calliq-access.log`
-- [ ] Check nginx error logs: `/var/log/nginx/calliq-error.log`
-- [ ] Check application logs: `journalctl -u calliq -f`
+- [ ] Check nginx access logs: `/var/log/nginx/synqall-access.log`
+- [ ] Check nginx error logs: `/var/log/nginx/synqall-error.log`
+- [ ] Check application logs: `journalctl -u synqall -f`
 - [ ] Set up log rotation if needed
 
 ---
@@ -155,10 +155,10 @@ Use this checklist to deploy to your Datalix Debian server.
 **Quick Commands:**
 ```bash
 # Restart service
-sudo systemctl restart calliq
+sudo systemctl restart synqall
 
 # View logs
-sudo journalctl -u calliq -f
+sudo journalctl -u synqall -f
 
 # Check nginx
 sudo nginx -t

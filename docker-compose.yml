@@ -6,11 +6,11 @@
 version: '3.8'
 
 services:
-  calliq:
+  synqall:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: calliq-app
+    container_name: synqall-app
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -27,7 +27,7 @@ services:
       retries: 3
       start_period: 40s
     networks:
-      - calliq-network
+      - synqall-network
     logging:
       driver: "json-file"
       options:
@@ -35,5 +35,5 @@ services:
         max-file: "3"
 
 networks:
-  calliq-network:
+  synqall-network:
     driver: bridge

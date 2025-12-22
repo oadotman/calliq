@@ -142,7 +142,7 @@ export default function BlogPage() {
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-white mb-4">
-            Stay Updated with CallIQ Insights
+            Stay Updated with SynQall Insights
           </h2>
           <p className="text-xl text-blue-100 mb-8">
             Get the latest tips on call analytics and AI-powered transcription delivered to your inbox

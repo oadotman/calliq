@@ -14,10 +14,10 @@ function question(query) {
 }
 
 async function createBlogPost() {
-  console.log('📝 Create a new blog post for CallIQ\n');
+  console.log('📝 Create a new blog post for SynQall\n');
 
   const title = await question('Title: ');
-  const author = await question('Author (default: CallIQ Team): ') || 'CallIQ Team';
+  const author = await question('Author (default: SynQall Team): ') || 'SynQall Team';
   const excerpt = await question('Excerpt (short description): ');
   const categories = await question('Categories (comma-separated): ');
   const tags = await question('Tags (comma-separated): ');
@@ -69,7 +69,7 @@ Start writing your blog post here...
 
 ---
 
-*Have questions? Contact us at [support@calliq.ai](mailto:support@calliq.ai)*
+*Have questions? Contact us at [support@synqall.com](mailto:support@synqall.com)*
 `;
 
   // Ensure content/blog directory exists

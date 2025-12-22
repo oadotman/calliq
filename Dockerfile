@@ -1,5 +1,5 @@
 # =====================================================
-# PRODUCTION DOCKERFILE FOR CALLIQ
+# PRODUCTION DOCKERFILE FOR SYNQALL
 # Optimized for Debian deployment on Datalix
 # =====================================================
 
@@ -43,7 +43,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Create non-root user
-RUN groupadd -r calliq && useradd -r -g calliq calliq
+RUN groupadd -r synqall && useradd -r -g synqall synqall
 
 # Set production environment
 ENV NODE_ENV=production
@@ -52,12 +52,12 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
 # Copy built application
-COPY --from=builder --chown=calliq:calliq /app/public ./public
-COPY --from=builder --chown=calliq:calliq /app/.next/standalone ./
-COPY --from=builder --chown=calliq:calliq /app/.next/static ./.next/static
+COPY --from=builder --chown=synqall:synqall /app/public ./public
+COPY --from=builder --chown=synqall:synqall /app/.next/standalone ./
+COPY --from=builder --chown=synqall:synqall /app/.next/static ./.next/static
 
 # Switch to non-root user
-USER calliq
+USER synqall
 
 # Expose port
 EXPOSE 3000
