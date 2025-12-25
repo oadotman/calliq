@@ -24,6 +24,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { getPlanDetails } from "@/lib/pricing";
 import { useDirectUpload } from "@/lib/hooks/useDirectUpload";
 import { createClient } from "@/lib/supabase/client";
+import { fetchCurrentUsage, estimateAudioDurationClient, checkDurationLimit } from "@/lib/client-usage";
 
 interface UploadModalProps {
   isOpen: boolean;
@@ -74,6 +75,8 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
     { id: "1", fieldName: "", fieldType: "text", description: "" }
   ]);
   const [typedNotes, setTypedNotes] = useState("");
+  const [currentUsage, setCurrentUsage] = useState<any>(null);
+  const [loadingUsage, setLoadingUsage] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
   const { user, organization } = useAuth();
@@ -100,7 +103,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
     };
   }, []);
 
-  // Fetch user's custom templates when modal opens
+  // Fetch user's custom templates and usage when modal opens
   useEffect(() => {
     if (!user || !isOpen) return;
 
@@ -118,7 +121,20 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
       }
     }
 
+    async function loadUsage() {
+      setLoadingUsage(true);
+      try {
+        const usage = await fetchCurrentUsage();
+        setCurrentUsage(usage);
+      } catch (error) {
+        console.error('Failed to fetch usage:', error);
+      } finally {
+        setLoadingUsage(false);
+      }
+    }
+
     fetchTemplates();
+    loadUsage();
   }, [user, isOpen]);
 
   // Browser visibility detection and upload protection
@@ -228,6 +244,19 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
     const selectedFiles = event.target.files;
     if (!selectedFiles) return;
 
+    // Refresh usage data before processing files
+    if (!loadingUsage) {
+      setLoadingUsage(true);
+      try {
+        const usage = await fetchCurrentUsage();
+        setCurrentUsage(usage);
+      } catch (error) {
+        console.error('Failed to refresh usage:', error);
+      } finally {
+        setLoadingUsage(false);
+      }
+    }
+
     const newFiles: FileUpload[] = [];
 
     for (const file of Array.from(selectedFiles)) {
@@ -248,37 +277,65 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
     for (const fileUpload of newFiles) {
       const validation = await validateAudioFile(fileUpload.file);
 
-      // Check actual audio duration against user's plan limits
+      // Check audio duration against user's plan limits
       let actualDuration: number | null = null;
+      let estimatedDuration: number | null = null;
       let durationError: string | null = null;
+      let durationWarning: string | null = null;
 
       if (validation.valid) {
+        // First, try to get actual duration
         try {
           actualDuration = await getAudioDuration(fileUpload.file);
-
-          // For free tier, check per-file duration limit (30 minutes per file)
-          // For paid tiers, the limit is monthly total, not per-file
-          if (userPlan === 'free') {
-            const MAX_FREE_TIER_DURATION = 30 * 60; // 30 minutes in seconds
-            if (actualDuration > MAX_FREE_TIER_DURATION) {
-              durationError = `Recording duration (${Math.ceil(actualDuration / 60)} minutes) exceeds the 30-minute free tier limit per file. Please upgrade your plan or use a shorter recording.`;
-            }
-          }
-          // For paid plans, we don't enforce per-file limits, only monthly totals
-          // The server will handle monthly limit checks
         } catch (error) {
-          console.warn("Could not determine audio duration:", error);
-          // Don't block upload if duration check fails
-          if (userPlan === 'free') {
-            toast({
-              title: "Warning",
-              description: "Could not verify recording duration. Upload may fail if it exceeds 30 minutes on the free plan.",
-              variant: "default",
-            });
+          console.warn("Could not determine actual audio duration:", error);
+        }
+
+        // Always estimate duration from file size as backup
+        const estimation = estimateAudioDurationClient(fileUpload.file.size, fileUpload.file.type);
+        estimatedDuration = estimation.estimatedMinutes;
+
+        // Use actual duration if available, otherwise use estimation
+        const durationToCheck = actualDuration
+          ? Math.ceil(actualDuration / 60)
+          : estimatedDuration;
+
+        // Check against available minutes for ALL plans
+        if (currentUsage) {
+          const durationCheck = checkDurationLimit(
+            durationToCheck,
+            currentUsage.remainingMinutes
+          );
+
+          if (!durationCheck.allowed) {
+            durationError = durationCheck.error ||
+              `This ${durationToCheck}-minute recording would exceed your available minutes. Please upgrade or purchase additional minutes.`;
+          } else if (durationCheck.warning) {
+            durationWarning = durationCheck.warning;
           }
+        }
+
+        // Additional check for free tier per-file limit
+        if (userPlan === 'free' && !durationError) {
+          const MAX_FREE_TIER_DURATION = 30 * 60; // 30 minutes in seconds
+          if (actualDuration && actualDuration > MAX_FREE_TIER_DURATION) {
+            durationError = `Recording duration (${Math.ceil(actualDuration / 60)} minutes) exceeds the 30-minute free tier limit per file. Please upgrade your plan.`;
+          } else if (!actualDuration && estimatedDuration > 30) {
+            durationError = `Estimated duration (${estimatedDuration} minutes) exceeds the 30-minute free tier limit per file. Please upgrade your plan.`;
+          }
+        }
+
+        // Show warning if estimation confidence is low and no actual duration
+        if (!actualDuration && estimation.confidence === 'low' && !durationError) {
+          toast({
+            title: "Duration Estimation",
+            description: `File duration is estimated at ${estimatedDuration} minutes. Actual duration may vary.`,
+            variant: "default",
+          });
         }
       }
 
+      // Update file status with validation results
       setFiles((prev) =>
         prev.map((f) =>
           f.id === fileUpload.id
@@ -292,11 +349,38 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
         )
       );
 
+      // Show warnings
+      if (durationWarning) {
+        toast({
+          title: "⚠️ Usage Warning",
+          description: durationWarning,
+          variant: "default",
+        });
+      }
+
       if (validation.warnings && validation.warnings.length > 0) {
         toast({
           title: "File warnings",
           description: validation.warnings.join(". "),
           variant: "default",
+        });
+      }
+
+      // Show error dialog if duration exceeds limits
+      if (durationError) {
+        toast({
+          title: "❌ Upload Blocked",
+          description: durationError,
+          variant: "destructive",
+          action: (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push('/pricing')}
+            >
+              Upgrade Plan
+            </Button>
+          ),
         });
       }
     }
@@ -836,6 +920,69 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
             AI will extract fields matching this template. You can change templates later.
           </p>
         </div>
+
+        {/* Usage Display */}
+        {currentUsage && (
+          <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-xl">
+            <div className="flex items-center justify-between mb-2">
+              <Label className="text-sm font-semibold text-blue-900">
+                Available Minutes
+              </Label>
+              <span className="text-xs text-blue-700">
+                Plan: {currentUsage.planType === 'free' ? 'Free' : currentUsage.planType.charAt(0).toUpperCase() + currentUsage.planType.slice(1)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl font-bold text-blue-900">
+                    {currentUsage.remainingMinutes}
+                  </span>
+                  <span className="text-sm text-blue-700">
+                    of {currentUsage.totalAvailableMinutes} minutes remaining
+                  </span>
+                </div>
+                <div className="w-full bg-blue-200 rounded-full h-2 mt-2">
+                  <div
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{
+                      width: `${Math.max(0, Math.min(100, ((currentUsage.totalAvailableMinutes - currentUsage.minutesUsed) / currentUsage.totalAvailableMinutes) * 100))}%`
+                    }}
+                  />
+                </div>
+                {currentUsage.hasOverage && currentUsage.purchasedOverageMinutes > 0 && (
+                  <p className="text-xs text-blue-600 mt-1">
+                    Includes {currentUsage.purchasedOverageMinutes} overage minutes
+                  </p>
+                )}
+              </div>
+              {currentUsage.remainingMinutes < 10 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="ml-4 border-blue-300 text-blue-700 hover:bg-blue-100"
+                  onClick={() => router.push('/pricing')}
+                >
+                  <AlertTriangle className="w-4 h-4 mr-1" />
+                  Low Balance
+                </Button>
+              )}
+            </div>
+            {currentUsage.planType === 'free' && (
+              <p className="text-xs text-blue-600 mt-2">
+                Free tier: Maximum 30 minutes per file, 60 minutes per month
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Loading Usage Indicator */}
+        {loadingUsage && (
+          <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-center">
+            <Loader2 className="h-5 w-5 animate-spin text-gray-500 mr-2" />
+            <span className="text-sm text-gray-600">Loading usage information...</span>
+          </div>
+        )}
 
         <Tabs defaultValue="file" className="w-full">
           <TabsList className="grid w-full grid-cols-2">

@@ -8,6 +8,7 @@ import { createServerClient, requireAuth } from '@/lib/supabase/server';
 import { validateUploadedFile, generateSecureFileName, sanitizeFileName } from '@/lib/security/file-validation';
 import { calculateUsageAndOverage } from '@/lib/overage';
 import { uploadRateLimiter } from '@/lib/rateLimit';
+import { reserveUsageMinutes, releaseReservation, confirmReservation } from '@/lib/usage-reservation';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300; // 5 minutes max for upload
@@ -31,6 +32,8 @@ const SUPPORTED_FORMATS = [
 const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB
 
 export async function POST(req: NextRequest) {
+  let reservationId: string | null = null; // Track reservation for cleanup
+
   try {
     // Authenticate user
     const user = await requireAuth();
@@ -206,6 +209,146 @@ export async function POST(req: NextRequest) {
       sizeMB: validation.sizeMB
     });
 
+    // =====================================================
+    // DURATION VALIDATION - Prevent uploads that exceed limits
+    // =====================================================
+
+    // Import duration validation utilities
+    const { estimateAudioDuration, validateDurationAgainstLimit, getDurationValidationMessage } =
+      await import('@/lib/audio-duration');
+
+    // Estimate the duration of the uploaded file
+    const durationEstimate = estimateAudioDuration(file.size, file.type);
+    console.log('Duration estimate:', {
+      fileName: file.name,
+      fileSize: file.size,
+      estimatedSeconds: durationEstimate.estimatedSeconds,
+      estimatedMinutes: durationEstimate.estimatedMinutes,
+      confidence: durationEstimate.confidence
+    });
+
+    // Re-fetch current usage to get the most up-to-date available minutes
+    if (organizationId) {
+      const { data: org } = await supabase
+        .from('organizations')
+        .select('max_minutes_monthly, plan_type, current_period_start, current_period_end')
+        .eq('id', organizationId)
+        .single();
+
+      if (org) {
+        const now = new Date();
+        const periodStart = org.current_period_start || new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+        const periodEnd = org.current_period_end || new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
+
+        const currentUsage = await calculateUsageAndOverage(organizationId, periodStart, periodEnd);
+        const availableMinutes = Math.max(0, currentUsage.totalAvailableMinutes - currentUsage.minutesUsed);
+
+        // Validate if this upload would exceed limits
+        const validation = validateDurationAgainstLimit(
+          durationEstimate.estimatedMinutes,
+          availableMinutes,
+          org.plan_type
+        );
+
+        if (!validation.allowed) {
+          console.log('Upload blocked - would exceed limits:', {
+            organizationId,
+            estimatedMinutes: validation.estimatedMinutes,
+            availableMinutes: validation.availableMinutes,
+            overageMinutes: validation.overageMinutes,
+            planType: org.plan_type
+          });
+
+          const message = getDurationValidationMessage(
+            durationEstimate.estimatedMinutes,
+            availableMinutes,
+            org.plan_type,
+            durationEstimate.confidence
+          );
+
+          return NextResponse.json(
+            {
+              error: 'File duration exceeds available minutes',
+              details: {
+                message,
+                estimatedDuration: {
+                  minutes: durationEstimate.estimatedMinutes,
+                  seconds: durationEstimate.estimatedSeconds,
+                  confidence: durationEstimate.confidence
+                },
+                usage: {
+                  used: Math.round(currentUsage.minutesUsed),
+                  available: availableMinutes,
+                  total: currentUsage.totalAvailableMinutes,
+                  wouldNeed: validation.overageMinutes
+                },
+                planType: org.plan_type,
+                requiresUpgrade: true,
+                upgradeMessage: org.plan_type === 'free'
+                  ? 'Upgrade to a paid plan for more minutes and larger file support'
+                  : 'Purchase an overage pack or upgrade your plan to continue'
+              }
+            },
+            { status: 402 } // Payment Required
+          );
+        }
+
+        // Warn if getting close to limit
+        if (availableMinutes - durationEstimate.estimatedMinutes < 10) {
+          console.log('Warning: User approaching limit after this upload:', {
+            remainingAfter: availableMinutes - durationEstimate.estimatedMinutes
+          });
+        }
+
+        // =====================================================
+        // RESERVATION SYSTEM - Prevent race conditions
+        // =====================================================
+
+        // Create a unique identifier for this file (hash of filename + size + timestamp)
+        const fileIdentifier = `${file.name}_${file.size}_${Date.now()}`;
+
+        // Reserve the estimated minutes to prevent concurrent uploads from exceeding limits
+        const reservation = await reserveUsageMinutes(
+          organizationId,
+          durationEstimate.estimatedMinutes,
+          fileIdentifier
+        );
+
+        if (!reservation.success) {
+          console.log('Upload blocked - reservation failed:', {
+            organizationId,
+            estimatedMinutes: durationEstimate.estimatedMinutes,
+            error: reservation.error
+          });
+
+          return NextResponse.json(
+            {
+              error: 'Unable to reserve usage minutes',
+              details: {
+                message: reservation.error || 'Another upload may be in progress. Please try again.',
+                estimatedDuration: {
+                  minutes: durationEstimate.estimatedMinutes,
+                  confidence: durationEstimate.confidence
+                },
+                remainingMinutes: reservation.remainingMinutes || 0,
+                requiresUpgrade: true
+              }
+            },
+            { status: 402 } // Payment Required
+          );
+        }
+
+        console.log('Usage reservation created:', {
+          reservationId: reservation.reservationId,
+          estimatedMinutes: durationEstimate.estimatedMinutes,
+          remainingAfter: reservation.remainingMinutes
+        });
+
+        // Store reservation ID for cleanup/confirmation
+        reservationId = reservation.reservationId!;
+      }
+    }
+
     // Generate secure unique filename
     const fileName = `${userId}/${generateSecureFileName(file.name, userId)}`;
 
@@ -279,7 +422,14 @@ export async function POST(req: NextRequest) {
         call_type: callType || null,
         status: 'uploading',
         uploaded_at: new Date().toISOString(),
-        metadata: participants ? { participants } : null,
+        metadata: participants ? {
+          participants,
+          reservationId: reservationId, // Track reservation for confirmation
+          estimatedMinutes: durationEstimate?.estimatedMinutes
+        } : {
+          reservationId: reservationId,
+          estimatedMinutes: durationEstimate?.estimatedMinutes
+        },
         template_id: templateId || null, // Save the selected template
       })
       .select()
@@ -360,6 +510,16 @@ export async function POST(req: NextRequest) {
 
   } catch (error) {
     console.error('Upload error:', error);
+
+    // Release reservation if upload failed
+    if (reservationId) {
+      try {
+        await releaseReservation(reservationId);
+        console.log('Released reservation due to error:', reservationId);
+      } catch (releaseError) {
+        console.error('Failed to release reservation:', releaseError);
+      }
+    }
 
     if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json(
