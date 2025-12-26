@@ -216,7 +216,7 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="en" className="light antialiased" suppressHydrationWarning>
+    <html lang="en" className="dark antialiased" suppressHydrationWarning>
       <head>
         <link rel="canonical" href="https://synqall.com" />
         <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
