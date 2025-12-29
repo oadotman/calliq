@@ -17,7 +17,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     // High priority pages for Google Sitelinks
     {
-      url: `${baseUrl}/signin`,
+      url: `${baseUrl}/login`,
       lastModified: new Date(),
       changeFrequency: 'weekly' as const,
       priority: 0.95, // Very high priority for Login sitelink
@@ -40,7 +40,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'weekly' as const,
       priority: 0.9, // High priority for Partners sitelink
     },
-    // Secondary pages
     {
       url: `${baseUrl}/features`,
       lastModified: new Date(),
@@ -84,6 +83,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(),
       changeFrequency: 'yearly' as const,
       priority: 0.3,
+    },
+    {
+      url: `${baseUrl}/gdpr`,
+      lastModified: new Date(),
+      changeFrequency: 'yearly' as const,
+      priority: 0.1, // Very low priority to prevent primary indexing
     },
     // Blog main page
     {

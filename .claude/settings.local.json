@@ -84,7 +84,9 @@
       "Bash(magick:*)",
       "Bash(git reset:*)",
       "Bash(git rm:*)",
-      "Bash(cmd /c:*)"
+      "Bash(cmd /c:*)",
+      "Bash(del appfeaturespage.tsx)",
+      "Bash(npx next build:*)"
     ],
     "deny": [],
     "ask": []

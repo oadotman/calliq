@@ -21,10 +21,22 @@ export async function middleware(req: NextRequest) {
   }
 
   // =====================================================
+  // URL REDIRECTS FOR SEO
+  // Handle legacy URLs and common routing issues
+  // =====================================================
+  const pathname = req.nextUrl.pathname;
+
+  // Redirect /signin to /login (301 permanent redirect for SEO)
+  if (pathname === '/signin') {
+    const url = req.nextUrl.clone();
+    url.pathname = '/login';
+    return NextResponse.redirect(url, 301);
+  }
+
+  // =====================================================
   // ADMIN ROUTES PROTECTION
   // Protect all admin routes - check before partner routes
   // =====================================================
-  const pathname = req.nextUrl.pathname;
 
   // =====================================================
   // PARTNER ROUTES HANDLING

@@ -99,9 +99,9 @@ export default function LandingPage() {
               <a href="#security" className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
                 Security
               </a>
-              <a href="#pricing" className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
+              <Link href="/pricing" className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
                 Pricing
-              </a>
+              </Link>
               <a href="#faq" className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
                 FAQ
               </a>
@@ -144,13 +144,13 @@ export default function LandingPage() {
               >
                 Security
               </a>
-              <a
-                href="#pricing"
+              <Link
+                href="/pricing"
                 className="block px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Pricing
-              </a>
+              </Link>
               <a
                 href="#faq"
                 className="block px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
@@ -1260,7 +1260,7 @@ export default function LandingPage() {
               <h3 className="font-bold mb-4">Product</h3>
               <ul className="space-y-2 text-sm text-slate-400">
                 <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
-                <li><a href="#pricing" className="hover:text-white transition-colors">Pricing</a></li>
+                <li><Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link></li>
                 <li><Link href="/signup" className="hover:text-white transition-colors">Sign Up</Link></li>
               </ul>
             </div>

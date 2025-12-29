@@ -480,7 +480,7 @@ export default function DataSecurityPage() {
               <h3 className="text-lg font-semibold text-gray-900 mb-1">Privacy Policy</h3>
               <p className="text-sm text-gray-600">How we collect and use your data</p>
             </a>
-            <a href="/gdpr" className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:bg-gray-100 transition">
+            <a href="/gdpr" rel="nofollow" className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:bg-gray-100 transition">
               <h3 className="text-lg font-semibold text-gray-900 mb-1">GDPR Compliance</h3>
               <p className="text-sm text-gray-600">Your data protection rights</p>
             </a>

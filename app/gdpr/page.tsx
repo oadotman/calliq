@@ -1,3 +1,18 @@
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'GDPR Compliance - SynQall',
+  description: 'Learn about SynQall\'s GDPR compliance and data protection measures',
+  robots: {
+    index: false,  // Prevent indexing of GDPR page
+    follow: true,
+    noarchive: true,
+  },
+  alternates: {
+    canonical: 'https://synqall.com/', // Point canonical to homepage to avoid GDPR being primary
+  },
+};
+
 export default function GDPRCompliancePage() {
   return (
     <div className="max-w-4xl mx-auto p-6 py-12 space-y-8">
