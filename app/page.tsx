@@ -773,15 +773,15 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-4 gap-6 mb-12">
+          <div className="grid md:grid-cols-3 gap-6 mb-12 max-w-4xl mx-auto">
             {/* Bank-Level Encryption */}
             <Card className="border-2 border-slate-200 dark:border-slate-700 hover:border-emerald-200 dark:hover:border-emerald-700 hover:shadow-xl transition-all">
               <CardContent className="pt-8 pb-6 text-center">
                 <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                   <Shield className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100 mb-2">Bank-Level Encryption</h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
+                <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100 mb-2 text-center">Bank-Level Encryption</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 text-center">
                   AES-256 encryption for all data at rest, SSL/TLS in transit
                 </p>
               </CardContent>
@@ -793,8 +793,8 @@ export default function LandingPage() {
                 <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                   <Clock className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100 mb-2">Smart Retention</h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
+                <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100 mb-2 text-center">Smart Retention</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 text-center">
                   Audio deleted after 7 days • CRM data kept • Logs anonymized at 90 days
                 </p>
               </CardContent>
@@ -806,8 +806,8 @@ export default function LandingPage() {
                 <div className="w-16 h-16 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                   <Award className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100 mb-2">GDPR Compliant</h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
+                <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100 mb-2 text-center">GDPR Compliant</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 text-center">
                   Full GDPR compliance with data export and deletion rights
                 </p>
               </CardContent>
