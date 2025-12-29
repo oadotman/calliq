@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { PLANS, type PlanType } from "@/lib/pricing";
-import { initializePaddle, openPaddleCheckout, getPaddlePlanId, debugPaddleConfig } from "@/lib/paddle";
+import { initializePaddle, getPaddlePlanId, debugPaddleConfig } from "@/lib/paddle";
+import { handlePlanChange, getPlanChangeMessage } from "@/lib/subscription-manager";
 import { Check, Sparkles, Loader2, CreditCard, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -104,20 +105,21 @@ export default function UpgradePage() {
         return;
       }
 
-      // Open Paddle checkout
-      openPaddleCheckout({
-        planId: priceId,
+      // Use the subscription manager to handle the plan change
+      handlePlanChange({
+        currentPlan: currentPlan as PlanType,
+        newPlan: planId,
+        priceId,
         email: user.email,
-        customData: {
-          organization_id: organization?.id,
-          user_id: user.id,
-          plan_type: planId,
-          billing_period: billingPeriod
-        },
-        successCallback: () => {
+        organizationId: organization?.id || '',
+        userId: user.id,
+        subscriptionId: organization?.paddle_subscription_id,
+        billingPeriod,
+        onSuccess: () => {
+          const isUpgrade = currentPlan !== 'free';
           toast({
             title: "Success!",
-            description: "Your subscription has been activated.",
+            description: isUpgrade ? "Your plan has been changed successfully!" : "Your subscription has been activated.",
           });
 
           // Redirect to dashboard after successful payment
@@ -125,7 +127,7 @@ export default function UpgradePage() {
             router.push('/dashboard');
           }, 2000);
         },
-        closeCallback: () => {
+        onClose: () => {
           setLoading(false);
           setSelectedPlan(null);
         }

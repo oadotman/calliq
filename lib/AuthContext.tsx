@@ -11,6 +11,11 @@ interface OrganizationData {
   plan_type: string
   max_members: number
   max_minutes_monthly: number
+  paddle_subscription_id?: string
+  paddle_customer_id?: string
+  subscription_status?: string
+  current_period_start?: string
+  current_period_end?: string
 }
 
 interface AuthContextType {

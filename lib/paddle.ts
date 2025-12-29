@@ -212,6 +212,8 @@ export function openPaddleCheckout(params: {
   customData?: Record<string, any>;
   successCallback?: () => void;
   closeCallback?: () => void;
+  isUpgrade?: boolean;
+  currentSubscriptionId?: string;
 }) {
   if (typeof window === 'undefined' || !(window as any).Paddle) {
     console.error('Paddle not initialized');
@@ -231,7 +233,17 @@ export function openPaddleCheckout(params: {
 
     // Add custom data if provided
     if (params.customData) {
-      checkoutConfig.customData = params.customData;
+      // Add proration mode for upgrades/downgrades
+      if (params.isUpgrade && params.currentSubscriptionId) {
+        checkoutConfig.customData = {
+          ...params.customData,
+          subscription_update: true,
+          current_subscription_id: params.currentSubscriptionId,
+          proration_billing_mode: 'prorated_immediately', // For upgrades
+        };
+      } else {
+        checkoutConfig.customData = params.customData;
+      }
     }
 
     // Add callbacks

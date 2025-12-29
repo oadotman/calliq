@@ -114,11 +114,25 @@ export async function POST(req: NextRequest) {
       }
 
       case 'subscription.updated': {
-        // Subscription updated (plan change, etc.)
+        // Subscription updated (plan change, upgrade/downgrade, etc.)
+        const priceId = payload.data.items?.[0]?.price_id;
+        const newPlanType = getPlanTypeFromPriceId(priceId);
+
+        // Get the organization to check for plan changes
+        const { data: org } = await supabase
+          .from('organizations')
+          .select('plan_type, id')
+          .eq('paddle_subscription_id', payload.data.id)
+          .single();
+
+        const isUpgrade = org && isPlanUpgrade(org.plan_type, newPlanType);
+        const isDowngrade = org && isPlanDowngrade(org.plan_type, newPlanType);
+
         const { error } = await supabase
           .from('organizations')
           .update({
             subscription_status: payload.data.status,
+            plan_type: newPlanType,
             current_period_start: payload.data.billing_period?.starts_at,
             current_period_end: payload.data.billing_period?.ends_at,
             updated_at: new Date().toISOString(),
@@ -129,7 +143,29 @@ export async function POST(req: NextRequest) {
           console.error('[Paddle] Error updating subscription:', error);
         }
 
-        console.log('[Paddle] Subscription updated:', payload.data.id);
+        // Create notification for plan change
+        if (org && payload.data.custom_data?.user_id) {
+          let notificationTitle = 'Subscription updated';
+          let notificationMessage = `Your subscription has been updated to ${newPlanType} plan.`;
+
+          if (isUpgrade) {
+            notificationTitle = 'Plan upgraded successfully!';
+            notificationMessage = `You've been upgraded to the ${newPlanType} plan. New features are now available!`;
+          } else if (isDowngrade) {
+            notificationTitle = 'Plan changed';
+            notificationMessage = `Your plan has been changed to ${newPlanType}. Changes will take effect at the end of your current billing period.`;
+          }
+
+          await supabase.from('notifications').insert({
+            user_id: payload.data.custom_data.user_id,
+            notification_type: 'subscription_updated',
+            title: notificationTitle,
+            message: notificationMessage,
+            link: '/settings',
+          });
+        }
+
+        console.log('[Paddle] Subscription updated:', payload.data.id, 'New plan:', newPlanType);
         break;
       }
 
@@ -271,4 +307,40 @@ function getPlanTypeFromPriceId(priceId?: string): string {
   };
 
   return priceIdMap[priceId] || 'free';
+}
+
+/**
+ * Check if a plan change is an upgrade
+ */
+function isPlanUpgrade(currentPlan: string, newPlan: string): boolean {
+  const planHierarchy: Record<string, number> = {
+    'free': 0,
+    'solo': 1,
+    'starter': 2,
+    'professional': 3,
+    'enterprise': 4,
+  };
+
+  const currentLevel = planHierarchy[currentPlan] || 0;
+  const newLevel = planHierarchy[newPlan] || 0;
+
+  return newLevel > currentLevel;
+}
+
+/**
+ * Check if a plan change is a downgrade
+ */
+function isPlanDowngrade(currentPlan: string, newPlan: string): boolean {
+  const planHierarchy: Record<string, number> = {
+    'free': 0,
+    'solo': 1,
+    'starter': 2,
+    'professional': 3,
+    'enterprise': 4,
+  };
+
+  const currentLevel = planHierarchy[currentPlan] || 0;
+  const newLevel = planHierarchy[newPlan] || 0;
+
+  return newLevel < currentLevel;
 }
