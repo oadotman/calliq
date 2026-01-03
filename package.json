@@ -17,7 +17,10 @@
     "test:e2e:basic": "node tests/e2e-call-processing.test.js",
     "test:e2e:ui": "playwright test --ui",
     "test:quick": "node tests/integration-test.js",
-    "test:all": "npm run test:quick && npm run test:e2e"
+    "test:all": "npm run test:quick && npm run test:e2e",
+    "worker": "node scripts/queue-worker.js",
+    "worker:dev": "nodemon scripts/queue-worker.js",
+    "process:stuck": "node scripts/process-stuck-call.js"
   },
   "keywords": [],
   "author": "",
