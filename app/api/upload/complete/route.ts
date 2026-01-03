@@ -170,24 +170,60 @@ export async function POST(req: NextRequest) {
           // Import our queue processor
           const { enqueueCallProcessing } = await import('@/lib/queue/call-processor');
 
-          // Add to processing queue
-          await enqueueCallProcessing(callData.id);
+          // Create proper job object with all required fields
+          const processingJob = {
+            callId: callData.id,
+            userId: userId,
+            organizationId: callData.organization_id,
+            fileUrl: callData.file_url,
+            fileName: callData.file_name,
+            duration: callData.duration || 0,
+            metadata: {
+              customerName: callData.customer_name,
+              templateId: callData.template_id,
+              callType: callData.call_type
+            }
+          };
+
+          // Add to processing queue with proper job object
+          await enqueueCallProcessing(processingJob);
 
           console.log('✅ Call enqueued for processing:', callData.id);
         } catch (error) {
-          console.error('Failed to enqueue processing:', error);
+          console.error('Failed to enqueue processing, trying direct processing:', error);
 
-          // Update status to failed
-          const supabaseAsync = createServerClient();
-          await supabaseAsync
-            .from('calls')
-            .update({
-              status: 'failed',
-              assemblyai_error: error instanceof Error
-                ? error.message
-                : 'Failed to start processing',
-            })
-            .eq('id', callData.id);
+          // FALLBACK: Try direct processing if queue fails
+          try {
+            const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://synqall.com';
+            const processUrl = `${baseUrl}/api/calls/${callData.id}/process`;
+
+            // Add internal processing header to bypass CSRF
+            const processResponse = await fetch(processUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-internal-processing': 'true',
+              },
+            });
+
+            if (processResponse.ok) {
+              console.log('✅ Fallback: Direct processing started for:', callData.id);
+            } else {
+              throw new Error(`Direct processing failed: ${processResponse.status}`);
+            }
+          } catch (fallbackError) {
+            console.error('Both queue and direct processing failed:', fallbackError);
+
+            // Update status to failed only if both methods fail
+            const supabaseAsync = createServerClient();
+            await supabaseAsync
+              .from('calls')
+              .update({
+                status: 'failed',
+                assemblyai_error: 'Processing unavailable. Please try again later or contact support.',
+              })
+              .eq('id', callData.id);
+          }
         }
       });
     } else {
