@@ -69,24 +69,68 @@ export async function POST(
         })
         .eq('id', callId);
 
-      // Call processing endpoint asynchronously (fire and forget)
+      // Trigger processing with retry logic
       const processUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/calls/${callId}/process`;
 
-      // Use fetch without awaiting to trigger background processing
-      // Use Connection: close to avoid chunked encoding HTTP parser issues
-      fetch(processUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-internal-processing': 'true',
-          'Connection': 'close',
-        },
-      }).catch((err) => {
-        // Log but don't fail - processing will continue in background
-        console.error('Failed to trigger processing (non-fatal):', err.message);
-      });
+      // Retry logic with exponential backoff
+      let processingStarted = false;
+      let lastError = null;
 
-      console.log('✅ Background processing triggered for call:', callId);
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
+          const response = await fetch(processUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-internal-processing': 'true',
+              'Connection': 'close',
+            },
+            signal: controller.signal,
+          });
+
+          clearTimeout(timeoutId);
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Processing endpoint returned ${response.status}: ${errorText}`);
+          }
+
+          processingStarted = true;
+          console.log('✅ Processing successfully started for call:', callId);
+          break;
+
+        } catch (error) {
+          lastError = error;
+          console.error(`Attempt ${attempt + 1} failed to start processing:`, error.message);
+
+          // If not the last attempt, wait before retrying
+          if (attempt < 2) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt))); // Exponential backoff
+          }
+        }
+      }
+
+      // If all attempts failed, revert status and return error
+      if (!processingStarted) {
+        console.error('❌ All attempts to start processing failed:', lastError);
+
+        // Revert status to uploaded
+        await supabase
+          .from('calls')
+          .update({
+            status: 'uploaded',
+            assemblyai_error: `Failed to start processing: ${lastError?.message || 'Unknown error'}`,
+          })
+          .eq('id', callId);
+
+        return NextResponse.json(
+          { error: 'Failed to start processing after 3 attempts. Please try again.' },
+          { status: 500 }
+        );
+      }
 
       // Create notification
       await supabase.from('notifications').insert({

@@ -161,71 +161,97 @@ export async function POST(req: NextRequest) {
     const shouldAutoTranscribe = userPreferences?.auto_transcribe ?? true;
 
     if (shouldAutoTranscribe) {
-      // Don't await - let it process in the background to avoid timeouts
-      console.log('🚀 Enqueueing call for processing:', callData.id);
+      console.log('🚀 Starting call processing:', callData.id);
 
-      // Process async without blocking the response
-      setImmediate(async () => {
-        try {
-          // Import our queue processor
-          const { enqueueCallProcessing } = await import('@/lib/queue/call-processor');
+      // Try to start processing synchronously with proper error handling
+      let processingStarted = false;
+      let lastError = null;
 
-          // Create proper job object with all required fields
-          const processingJob = {
-            callId: callData.id,
-            userId: userId,
-            organizationId: callData.organization_id,
-            fileUrl: callData.file_url,
-            fileName: callData.file_name,
-            duration: callData.duration || 0,
-            metadata: {
-              customerName: callData.customer_name,
-              templateId: callData.template_id,
-              callType: callData.call_type
-            }
-          };
+      // First try queue system
+      try {
+        const { enqueueCallProcessing } = await import('@/lib/queue/call-processor');
 
-          // Add to processing queue with proper job object
-          await enqueueCallProcessing(processingJob);
+        const processingJob = {
+          callId: callData.id,
+          userId: userId,
+          organizationId: callData.organization_id,
+          fileUrl: callData.file_url,
+          fileName: callData.file_name,
+          duration: callData.duration || 0,
+          metadata: {
+            customerName: callData.customer_name,
+            templateId: callData.template_id,
+            callType: callData.call_type
+          }
+        };
 
-          console.log('✅ Call enqueued for processing:', callData.id);
-        } catch (error) {
-          console.error('Failed to enqueue processing, trying direct processing:', error);
+        await enqueueCallProcessing(processingJob);
+        processingStarted = true;
+        console.log('✅ Call enqueued for processing:', callData.id);
 
-          // FALLBACK: Try direct processing if queue fails
+      } catch (queueError) {
+        console.error('Queue processing failed, trying direct processing:', queueError);
+        lastError = queueError;
+
+        // Fallback to direct processing with retries
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://synqall.com';
+        const processUrl = `${baseUrl}/api/calls/${callData.id}/process`;
+
+        for (let attempt = 0; attempt < 3; attempt++) {
           try {
-            const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://synqall.com';
-            const processUrl = `${baseUrl}/api/calls/${callData.id}/process`;
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-            // Add internal processing header to bypass CSRF
             const processResponse = await fetch(processUrl, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
                 'x-internal-processing': 'true',
               },
+              signal: controller.signal,
             });
 
-            if (processResponse.ok) {
-              console.log('✅ Fallback: Direct processing started for:', callData.id);
-            } else {
+            clearTimeout(timeoutId);
+
+            if (!processResponse.ok) {
               throw new Error(`Direct processing failed: ${processResponse.status}`);
             }
-          } catch (fallbackError) {
-            console.error('Both queue and direct processing failed:', fallbackError);
 
-            // Update status to failed only if both methods fail
-            const supabaseAsync = createServerClient();
-            await supabaseAsync
-              .from('calls')
-              .update({
-                status: 'failed',
-                assemblyai_error: 'Processing unavailable. Please try again later or contact support.',
-              })
-              .eq('id', callData.id);
+            processingStarted = true;
+            console.log('✅ Fallback: Direct processing started for:', callData.id);
+            break;
+
+          } catch (directError) {
+            lastError = directError;
+            console.error(`Direct processing attempt ${attempt + 1} failed:`, directError.message);
+
+            if (attempt < 2) {
+              await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
+            }
           }
         }
-      });
+      }
+
+      // If processing couldn't be started, update status to failed
+      if (!processingStarted) {
+        console.error('❌ All processing attempts failed:', lastError);
+
+        await supabase
+          .from('calls')
+          .update({
+            status: 'failed',
+            assemblyai_error: 'Processing unavailable. Please try again later or use manual transcription.',
+          })
+          .eq('id', callData.id);
+
+        // Still return success for upload, but indicate processing failed
+        return NextResponse.json({
+          success: true,
+          call: callData,
+          message: 'Upload completed but automatic processing failed. Please start transcription manually.',
+          processingFailed: true,
+        });
+      }
     } else {
       console.log('Auto-transcribe disabled, leaving call in uploaded state');
     }
