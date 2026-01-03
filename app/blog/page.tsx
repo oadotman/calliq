@@ -9,6 +9,9 @@ import { CalendarIcon, ClockIcon, UserIcon, ArrowRightIcon } from 'lucide-react'
 export const metadata: Metadata = {
   title: 'Blog - SynQall | AI-Powered Call Analytics Insights',
   description: 'Learn about call analytics, AI transcription, sales optimization, and best practices for managing customer conversations with SynQall.',
+  alternates: {
+    canonical: 'https://synqall.com/blog',
+  },
   openGraph: {
     title: 'SynQall Blog - Insights on Call Analytics & AI',
     description: 'Expert insights on call recording, transcription, and analytics to help you optimize your sales and customer service operations.',

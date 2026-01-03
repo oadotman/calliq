@@ -1,3 +1,32 @@
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Terms of Service | SynQall',
+  description: 'Read the terms and conditions for using SynQall\'s AI-powered CRM data automation service. Understand your rights and obligations.',
+  keywords: [
+    'terms of service',
+    'terms and conditions',
+    'legal terms',
+    'user agreement',
+    'SynQall terms',
+    'service agreement'
+  ],
+  alternates: {
+    canonical: 'https://synqall.com/terms',
+  },
+  openGraph: {
+    title: 'Terms of Service - SynQall',
+    description: 'Terms and conditions for using SynQall services',
+    url: 'https://synqall.com/terms',
+    type: 'website',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    noarchive: false,
+  },
+};
+
 export default function TermsOfServicePage() {
   return (
     <div className="max-w-4xl mx-auto p-6 py-12 space-y-8">

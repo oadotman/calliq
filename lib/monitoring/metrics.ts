@@ -1,283 +1,317 @@
-// =====================================================
-// METRICS AND MONITORING
-// Application performance and business metrics tracking
-// =====================================================
+/**
+ * Minimal Metrics Collection System
+ * Tracks essential performance metrics using Redis
+ * Focuses only on critical metrics for scale and reliability
+ */
 
-import { logger } from '@/lib/logging/app-logger';
+import redisClient from '@/lib/redis/client';
 
-export interface Metric {
-  name: string;
-  value: number;
-  timestamp: number;
-  tags?: Record<string, string>;
-}
-
-export interface MetricAggregation {
-  count: number;
-  sum: number;
-  min: number;
-  max: number;
-  avg: number;
-}
-
-class MetricsCollector {
-  private metrics: Metric[] = [];
-  private aggregations: Map<string, MetricAggregation> = new Map();
+export class Metrics {
+  private static readonly METRICS_PREFIX = 'metrics:';
+  private static readonly WINDOW_SIZE = 3600; // 1 hour window for metrics
 
   /**
-   * Record a metric
+   * Record API response time
    */
-  record(name: string, value: number, tags?: Record<string, string>): void {
-    const metric: Metric = {
-      name,
-      value,
-      timestamp: Date.now(),
-      tags,
-    };
-
-    this.metrics.push(metric);
-    this.updateAggregation(name, value);
-
-    // Send to monitoring service if configured
-    if (process.env.NEXT_PUBLIC_POSTHOG_KEY) {
-      this.sendToPostHog(metric);
-    }
-
-    // Log performance metrics
-    if (name.includes('duration') || name.includes('latency')) {
-      logger.performance(name, value, 'ms');
-    }
-  }
-
-  /**
-   * Update aggregation for a metric
-   */
-  private updateAggregation(name: string, value: number): void {
-    const agg = this.aggregations.get(name) || {
-      count: 0,
-      sum: 0,
-      min: value,
-      max: value,
-      avg: 0,
-    };
-
-    agg.count++;
-    agg.sum += value;
-    agg.min = Math.min(agg.min, value);
-    agg.max = Math.max(agg.max, value);
-    agg.avg = agg.sum / agg.count;
-
-    this.aggregations.set(name, agg);
-  }
-
-  /**
-   * Send metric to PostHog
-   */
-  private async sendToPostHog(metric: Metric): Promise<void> {
+  static async recordResponseTime(route: string, duration: number): Promise<void> {
     try {
-      if (typeof window !== 'undefined') {
-        const posthog = await import('posthog-js');
-        posthog.default.capture(metric.name, {
-          value: metric.value,
-          ...metric.tags,
-        });
+      const key = `${this.METRICS_PREFIX}response_times:${route}`;
+      const timestamp = Date.now();
+
+      // Store in sorted set with timestamp as score
+      await redisClient.zadd(key, timestamp, `${timestamp}:${duration}`);
+
+      // Remove old entries (older than window)
+      await redisClient.zremrangebyscore(key, '-inf', timestamp - (this.WINDOW_SIZE * 1000));
+
+      // Set expiry
+      await redisClient.expire(key, this.WINDOW_SIZE);
+
+      // Update aggregates
+      await this.updateResponseTimeAggregates(route, duration);
+    } catch (error) {
+      console.error('Error recording response time:', error);
+    }
+  }
+
+  /**
+   * Record an error occurrence
+   */
+  static async recordError(route: string, errorType: string): Promise<void> {
+    try {
+      const hourKey = `${this.METRICS_PREFIX}errors:${route}:${this.getCurrentHour()}`;
+      const totalKey = `${this.METRICS_PREFIX}errors:total`;
+
+      // Increment error count for specific route and error type
+      await redisClient.hincrby(hourKey, errorType, 1);
+      await redisClient.expire(hourKey, this.WINDOW_SIZE);
+
+      // Increment total error count
+      await redisClient.incr(totalKey);
+      await redisClient.expire(totalKey, this.WINDOW_SIZE);
+
+      // Track error rate
+      await this.updateErrorRate();
+    } catch (error) {
+      console.error('Error recording error metric:', error);
+    }
+  }
+
+  /**
+   * Record queue depth
+   */
+  static async recordQueueDepth(queueName: string, depth: number): Promise<void> {
+    try {
+      const key = `${this.METRICS_PREFIX}queue:${queueName}`;
+      await redisClient.set(key, depth, 'EX', 60); // Expire after 1 minute
+
+      // Track max queue depth
+      const maxKey = `${this.METRICS_PREFIX}queue:${queueName}:max`;
+      const currentMax = await redisClient.get(maxKey);
+      if (!currentMax || depth > parseInt(currentMax)) {
+        await redisClient.set(maxKey, depth, 'EX', this.WINDOW_SIZE);
       }
     } catch (error) {
-      logger.error('Failed to send metric to PostHog', error as Error, 'Metrics');
+      console.error('Error recording queue depth:', error);
     }
   }
 
   /**
-   * Get aggregated metrics
+   * Record database query time
    */
-  getAggregation(name: string): MetricAggregation | undefined {
-    return this.aggregations.get(name);
+  static async recordDatabaseQuery(operation: string, duration: number): Promise<void> {
+    try {
+      const key = `${this.METRICS_PREFIX}db:${operation}`;
+      const timestamp = Date.now();
+
+      await redisClient.zadd(key, timestamp, `${timestamp}:${duration}`);
+      await redisClient.zremrangebyscore(key, '-inf', timestamp - (this.WINDOW_SIZE * 1000));
+      await redisClient.expire(key, this.WINDOW_SIZE);
+
+      // Track slow queries
+      if (duration > 1000) {
+        await this.recordSlowQuery(operation, duration);
+      }
+    } catch (error) {
+      console.error('Error recording database query:', error);
+    }
   }
 
   /**
-   * Get all metrics
+   * Record cache hit/miss
    */
-  getAll(): Metric[] {
-    return [...this.metrics];
+  static async recordCacheOperation(hit: boolean): Promise<void> {
+    try {
+      const key = hit
+        ? `${this.METRICS_PREFIX}cache:hits`
+        : `${this.METRICS_PREFIX}cache:misses`;
+
+      await redisClient.incr(key);
+      await redisClient.expire(key, this.WINDOW_SIZE);
+    } catch (error) {
+      console.error('Error recording cache operation:', error);
+    }
   }
 
   /**
-   * Clear metrics older than specified time
+   * Record memory usage
    */
-  cleanup(olderThanMs: number = 3600000): void {
-    const cutoff = Date.now() - olderThanMs;
-    this.metrics = this.metrics.filter((m) => m.timestamp > cutoff);
+  static async recordMemoryUsage(): Promise<void> {
+    try {
+      const memUsage = process.memoryUsage();
+      const key = `${this.METRICS_PREFIX}memory:node`;
+
+      await redisClient.hset(key, {
+        rss: memUsage.rss,
+        heapTotal: memUsage.heapTotal,
+        heapUsed: memUsage.heapUsed,
+        external: memUsage.external,
+        timestamp: Date.now()
+      });
+      await redisClient.expire(key, 300); // 5 minutes
+    } catch (error) {
+      console.error('Error recording memory usage:', error);
+    }
   }
-}
 
-// Singleton instance
-export const metrics = new MetricsCollector();
+  /**
+   * Get current metrics summary
+   */
+  static async getMetricsSummary(): Promise<any> {
+    try {
+      const [
+        responseTimeStats,
+        errorCount,
+        cacheHits,
+        cacheMisses,
+        memoryUsage
+      ] = await Promise.all([
+        this.getResponseTimeStats(),
+        redisClient.get(`${this.METRICS_PREFIX}errors:total`),
+        redisClient.get(`${this.METRICS_PREFIX}cache:hits`),
+        redisClient.get(`${this.METRICS_PREFIX}cache:misses`),
+        redisClient.hgetall(`${this.METRICS_PREFIX}memory:node`)
+      ]);
 
-// Cleanup old metrics every hour
-if (typeof window === 'undefined') {
-  setInterval(() => {
-    metrics.cleanup();
-  }, 3600000);
-}
+      const cacheHitRate = this.calculateCacheHitRate(
+        parseInt(cacheHits || '0'),
+        parseInt(cacheMisses || '0')
+      );
 
-/**
- * Track API request duration
- */
-export function trackApiDuration(
-  method: string,
-  path: string,
-  duration: number,
-  statusCode: number
-): void {
-  metrics.record('api.request.duration', duration, {
-    method,
-    path,
-    status: String(statusCode),
-  });
+      return {
+        responseTime: responseTimeStats,
+        errors: {
+          total: parseInt(errorCount || '0'),
+          rate: await this.getErrorRate()
+        },
+        cache: {
+          hits: parseInt(cacheHits || '0'),
+          misses: parseInt(cacheMisses || '0'),
+          hitRate: cacheHitRate
+        },
+        memory: memoryUsage ? {
+          rss: this.formatBytes(parseInt(memoryUsage.rss || '0')),
+          heapUsed: this.formatBytes(parseInt(memoryUsage.heapUsed || '0')),
+          heapTotal: this.formatBytes(parseInt(memoryUsage.heapTotal || '0'))
+        } : null,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('Error getting metrics summary:', error);
+      return null;
+    }
+  }
 
-  if (statusCode >= 500) {
-    metrics.record('api.request.error', 1, {
-      method,
-      path,
-      status: String(statusCode),
+  /**
+   * Get average response time for a route
+   */
+  static async getAverageResponseTime(route?: string): Promise<number> {
+    try {
+      const pattern = route
+        ? `${this.METRICS_PREFIX}response_times:${route}`
+        : `${this.METRICS_PREFIX}response_times:*`;
+
+      const keys = route ? [pattern] : await redisClient.keys(pattern);
+
+      if (keys.length === 0) return 0;
+
+      let totalTime = 0;
+      let count = 0;
+
+      for (const key of keys) {
+        const values = await redisClient.zrange(key, 0, -1);
+        for (const value of values) {
+          const duration = parseInt(value.split(':')[1]);
+          totalTime += duration;
+          count++;
+        }
+      }
+
+      return count > 0 ? Math.round(totalTime / count) : 0;
+    } catch (error) {
+      console.error('Error getting average response time:', error);
+      return 0;
+    }
+  }
+
+  // Private helper methods
+
+  private static async updateResponseTimeAggregates(route: string, duration: number): Promise<void> {
+    const key = `${this.METRICS_PREFIX}response_times:${route}:stats`;
+
+    const stats = await redisClient.hgetall(key);
+    const count = parseInt(stats?.count || '0') + 1;
+    const total = parseInt(stats?.total || '0') + duration;
+    const min = Math.min(duration, parseInt(stats?.min || String(duration)));
+    const max = Math.max(duration, parseInt(stats?.max || '0'));
+
+    await redisClient.hset(key, {
+      count,
+      total,
+      min,
+      max,
+      avg: Math.round(total / count),
+      last: duration,
+      lastUpdate: Date.now()
     });
+
+    await redisClient.expire(key, this.WINDOW_SIZE);
   }
-}
 
-/**
- * Track database query duration
- */
-export function trackDbQuery(
-  operation: string,
-  table: string,
-  duration: number,
-  success: boolean
-): void {
-  metrics.record('db.query.duration', duration, {
-    operation,
-    table,
-    success: String(success),
-  });
+  private static async updateErrorRate(): Promise<void> {
+    const key = `${this.METRICS_PREFIX}errors:rate`;
+    const timestamp = Date.now();
 
-  if (!success) {
-    metrics.record('db.query.error', 1, {
+    await redisClient.zadd(key, timestamp, timestamp);
+    await redisClient.zremrangebyscore(key, '-inf', timestamp - 60000); // Keep last minute
+    await redisClient.expire(key, 120);
+  }
+
+  private static async getErrorRate(): Promise<number> {
+    const key = `${this.METRICS_PREFIX}errors:rate`;
+    const count = await redisClient.zcard(key);
+    return count; // Errors per minute
+  }
+
+  private static async recordSlowQuery(operation: string, duration: number): Promise<void> {
+    const key = `${this.METRICS_PREFIX}slow_queries`;
+    const entry = JSON.stringify({
       operation,
-      table,
+      duration,
+      timestamp: Date.now()
     });
-  }
-}
 
-/**
- * Track external API call
- */
-export function trackExternalApi(
-  service: string,
-  operation: string,
-  duration: number,
-  success: boolean
-): void {
-  metrics.record('external.api.duration', duration, {
-    service,
-    operation,
-    success: String(success),
-  });
-
-  if (!success) {
-    metrics.record('external.api.error', 1, {
-      service,
-      operation,
-    });
-  }
-}
-
-/**
- * Track business metrics
- */
-export const businessMetrics = {
-  /**
-   * Track call upload
-   */
-  callUploaded(userId: string, fileSize: number, duration: number): void {
-    metrics.record('business.call.uploaded', 1, { userId });
-    metrics.record('business.call.upload.size', fileSize, { userId });
-    metrics.record('business.call.upload.duration', duration, { userId });
-  },
-
-  /**
-   * Track transcription completed
-   */
-  transcriptionCompleted(userId: string, duration: number, wordCount: number): void {
-    metrics.record('business.transcription.completed', 1, { userId });
-    metrics.record('business.transcription.duration', duration, { userId });
-    metrics.record('business.transcription.words', wordCount, { userId });
-  },
-
-  /**
-   * Track extraction completed
-   */
-  extractionCompleted(userId: string, duration: number, fieldCount: number): void {
-    metrics.record('business.extraction.completed', 1, { userId });
-    metrics.record('business.extraction.duration', duration, { userId });
-    metrics.record('business.extraction.fields', fieldCount, { userId });
-  },
-
-  /**
-   * Track data export
-   */
-  dataExported(userId: string, format: string, recordCount: number): void {
-    metrics.record('business.data.exported', 1, { userId, format });
-    metrics.record('business.data.export.records', recordCount, { userId, format });
-  },
-
-  /**
-   * Track user signup
-   */
-  userSignup(userId: string): void {
-    metrics.record('business.user.signup', 1, { userId });
-  },
-
-  /**
-   * Track user login
-   */
-  userLogin(userId: string): void {
-    metrics.record('business.user.login', 1, { userId });
-  },
-
-  /**
-   * Track subscription created
-   */
-  subscriptionCreated(userId: string, plan: string): void {
-    metrics.record('business.subscription.created', 1, { userId, plan });
-  },
-
-  /**
-   * Track subscription cancelled
-   */
-  subscriptionCancelled(userId: string, plan: string, reason?: string): void {
-    metrics.record('business.subscription.cancelled', 1, {
-      userId,
-      plan,
-      reason: reason || 'unknown',
-    });
-  },
-};
-
-/**
- * Generate metrics report
- */
-export function generateMetricsReport(): Record<string, MetricAggregation> {
-  const report: Record<string, MetricAggregation> = {};
-
-  for (const [name, agg] of metrics['aggregations'].entries()) {
-    report[name] = { ...agg };
+    await redisClient.lpush(key, entry);
+    await redisClient.ltrim(key, 0, 99); // Keep last 100
+    await redisClient.expire(key, this.WINDOW_SIZE);
   }
 
-  return report;
-}
+  private static async getResponseTimeStats(): Promise<any> {
+    const statsKey = `${this.METRICS_PREFIX}response_times:*:stats`;
+    const keys = await redisClient.keys(statsKey);
 
-/**
- * Export metrics for external monitoring
- */
-export function exportMetrics(): Metric[] {
-  return metrics.getAll();
+    if (keys.length === 0) {
+      return { avg: 0, min: 0, max: 0, count: 0 };
+    }
+
+    let totalAvg = 0;
+    let minTime = Infinity;
+    let maxTime = 0;
+    let totalCount = 0;
+
+    for (const key of keys) {
+      const stats = await redisClient.hgetall(key);
+      if (stats) {
+        totalAvg += parseInt(stats.avg || '0') * parseInt(stats.count || '0');
+        totalCount += parseInt(stats.count || '0');
+        minTime = Math.min(minTime, parseInt(stats.min || String(Infinity)));
+        maxTime = Math.max(maxTime, parseInt(stats.max || '0'));
+      }
+    }
+
+    return {
+      avg: totalCount > 0 ? Math.round(totalAvg / totalCount) : 0,
+      min: minTime === Infinity ? 0 : minTime,
+      max: maxTime,
+      count: totalCount
+    };
+  }
+
+  private static calculateCacheHitRate(hits: number, misses: number): number {
+    const total = hits + misses;
+    return total > 0 ? Math.round((hits / total) * 100) : 0;
+  }
+
+  private static formatBytes(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  }
+
+  private static getCurrentHour(): string {
+    const now = new Date();
+    return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}-${now.getHours()}`;
+  }
 }

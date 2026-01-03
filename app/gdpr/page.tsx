@@ -1,15 +1,31 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'GDPR Compliance - SynQall',
-  description: 'Learn about SynQall\'s GDPR compliance and data protection measures',
+  title: 'GDPR Compliance | SynQall',
+  description: 'SynQall is fully GDPR compliant. Learn about data subject rights, data processing agreements, and our comprehensive compliance measures for EU data protection.',
+  keywords: [
+    'GDPR compliance',
+    'data subject rights',
+    'DPA',
+    'data processing agreement',
+    'EU data protection',
+    'privacy rights',
+    'data portability',
+    'right to erasure'
+  ],
   robots: {
-    index: false,  // Prevent indexing of GDPR page
+    index: false,  // Prevent indexing - legal page doesn't drive traffic
     follow: true,
     noarchive: true,
   },
   alternates: {
-    canonical: 'https://synqall.com/', // Point canonical to homepage to avoid GDPR being primary
+    canonical: 'https://synqall.com/gdpr',
+  },
+  openGraph: {
+    title: 'GDPR Compliance - SynQall',
+    description: 'Full GDPR compliance with data subject rights and processing agreements',
+    url: 'https://synqall.com/gdpr',
+    type: 'website',
   },
 };
 

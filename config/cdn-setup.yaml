@@ -1,0 +1,135 @@
+# CDN Configuration for CallIQ
+# This file contains the recommended CDN settings for production deployment
+
+# Cloudflare Configuration (Recommended)
+cloudflare:
+  # Page Rules for optimal caching
+  page_rules:
+    - pattern: "*.js"
+      cache_level: aggressive
+      browser_cache_ttl: 31536000
+      edge_cache_ttl: 31536000
+      cache_on_cookie: false
+
+    - pattern: "*.css"
+      cache_level: aggressive
+      browser_cache_ttl: 31536000
+      edge_cache_ttl: 31536000
+      cache_on_cookie: false
+
+    - pattern: "/_next/static/*"
+      cache_level: aggressive
+      browser_cache_ttl: 31536000
+      edge_cache_ttl: 31536000
+      cache_on_cookie: false
+
+    - pattern: "/api/*"
+      cache_level: bypass
+      ssl: full
+
+    - pattern: "*.webp"
+      cache_level: aggressive
+      browser_cache_ttl: 86400
+      edge_cache_ttl: 604800
+      polish: lossy
+      webp: true
+
+    - pattern: "*.png"
+      cache_level: aggressive
+      browser_cache_ttl: 86400
+      edge_cache_ttl: 604800
+      polish: lossless
+      webp: true
+
+    - pattern: "*.jpg"
+      cache_level: aggressive
+      browser_cache_ttl: 86400
+      edge_cache_ttl: 604800
+      polish: lossy
+      webp: true
+
+  # Performance Settings
+  performance:
+    auto_minify:
+      javascript: true
+      css: true
+      html: false # Don't minify HTML for Next.js
+
+    brotli: true
+    rocket_loader: false # Disable for Next.js compatibility
+    http2_push: true
+    http3: true
+
+  # Security Settings
+  security:
+    ssl: full_strict
+    always_use_https: true
+    automatic_https_rewrites: true
+    hsts:
+      enabled: true
+      max_age: 31536000
+      include_subdomains: true
+      preload: true
+
+  # Network Settings
+  network:
+    websockets: true
+    ip_geolocation: true
+    ipv6: true
+    pseudo_ipv4: off
+
+  # Caching Settings
+  caching:
+    browser_cache_ttl: 14400 # 4 hours default
+    challenge_ttl: 3600
+    max_upload: 500 # MB
+
+# Alternative: AWS CloudFront Configuration
+cloudfront:
+  behaviors:
+    - path_pattern: "/_next/static/*"
+      cache_policy:
+        default_ttl: 86400
+        max_ttl: 31536000
+        compress: true
+
+    - path_pattern: "/api/*"
+      cache_policy:
+        default_ttl: 0
+        max_ttl: 0
+        forward_headers:
+          - "Authorization"
+          - "Content-Type"
+          - "X-Organization-ID"
+
+    - path_pattern: "*.css"
+      cache_policy:
+        default_ttl: 86400
+        max_ttl: 31536000
+        compress: true
+
+    - path_pattern: "*.js"
+      cache_policy:
+        default_ttl: 86400
+        max_ttl: 31536000
+        compress: true
+
+  origins:
+    - domain_name: api.calliq.ai
+      custom_origin_config:
+        protocol_policy: https-only
+        ssl_protocols:
+          - TLSv1.2
+          - TLSv1.3
+
+# Environment Variables for Next.js
+environment_variables:
+  production:
+    CDN_URL: "https://cdn.calliq.ai"
+    NEXT_PUBLIC_CDN_URL: "https://cdn.calliq.ai"
+    BUILD_ID: "${GIT_COMMIT_HASH}"
+
+  staging:
+    CDN_URL: "https://staging-cdn.calliq.ai"
+    NEXT_PUBLIC_CDN_URL: "https://staging-cdn.calliq.ai"
+    BUILD_ID: "${GIT_COMMIT_HASH}-staging"

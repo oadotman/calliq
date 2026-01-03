@@ -1,3 +1,48 @@
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Data Security | SynQall',
+  description: 'Enterprise-grade security for your sales data. Learn about our encryption, compliance certifications, and comprehensive security measures protecting your information.',
+  keywords: [
+    'data security',
+    'enterprise security',
+    'encryption',
+    'SOC 2 compliance',
+    'ISO 27001',
+    'GDPR security',
+    'data protection',
+    'security measures',
+    'SynQall security'
+  ],
+  alternates: {
+    canonical: 'https://synqall.com/security',
+  },
+  openGraph: {
+    title: 'Enterprise Security - SynQall',
+    description: 'Bank-level encryption and security for your sales call data',
+    url: 'https://synqall.com/security',
+    type: 'website',
+    images: [
+      {
+        url: 'https://synqall.com/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'SynQall Security - Enterprise-grade data protection',
+      }
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Data Security - SynQall',
+    description: 'Enterprise-grade security and compliance for your sales data',
+    images: ['https://synqall.com/og-image.png'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+};
+
 export default function DataSecurityPage() {
   return (
     <div className="max-w-4xl mx-auto p-6 py-12 space-y-8">

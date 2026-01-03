@@ -26,11 +26,25 @@ const nextConfig = {
     return config;
   },
 
-  // Optimize images
+  // Optimize images with CDN
   images: {
     formats: ['image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    // Enable CDN for production
+    ...(process.env.NODE_ENV === 'production' && {
+      loader: 'custom',
+      loaderFile: './lib/cdn/image-loader.js',
+    }),
+  },
+
+  // CDN and caching configuration
+  assetPrefix: process.env.CDN_URL || '',
+
+  // Static file caching
+  generateBuildId: async () => {
+    // Use git commit hash or timestamp for cache busting
+    return process.env.BUILD_ID || Date.now().toString();
   },
 
   // Production-ready optimizations
@@ -147,6 +161,34 @@ const nextConfig = {
           {
             key: 'X-Robots-Tag',
             value: 'noindex, nofollow'
+          }
+        ],
+      },
+      // Aggressive caching for static assets
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable'
+          }
+        ],
+      },
+      {
+        source: '/fonts/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable'
+          }
+        ],
+      },
+      {
+        source: '/:path(favicon.ico|robots.txt|sitemap.xml)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, s-maxage=86400'
           }
         ],
       },

@@ -1,6 +1,5 @@
-"use client";
-
-import { useState, useEffect } from "react";
+import { Metadata } from "next";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,190 +8,85 @@ import {
   Clock,
   Zap,
   Users,
-  TrendingUp,
   Shield,
   ArrowRight,
   Play,
   X,
   Check,
-  DollarSign,
-  Target,
-  AlertCircle,
-  Star,
-  ChevronDown,
-  ChevronUp,
   Sparkles,
   FileText,
   BarChart3,
   Folder,
-  MessageSquare,
   Award,
-  Menu,
 } from "lucide-react";
-import Link from "next/link";
-import { getPublicPlans } from "@/lib/pricing";
-import { ThemeToggle } from "@/components/ThemeToggle";
+
+// Client Components
+import { Navigation } from "@/components/landing/Navigation";
+import { ROICalculator } from "@/components/landing/ROICalculator";
+import { PricingSection } from "@/components/landing/PricingSection";
+import { FAQSection } from "@/components/landing/FAQSection";
+import { StickyCTA } from "@/components/landing/StickyCTA";
+
+export const metadata: Metadata = {
+  title: "SynQall - AI-Powered CRM Data Entry Automation for Sales Teams",
+  description: "Transform sales calls into CRM-ready data instantly with AI. Save 15+ minutes per call. Upload audio, get transcripts, extract key insights. No CRM integration required. Try free!",
+  keywords: [
+    "CRM automation",
+    "sales call transcription",
+    "AI data entry",
+    "sales productivity",
+    "call recording software",
+    "CRM data extraction",
+    "sales automation tool",
+    "call analytics",
+    "AssemblyAI transcription",
+    "OpenAI integration",
+    "automated CRM updates",
+    "sales efficiency",
+    "multi-party call support",
+    "enterprise sales tools"
+  ],
+  alternates: {
+    canonical: 'https://synqall.com',
+  },
+  openGraph: {
+    title: "SynQall - AI-Powered CRM Data Entry Automation",
+    description: "Upload sales calls and get CRM-ready data instantly. Save 15+ minutes per call with AI-powered transcription and data extraction.",
+    url: 'https://synqall.com',
+    siteName: 'SynQall',
+    type: 'website',
+    locale: 'en_US',
+    images: [
+      {
+        url: 'https://synqall.com/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'SynQall - CRM Data Entry Automation',
+      }
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'SynQall - AI-Powered CRM Data Entry Automation',
+    description: 'Transform sales calls into CRM-ready data instantly. Save 15+ minutes per call.',
+    images: ['https://synqall.com/og-image.png'],
+    creator: '@synqall',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    'max-video-preview': -1,
+    'max-image-preview': 'large',
+    'max-snippet': -1,
+  },
+};
 
 export default function LandingPage() {
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [reps, setReps] = useState(5);
-  const [callsPerWeek, setCallsPerWeek] = useState(10);
-  const [minsPerCall, setMinsPerCall] = useState(15);
-  const [showStickyCta, setShowStickyCta] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const plans = getPublicPlans();
-
-  // Show sticky CTA after scrolling past hero
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollY = window.scrollY;
-      setShowStickyCta(scrollY > 600);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  // ROI Calculator Logic
-  const weeklyHours = (reps * callsPerWeek * minsPerCall) / 60;
-  const monthlyHours = weeklyHours * 4;
-  const savedHours = monthlyHours * 0.9; // 90% time saved
-  const monthlySavings = savedHours * 75; // $75/hr average
-
-  const toggleFaq = (index: number) => {
-    setOpenFaq(openFaq === index ? null : index);
-  };
-
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800">
-        <div className="container mx-auto px-4 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-violet-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <Zap className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-slate-900 dark:text-slate-100">SynQall</span>
-            </div>
+      <Navigation />
 
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800"
-              aria-label="Toggle menu"
-            >
-              {mobileMenuOpen ? (
-                <X className="w-6 h-6 text-slate-900 dark:text-slate-100" />
-              ) : (
-                <Menu className="w-6 h-6 text-slate-900 dark:text-slate-100" />
-              )}
-            </button>
-
-            {/* Desktop Menu */}
-            <div className="hidden md:flex items-center gap-6">
-              <a href="#features" className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
-                Features
-              </a>
-              <a href="#security" className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
-                Security
-              </a>
-              <Link href="/pricing" className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
-                Pricing
-              </Link>
-              <a href="#faq" className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
-                FAQ
-              </a>
-              <Link href="/partners" className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
-                Partners
-              </Link>
-              <Link href="/blog" className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
-                Blog
-              </Link>
-              <ThemeToggle />
-              <Link href="/login">
-                <Button variant="ghost" className="text-sm font-medium">
-                  Sign In
-                </Button>
-              </Link>
-              <Link href="/signup">
-                <Button className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white shadow-lg">
-                  Get Started
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Menu Dropdown */}
-        {mobileMenuOpen && (
-          <div className="md:hidden bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800">
-            <div className="px-4 py-4 space-y-3">
-              <a
-                href="#features"
-                className="block px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Features
-              </a>
-              <a
-                href="#security"
-                className="block px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Security
-              </a>
-              <Link
-                href="/pricing"
-                className="block px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Pricing
-              </Link>
-              <a
-                href="#faq"
-                className="block px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                FAQ
-              </a>
-              <Link
-                href="/partners"
-                className="block px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Partners
-              </Link>
-              <Link
-                href="/blog"
-                className="block px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Blog
-              </Link>
-              <div className="pt-3 pb-1 px-4">
-                <ThemeToggle />
-              </div>
-              <div className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
-                <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="ghost" className="w-full justify-center text-sm font-medium">
-                    Sign In
-                  </Button>
-                </Link>
-                <Link href="/signup" onClick={() => setMobileMenuOpen(false)}>
-                  <Button className="w-full justify-center bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white shadow-lg">
-                    Get Started
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
-      </nav>
-
-      {/* Hero Section */}
+      {/* Hero Section - Server Rendered */}
       <section className="pt-32 pb-20 px-4 lg:px-8 bg-gradient-to-br from-slate-50 via-white to-violet-50/30 dark:from-slate-950 dark:via-slate-900 dark:to-violet-950/30">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center space-y-8">
@@ -210,8 +104,6 @@ export default function LandingPage() {
               Upload your sales call → SynQall transcribes it → 60 seconds extraction → Perfect CRM-ready data.<br />
               <span className="font-semibold text-slate-900 dark:text-slate-100">Zero IT involvement. Just accurate data.</span>
             </p>
-
-            {/* Social Proof Indicators */}
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link href="/signup">
@@ -601,7 +493,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Enhanced ROI Calculator - Moved to prominent position */}
+      {/* Enhanced ROI Calculator - Client Component */}
       <section className="py-20 px-4 lg:px-8 bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950 dark:to-purple-950">
         <div className="container mx-auto max-w-4xl">
           <div className="text-center mb-12">
@@ -615,75 +507,7 @@ export default function LandingPage() {
               Enter your team size and call volume to see how much time and money SynQall saves you monthly
             </p>
           </div>
-          <Card className="border-2 border-violet-200 dark:border-violet-700 shadow-2xl bg-white dark:bg-slate-950">
-            <CardContent className="p-8">
-              <div className="grid md:grid-cols-3 gap-6 mb-8">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                    Number of Reps
-                  </label>
-                  <input
-                    type="number"
-                    value={reps}
-                    onChange={(e) => setReps(Number(e.target.value))}
-                    className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 rounded-lg focus:border-violet-500 focus:outline-none font-semibold text-slate-900 dark:text-slate-100 text-center text-xl"
-                    min="1"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                    Calls per Rep per Week
-                  </label>
-                  <input
-                    type="number"
-                    value={callsPerWeek}
-                    onChange={(e) => setCallsPerWeek(Number(e.target.value))}
-                    className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 rounded-lg focus:border-violet-500 focus:outline-none font-semibold text-slate-900 dark:text-slate-100 text-center text-xl"
-                    min="1"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                    Minutes per Call (Manual)
-                  </label>
-                  <input
-                    type="number"
-                    value={minsPerCall}
-                    onChange={(e) => setMinsPerCall(Number(e.target.value))}
-                    className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 rounded-lg focus:border-violet-500 focus:outline-none font-semibold text-slate-900 dark:text-slate-100 text-center text-xl"
-                    min="1"
-                  />
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-br from-violet-600 to-purple-600 rounded-2xl p-8 text-white">
-                <div className="grid md:grid-cols-3 gap-6 text-center mb-8">
-                  <div className="p-4 bg-white/10 rounded-xl backdrop-blur">
-                    <div className="text-5xl font-bold mb-2">{monthlyHours.toFixed(0)}</div>
-                    <p className="text-violet-100 text-sm font-medium">Current Hours/Month</p>
-                  </div>
-                  <div className="p-4 bg-white/10 rounded-xl backdrop-blur">
-                    <div className="text-5xl font-bold mb-2 text-yellow-300">{savedHours.toFixed(0)}</div>
-                    <p className="text-violet-100 text-sm font-medium">Hours Saved/Month</p>
-                  </div>
-                  <div className="p-4 bg-white/10 rounded-xl backdrop-blur">
-                    <div className="text-5xl font-bold mb-2 text-emerald-300">${monthlySavings.toLocaleString()}</div>
-                    <p className="text-violet-100 text-sm font-medium">Saved Monthly</p>
-                  </div>
-                </div>
-
-                <div className="bg-white/10 rounded-xl p-6 backdrop-blur">
-                  <p className="text-center text-xl font-semibold mb-2">
-                    🎯 SynQall reduces {monthlyHours.toFixed(0)} hours to just {(monthlyHours - savedHours).toFixed(0)} hours per month
-                  </p>
-                  <p className="text-center text-lg text-violet-100">
-                    That's <span className="text-yellow-300 font-bold">{savedHours.toFixed(0)} hours</span> your team can spend selling instead of data entry,
-                    worth <span className="text-emerald-300 font-bold">${monthlySavings.toLocaleString()}</span> monthly
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <ROICalculator />
         </div>
       </section>
 
@@ -974,163 +798,11 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section id="pricing" className="py-20 px-4 lg:px-8 bg-slate-50 dark:bg-slate-900">
-        <div className="container mx-auto max-w-7xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-slate-100 mb-6">
-              Simple, Transparent Pricing
-            </h2>
-            <p className="text-xl text-slate-600 dark:text-slate-400 mb-8">
-              Start free. Scale as you grow.
-            </p>
-            <div className="inline-flex items-center gap-4 p-1 bg-white dark:bg-slate-800 rounded-full shadow-md">
-              <button
-                onClick={() => setBillingCycle("monthly")}
-                className={`px-6 py-2 rounded-full font-semibold transition-all ${
-                  billingCycle === "monthly"
-                    ? "bg-violet-600 text-white shadow-lg"
-                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
-                }`}
-              >
-                Monthly
-              </button>
-              <button
-                onClick={() => setBillingCycle("annual")}
-                className={`px-6 py-2 rounded-full font-semibold transition-all ${
-                  billingCycle === "annual"
-                    ? "bg-violet-600 text-white shadow-lg"
-                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
-                }`}
-              >
-                Annual
-                <span className="ml-2 text-xs px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 rounded-full">
-                  Save 17%
-                </span>
-              </button>
-            </div>
-          </div>
-          <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-6">
-            {plans.map((plan) => (
-              <Card
-                key={plan.id}
-                className={`relative ${
-                  plan.isPopular
-                    ? "border-2 border-violet-200 dark:border-violet-700 shadow-2xl shadow-violet-500/20"
-                    : "border-2 border-slate-200 dark:border-slate-700"
-                }`}
-              >
-                {plan.isPopular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                    <Badge className="bg-gradient-to-r from-violet-600 to-purple-600 text-white px-4 py-1.5">
-                      Most Popular
-                    </Badge>
-                  </div>
-                )}
-                <CardHeader className="text-center pb-8">
-                  <CardTitle className="text-2xl mb-2">{plan.name}</CardTitle>
-                  <div className="mb-4">
-                    {plan.price === 0 ? (
-                      <div className="text-4xl font-bold text-slate-900 dark:text-slate-100">
-                        {plan.priceDisplay}
-                      </div>
-                    ) : (
-                      <>
-                        <div className="text-4xl font-bold text-slate-900 dark:text-slate-100">
-                          ${billingCycle === "monthly" ? plan.price : Math.round(plan.priceAnnual / 12)}
-                        </div>
-                        <div className="text-sm text-slate-600 dark:text-slate-400">
-                          {billingCycle === "monthly" ? "/month" : "/month, billed annually"}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  <Link href={plan.id === "free" ? "/signup" : "/signup"}>
-                    <Button
-                      className={`w-full ${
-                        plan.isPopular
-                          ? "bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white"
-                          : "bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 text-white"
-                      }`}
-                    >
-                      {plan.cta}
-                    </Button>
-                  </Link>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {plan.features.map((feature, idx) => (
-                    <div key={idx} className="flex items-start gap-2">
-                      <Check className="w-5 h-5 text-emerald-600 dark:text-emerald-500 flex-shrink-0 mt-0.5" />
-                      <p className="text-sm text-slate-600 dark:text-slate-400">{feature}</p>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Pricing Section - Client Component */}
+      <PricingSection />
 
-      {/* TODO: Add real customer testimonials with verified names and LinkedIn profiles */}
-
-      {/* FAQ */}
-      <section id="faq" className="py-20 px-4 lg:px-8 bg-white dark:bg-slate-950">
-        <div className="container mx-auto max-w-3xl">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-slate-100 mb-6">
-              Frequently Asked Questions
-            </h2>
-          </div>
-          <div className="space-y-4">
-            {[
-              {
-                q: "Why not just use Gong/Chorus?",
-                a: "They're full coaching platforms. Great for large teams, but heavy to implement. SynQall is the fastest path to accurate CRM data.",
-              },
-              {
-                q: "Why not use ChatGPT?",
-                a: "You'll spend 8–10 minutes formatting fields. SynQall formats for you automatically with 1-time setup.",
-              },
-              {
-                q: "How accurate is it?",
-                a: "High accuracy for clear audio—much better than rushed manual notes. The accuracy improves when you add your own notes.",
-              },
-              {
-                q: "Is copy-paste really better than API integration?",
-                a: "If you want speed, flexibility, and no IT involvement—yes. You can be live in 5 minutes with any CRM, including custom ones.",
-              },
-              {
-                q: "Is my data secure?",
-                a: "Encrypted in transit and at rest, auto-delete options, no training on your data, and enterprise agreements available.",
-              },
-              {
-                q: "Can I include my own notes?",
-                a: "Yes. After the transcript is generated, you can optionally paste any typed notes you took during or after the call. SynQall uses both sources together to improve extraction accuracy. This step is 100% optional.",
-              },
-            ].map((faq, idx) => (
-              <Card
-                key={idx}
-                className="border-2 border-slate-200 dark:border-slate-700 cursor-pointer hover:border-violet-300 dark:hover:border-violet-600 transition-colors"
-                onClick={() => toggleFaq(idx)}
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-lg">{faq.q}</h3>
-                    {openFaq === idx ? (
-                      <ChevronUp className="w-5 h-5 text-violet-600 dark:text-violet-400 flex-shrink-0" />
-                    ) : (
-                      <ChevronDown className="w-5 h-5 text-slate-400 dark:text-slate-500 flex-shrink-0" />
-                    )}
-                  </div>
-                  {openFaq === idx && (
-                    <p className="mt-4 text-slate-600 dark:text-slate-400 leading-relaxed">{faq.a}</p>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* FAQ - Client Component */}
+      <FAQSection />
 
       {/* Who It's For */}
       <section className="py-20 px-4 lg:px-8 bg-slate-50 dark:bg-slate-900">
@@ -1210,7 +882,7 @@ export default function LandingPage() {
               </Button>
             </Link>
             <Link href="https://youtu.be/NXpuKIH28Nk" target="_blank" rel="noopener noreferrer">
-              <Button size="lg" variant="outline" className="border-2 border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 px-8 py-6 text-lg font-semibold rounded-xl">
+              <Button size="lg" variant="outline" className="border-2 border-white text-white hover:bg-white/10 px-8 py-6 text-lg font-semibold rounded-xl">
                 <Play className="w-5 h-5 mr-2" />
                 Watch Demo
               </Button>
@@ -1267,9 +939,9 @@ export default function LandingPage() {
             <div>
               <h3 className="font-bold mb-4">Company</h3>
               <ul className="space-y-2 text-sm text-slate-400">
-                <li><a href="#" className="hover:text-white transition-colors">About</a></li>
+                <li><Link href="/about" className="hover:text-white transition-colors">About</Link></li>
                 <li><Link href="/blog" className="hover:text-white transition-colors">Blog</Link></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
+                <li><Link href="/contact" className="hover:text-white transition-colors">Contact</Link></li>
               </ul>
             </div>
             <div>
@@ -1294,32 +966,9 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
-      {/* Sticky CTA */}
-      {showStickyCta && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-gradient-to-r from-violet-600 to-purple-600 shadow-2xl transform transition-transform duration-300">
-          <div className="container mx-auto max-w-4xl flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="text-white">
-              <p className="font-bold text-lg">Try Free (3 Calls Included)</p>
-              <p className="text-sm text-violet-100">No card required. Setup in 5 minutes.</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Link href="/signup">
-                <Button size="lg" className="bg-white text-violet-600 hover:bg-slate-100 font-bold shadow-xl">
-                  Try It Free — No Card Required
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
-              </Link>
-              <button
-                onClick={() => setShowStickyCta(false)}
-                className="p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
-                aria-label="Close sticky CTA"
-              >
-                <X className="w-5 h-5 text-white" />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
+      {/* Sticky CTA - Client Component */}
+      <StickyCTA />
     </div>
   );
 }

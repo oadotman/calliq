@@ -1,3 +1,33 @@
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Privacy Policy | SynQall',
+  description: 'Learn how SynQall protects your data. Our privacy policy explains data collection, usage, and your rights under GDPR and data protection laws.',
+  keywords: [
+    'privacy policy',
+    'data protection',
+    'GDPR compliance',
+    'data privacy',
+    'personal information',
+    'SynQall privacy',
+    'data security'
+  ],
+  alternates: {
+    canonical: 'https://synqall.com/privacy',
+  },
+  openGraph: {
+    title: 'Privacy Policy - SynQall',
+    description: 'How we protect your data and respect your privacy',
+    url: 'https://synqall.com/privacy',
+    type: 'website',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    noarchive: false,
+  },
+};
+
 export default function PrivacyPolicyPage() {
   return (
     <div className="max-w-4xl mx-auto p-6 py-12 space-y-8">

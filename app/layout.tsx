@@ -106,13 +106,14 @@ export default function RootLayout({
     "@type": "WebSite",
     "name": "SynQall",
     "url": "https://synqall.com",
-    "potentialAction": {
-      "@type": "SearchAction",
-      "target": {
-        "@type": "EntryPoint",
-        "urlTemplate": "https://synqall.com/search?q={search_term_string}"
-      },
-      "query-input": "required name=search_term_string"
+    "description": "AI-powered CRM data entry automation platform that transforms sales calls into CRM-ready data instantly",
+    "publisher": {
+      "@type": "Organization",
+      "name": "SynQall",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://synqall.com/logo.png"
+      }
     },
     "sameAs": [
       "https://twitter.com/synqall",
@@ -129,9 +130,10 @@ export default function RootLayout({
     "description": "AI-powered CRM data entry automation platform",
     "contactPoint": {
       "@type": "ContactPoint",
-      "telephone": "+1-support-number",
+      "email": "support@synqall.com",
       "contactType": "Customer Support",
-      "availableLanguage": "English"
+      "availableLanguage": ["English"],
+      "url": "https://synqall.com/contact"
     }
   };
 

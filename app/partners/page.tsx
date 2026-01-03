@@ -3,9 +3,7 @@
 // Main landing page for the SynQall Partner Program
 // =====================================================
 
-'use client';
-
-import { useState, useEffect } from 'react';
+import { Metadata } from 'next';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,28 +19,58 @@ import {
   HeartHandshake,
   Rocket
 } from 'lucide-react';
+import { EarningsAnimation } from '@/components/partners/EarningsAnimation';
+
+export const metadata: Metadata = {
+  title: "Partner Program - Earn 25-30% Recurring Commission | SynQall",
+  description: "Join SynQall's Partner Program and earn 25-30% recurring commission for 12 months. Perfect for CRM consultants, sales coaches, and RevOps professionals. Apply today!",
+  keywords: [
+    "synqall partner program",
+    "referral program",
+    "affiliate program",
+    "crm consultant partnership",
+    "sales software affiliate",
+    "recurring commission",
+    "partner earnings",
+    "sales technology partner",
+    "revops consultant program",
+    "fractional sales leader program"
+  ],
+  alternates: {
+    canonical: 'https://synqall.com/partners',
+  },
+  openGraph: {
+    title: "SynQall Partner Program - Earn 25-30% Recurring Commission",
+    description: "Help sales teams save 15-20 hours/week while earning generous recurring commissions. Join our partner program today!",
+    url: 'https://synqall.com/partners',
+    siteName: 'SynQall',
+    type: 'website',
+    images: [
+      {
+        url: 'https://synqall.com/og-partners.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'SynQall Partner Program',
+      }
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "SynQall Partner Program - Earn Recurring Commission",
+    description: "Help sales teams automate CRM data entry. Earn 25-30% recurring commission for 12 months.",
+    images: ['https://synqall.com/og-partners.jpg'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+    },
+  },
+};
 
 export default function PartnerLandingPage() {
-  const [averageEarnings, setAverageEarnings] = useState(0);
-
-  useEffect(() => {
-    // Calculate average earnings animation
-    const target = 370;
-    const increment = target / 30;
-    let current = 0;
-
-    const timer = setInterval(() => {
-      current += increment;
-      if (current >= target) {
-        current = target;
-        clearInterval(timer);
-      }
-      setAverageEarnings(Math.round(current));
-    }, 50);
-
-    return () => clearInterval(timer);
-  }, []);
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
       {/* Hero Section */}
@@ -96,10 +124,7 @@ export default function PartnerLandingPage() {
               <div className="text-4xl font-bold text-white">90 Days</div>
               <div className="mt-2 text-blue-100">Cookie Duration</div>
             </div>
-            <div>
-              <div className="text-4xl font-bold text-white">${averageEarnings}+</div>
-              <div className="mt-2 text-blue-100">Avg Monthly Earnings*</div>
-            </div>
+            <EarningsAnimation />
           </div>
           <p className="mt-4 text-xs text-center text-blue-100">
             *Based on partners referring 10 customers
