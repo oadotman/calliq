@@ -226,8 +226,22 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark antialiased" suppressHydrationWarning>
       <head>
-        <link rel="canonical" href="https://synqall.com" />
+        {/* CRITICAL: Force canonical to prevent duplicate content issues */}
+        <link rel="canonical" href="https://synqall.com/" />
         <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+
+        {/* Domain verification and ownership - CRITICAL FOR CANONICAL FIX */}
+        <meta name="google-site-verification" content="YOUR_VERIFICATION_CODE" />
+        <meta name="author" content="SynQall - Nikola Innovations Limited" />
+        <meta name="copyright" content="© 2025 SynQall (synqall.com). All rights reserved. Original content owner." />
+        <meta name="publisher" content="Nikola Innovations Limited" />
+        <meta name="original-source" content="https://synqall.com" />
+        <meta name="content-owner" content="SynQall - synqall.com" />
+
+        {/* Prevent content scraping */}
+        <meta name="og:site_name" content="SynQall" />
+        <meta property="og:determiner" content="" />
+
         <link rel="shortcut icon" href="/favicon.ico" />
         <link rel="icon" type="image/x-icon" href="/favicon.ico" />
         <link rel="icon" href="/favicon.ico" sizes="any" />
