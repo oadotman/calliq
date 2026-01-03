@@ -26,12 +26,13 @@ const callQueue = new Bull('call-processing', REDIS_URL, {
   },
 });
 
-// Process jobs
-callQueue.process(async (job) => {
+// Process jobs - handle all job types
+callQueue.process('*', async (job) => {
   const { callId, userId, fileUrl, fileName } = job.data;
 
   console.log(`[Worker] Processing call ${callId} for user ${userId}`);
   console.log(`[Worker] File: ${fileName}`);
+  console.log(`[Worker] Job type: ${job.name || 'default'}`);
 
   try {
     // Call the processing API
