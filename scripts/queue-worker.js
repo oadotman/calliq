@@ -35,7 +35,7 @@ callQueue.process(async (job) => {
 
   try {
     // Call the processing API
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://synqall.com';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://synqall.com';
     const response = await fetch(`${baseUrl}/api/calls/${callId}/process`, {
       method: 'POST',
       headers: {

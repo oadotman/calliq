@@ -194,41 +194,35 @@ export async function POST(req: NextRequest) {
         lastError = queueError;
 
         // Fallback to direct processing with retries
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://synqall.com';
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://synqall.com';
         const processUrl = `${baseUrl}/api/calls/${callData.id}/process`;
 
-        for (let attempt = 0; attempt < 3; attempt++) {
-          try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        // Single attempt with proper timeout
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second health check
 
-            const processResponse = await fetch(processUrl, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'x-internal-processing': 'true',
-              },
-              signal: controller.signal,
-            });
+          const processResponse = await fetch(processUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-internal-processing': 'true',
+            },
+            signal: controller.signal,
+          });
 
-            clearTimeout(timeoutId);
+          clearTimeout(timeoutId);
 
-            if (!processResponse.ok) {
-              throw new Error(`Direct processing failed: ${processResponse.status}`);
-            }
-
+          if (processResponse.ok) {
             processingStarted = true;
-            console.log('✅ Fallback: Direct processing started for:', callData.id);
-            break;
-
-          } catch (directError) {
-            lastError = directError;
-            console.error(`Direct processing attempt ${attempt + 1} failed:`, directError.message);
-
-            if (attempt < 2) {
-              await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
-            }
+            console.log('✅ Fallback: Direct processing initiated for:', callData.id);
+          } else {
+            throw new Error(`Direct processing endpoint returned: ${processResponse.status}`);
           }
+
+        } catch (directError) {
+          lastError = directError;
+          console.error('Direct processing fallback failed:', directError.message);
         }
       }
 

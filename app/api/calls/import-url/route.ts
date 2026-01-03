@@ -443,49 +443,90 @@ export async function POST(req: NextRequest) {
     const shouldAutoTranscribe = userPreferences?.auto_transcribe ?? true; // Default to true
 
     if (shouldAutoTranscribe) {
-      // Trigger background processing directly (no Inngest needed)
+      console.log('🚀 Starting call processing:', callData.id);
+
+      // Try to start processing synchronously with proper error handling
+      let processingStarted = false;
+      let lastError = null;
+
+      // First try queue system
       try {
-        console.log('🚀 Triggering background processing for call:', callData.id);
+        const { enqueueCallProcessing } = await import('@/lib/queue/call-processor');
 
-        // Update call status to processing
-        await supabase
-          .from('calls')
-          .update({
-            status: 'processing',
-          })
-          .eq('id', callData.id);
+        const processingJob = {
+          callId: callData.id,
+          userId: userId,
+          organizationId: callData.organization_id,
+          fileUrl: callData.file_url,
+          fileName: callData.file_name,
+          duration: 0, // Duration will be detected during processing
+          metadata: {
+            customerName: callData.customer_name,
+            importSource: 'url',
+            platform: platform
+          }
+        };
 
-        // Call processing endpoint asynchronously (fire and forget)
-        const processUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/calls/${callData.id}/process`;
+        await enqueueCallProcessing(processingJob);
+        processingStarted = true;
+        console.log('✅ Call enqueued for processing:', callData.id);
 
-        // Use fetch without awaiting to trigger background processing
-        // Use Connection: close to avoid chunked encoding HTTP parser issues
-        fetch(processUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-internal-processing': 'true',
-            'Connection': 'close',
-          },
-        }).catch((err) => {
-          // Log but don't fail - processing will continue in background
-          console.error('Failed to trigger processing (non-fatal):', err.message);
-        });
+      } catch (queueError) {
+        console.error('Queue processing failed, trying direct processing:', queueError);
+        lastError = queueError;
 
-        console.log('✅ Background processing triggered for call:', callData.id);
+        // Fallback to direct processing with retries
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://synqall.com';
+        const processUrl = `${baseUrl}/api/calls/${callData.id}/process`;
 
-      } catch (error) {
-        console.error('Failed to trigger processing:', error);
+        // Single attempt with proper timeout
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second health check
+
+          const processResponse = await fetch(processUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-internal-processing': 'true',
+            },
+            signal: controller.signal,
+          });
+
+          clearTimeout(timeoutId);
+
+          if (processResponse.ok) {
+            processingStarted = true;
+            console.log('✅ Fallback: Direct processing initiated for:', callData.id);
+          } else {
+            throw new Error(`Direct processing endpoint returned: ${processResponse.status}`);
+          }
+
+        } catch (directError) {
+          lastError = directError;
+          console.error('Direct processing fallback failed:', directError.message);
+        }
+      }
+
+      // If processing couldn't be started, update status to failed
+      if (!processingStarted) {
+        console.error('❌ All processing attempts failed:', lastError);
 
         await supabase
           .from('calls')
           .update({
             status: 'failed',
-            assemblyai_error: error instanceof Error
-              ? error.message
-              : 'Failed to start processing',
+            assemblyai_error: 'Processing unavailable. Please try again later or use manual transcription.',
           })
           .eq('id', callData.id);
+
+        // Still return success for upload, but indicate processing failed
+        return NextResponse.json({
+          success: true,
+          call: callData,
+          message: 'Import completed but automatic processing failed. Please start transcription manually.',
+          processingFailed: true,
+        });
       }
     } else {
       console.log('Auto-transcribe disabled, leaving call in uploaded state');

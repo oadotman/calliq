@@ -72,63 +72,80 @@ export async function POST(
       // Trigger processing with retry logic
       const processUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/calls/${callId}/process`;
 
-      // Retry logic with exponential backoff
-      let processingStarted = false;
+      // Smart fire-and-forget: Just verify the endpoint is reachable
+      let processingInitiated = false;
       let lastError = null;
 
-      for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        // Quick health check with short timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second health check
+
+        const response = await fetch(processUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-internal-processing': 'true',
+          },
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (response.ok) {
+          processingInitiated = true;
+          console.log('✅ Processing endpoint reached, call will process in background:', callId);
+          // Don't wait for the body or processing to complete
+        } else {
+          throw new Error(`Processing endpoint returned ${response.status}`);
+        }
+
+      } catch (error) {
+        lastError = error;
+        console.error('Failed to reach processing endpoint:', error.message);
+
+        // Try one more time with the queue directly
         try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+          const { enqueueCallProcessing } = await import('@/lib/queue/call-processor');
 
-          const response = await fetch(processUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-internal-processing': 'true',
-              'Connection': 'close',
-            },
-            signal: controller.signal,
-          });
+          const processingJob = {
+            callId: callId,
+            userId: user.id,
+            organizationId: call.organization_id,
+            fileUrl: call.file_url,
+            fileName: call.file_name,
+            duration: call.duration || 0,
+            metadata: {
+              customerName: call.customer_name,
+              templateId: call.template_id,
+            }
+          };
 
-          clearTimeout(timeoutId);
+          await enqueueCallProcessing(processingJob);
+          processingInitiated = true;
+          console.log('✅ Fallback: Enqueued to processing queue:', callId);
 
-          if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Processing endpoint returned ${response.status}: ${errorText}`);
-          }
-
-          processingStarted = true;
-          console.log('✅ Processing successfully started for call:', callId);
-          break;
-
-        } catch (error) {
-          lastError = error;
-          console.error(`Attempt ${attempt + 1} failed to start processing:`, error.message);
-
-          // If not the last attempt, wait before retrying
-          if (attempt < 2) {
-            await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt))); // Exponential backoff
-          }
+        } catch (queueError) {
+          console.error('Queue fallback also failed:', queueError.message);
         }
       }
 
-      // If all attempts failed, revert status and return error
-      if (!processingStarted) {
-        console.error('❌ All attempts to start processing failed:', lastError);
+      // If we couldn't even reach the endpoint, revert status
+      if (!processingInitiated) {
+        console.error('❌ Could not initiate processing:', lastError);
 
         // Revert status to uploaded
         await supabase
           .from('calls')
           .update({
             status: 'uploaded',
-            assemblyai_error: `Failed to start processing: ${lastError?.message || 'Unknown error'}`,
+            assemblyai_error: `Processing service unavailable. Please try again later.`,
           })
           .eq('id', callId);
 
         return NextResponse.json(
-          { error: 'Failed to start processing after 3 attempts. Please try again.' },
-          { status: 500 }
+          { error: 'Processing service is currently unavailable. Please try again in a few moments.' },
+          { status: 503 }
         );
       }
 
