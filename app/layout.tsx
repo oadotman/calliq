@@ -7,6 +7,7 @@ import { AuthLayout } from "@/components/layout/AuthLayout";
 import { AnalyticsProvider } from "@/components/providers/AnalyticsProvider";
 import { ThemeProvider } from "@/lib/theme/ThemeProvider";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { themeInitScript } from "@/lib/theme/theme-script";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -226,6 +227,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="antialiased" suppressHydrationWarning>
       <head>
+        {/* Theme initialization - must run before React hydrates */}
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+
         {/* CRITICAL: Force canonical to prevent duplicate content issues */}
         <link rel="canonical" href="https://synqall.com/" />
         <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
