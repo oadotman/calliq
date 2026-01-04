@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 
-type Theme = "light" | "dark";
+type Theme = "light" | "dark" | "system";
 
 interface ThemeContextType {
   theme: Theme;
@@ -13,14 +13,39 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // Initialize from what's already on the DOM (set by the script)
-  const [theme, setThemeState] = useState<Theme>(() => {
-    if (typeof window !== 'undefined') {
-      // Read from DOM which was set by our script
-      const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-      return currentTheme;
+  // Helper function to get system preference
+  const getSystemTheme = (): 'light' | 'dark' => {
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     }
     return 'light';
+  };
+
+  // Helper function to apply theme to DOM
+  const applyThemeToDOM = (theme: 'light' | 'dark') => {
+    const root = document.documentElement;
+    root.classList.remove('light', 'dark');
+    root.classList.add(theme);
+    root.setAttribute('data-theme', theme);
+  };
+
+  // Initialize from localStorage or system
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window !== 'undefined') {
+      // First try to get saved preference
+      try {
+        const saved = localStorage.getItem('theme') as Theme | null;
+        if (saved === 'light' || saved === 'dark' || saved === 'system') {
+          return saved;
+        }
+      } catch (e) {
+        console.warn('Failed to read theme preference:', e);
+      }
+
+      // If no saved preference, use 'system' as default
+      return 'system';
+    }
+    return 'system';
   });
 
   // Update DOM and localStorage when theme changes
@@ -28,11 +53,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setThemeState(newTheme);
 
     if (typeof window !== 'undefined') {
+      // Determine actual theme to apply
+      const actualTheme = newTheme === 'system' ? getSystemTheme() : newTheme;
+
       // Update DOM
-      const root = document.documentElement;
-      root.classList.remove('light', 'dark');
-      root.classList.add(newTheme);
-      root.setAttribute('data-theme', newTheme);
+      applyThemeToDOM(actualTheme);
 
       // Update localStorage
       try {
@@ -47,22 +72,57 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setTheme(theme === 'light' ? 'dark' : 'light');
   };
 
+  // Apply theme on mount and when it changes
+  useEffect(() => {
+    const actualTheme = theme === 'system' ? getSystemTheme() : theme;
+    applyThemeToDOM(actualTheme);
+  }, [theme]);
+
   // Sync with system changes or storage events from other tabs
   useEffect(() => {
+    // Handle storage changes from other tabs
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'theme' && e.newValue) {
         const newTheme = e.newValue as Theme;
-        if (newTheme === 'light' || newTheme === 'dark') {
+        if (newTheme === 'light' || newTheme === 'dark' || newTheme === 'system') {
           setThemeState(newTheme);
-          document.documentElement.classList.remove('light', 'dark');
-          document.documentElement.classList.add(newTheme);
+          const actualTheme = newTheme === 'system' ? getSystemTheme() : newTheme;
+          applyThemeToDOM(actualTheme);
         }
       }
     };
 
+    // Handle system theme changes
+    const handleSystemThemeChange = (e: MediaQueryListEvent) => {
+      if (theme === 'system') {
+        applyThemeToDOM(e.matches ? 'dark' : 'light');
+      }
+    };
+
     window.addEventListener('storage', handleStorageChange);
+
+    // Listen for system theme changes
+    if (window.matchMedia) {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      if (mediaQuery.addEventListener) {
+        mediaQuery.addEventListener('change', handleSystemThemeChange);
+      } else {
+        // Fallback for older browsers
+        mediaQuery.addListener(handleSystemThemeChange);
+      }
+
+      return () => {
+        window.removeEventListener('storage', handleStorageChange);
+        if (mediaQuery.removeEventListener) {
+          mediaQuery.removeEventListener('change', handleSystemThemeChange);
+        } else {
+          mediaQuery.removeListener(handleSystemThemeChange);
+        }
+      };
+    }
+
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+  }, [theme]);
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
