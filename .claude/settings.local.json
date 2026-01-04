@@ -87,7 +87,8 @@
       "Bash(cmd /c:*)",
       "Bash(del appfeaturespage.tsx)",
       "Bash(npx next build:*)",
-      "Bash(npm run test:infrastructure:*)"
+      "Bash(npm run test:infrastructure:*)",
+      "Bash(timeout /t 10 /nobreak)"
     ],
     "deny": [],
     "ask": []

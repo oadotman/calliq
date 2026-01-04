@@ -69,191 +69,64 @@ export default function AnalyticsPage() {
 
       setLoading(true); // Ensure loading is set
       try {
-        const supabase = createClient();
-
-        // Fetch all organization's calls with insights
-        const { data: callsData, error: callsError } = await supabase
-          .from('calls')
-          .select('*')
-          .eq('organization_id', organization.id)
-          .is('deleted_at', null)
-          .order('created_at', { ascending: true });
-
-        if (callsError) {
-          console.error('Error fetching calls:', callsError);
-          setLoading(false);
-          return;
+        // Fetch comprehensive analytics from the new API endpoint
+        const response = await fetch('/api/analytics/comprehensive');
+        if (!response.ok) {
+          throw new Error('Failed to fetch analytics');
         }
 
-        // Fetch all insights for keyword analysis
-        const { data: insightsData, error: insightsError } = await supabase
-          .from('call_insights')
-          .select('insight_type, insight_text')
-          .in('call_id', callsData?.map(c => c.id) || []);
+        const data = await response.json();
 
-        const calls = callsData || [];
-        const insights = insightsData || [];
-
-        // Calculate current month metrics
-        const now = new Date();
-        const currentMonthStart = startOfMonth(now);
-        const currentMonthEnd = endOfMonth(now);
-
-        const currentMonthCalls = calls.filter(call => {
-          const callDate = parseISO(call.created_at);
-          return callDate >= currentMonthStart && callDate <= currentMonthEnd;
-        });
-
-        // Calculate last month metrics for comparison
-        const lastMonthStart = startOfMonth(subMonths(now, 1));
-        const lastMonthEnd = endOfMonth(subMonths(now, 1));
-
-        const lastMonthCalls = calls.filter(call => {
-          const callDate = parseISO(call.created_at);
-          return callDate >= lastMonthStart && callDate <= lastMonthEnd;
-        });
-
-        // 1. Total Time Saved (assuming 15 min saved per call)
-        const totalTimeSaved = Math.round((currentMonthCalls.length * 15) / 60); // hours
-        const lastMonthTimeSaved = Math.round((lastMonthCalls.length * 15) / 60);
-
-        // 2. Average Sentiment (scale sentiment_score to 0-10)
-        const sentimentScores = currentMonthCalls
-          .map(c => c.sentiment_score)
-          .filter(s => s !== null && s !== undefined);
-        const avgSentiment = sentimentScores.length > 0
-          ? parseFloat((sentimentScores.reduce((a, b) => a + b, 0) / sentimentScores.length).toFixed(1))
-          : 0;
-
-        const lastMonthSentimentScores = lastMonthCalls
-          .map(c => c.sentiment_score)
-          .filter(s => s !== null && s !== undefined);
-        const lastMonthSentiment = lastMonthSentimentScores.length > 0
-          ? parseFloat((lastMonthSentimentScores.reduce((a, b) => a + b, 0) / lastMonthSentimentScores.length).toFixed(1))
-          : 0;
-
-        // 3. Active Reps (unique sales reps)
-        const uniqueReps = new Set(currentMonthCalls.map(c => c.sales_rep).filter(r => r));
-        const activeReps = uniqueReps.size;
-
-        // 4. Average Call Length (in minutes)
-        const durations = currentMonthCalls
-          .map(c => c.duration)
-          .filter(d => d !== null && d !== undefined);
-        const avgCallLength = durations.length > 0
-          ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length / 60) // convert seconds to minutes
-          : 0;
-
-        // 5. Time Saved Over Time (last 5 months)
-        const timeSavedData = [];
-        for (let i = 4; i >= 0; i--) {
-          const monthDate = subMonths(now, i);
-          const monthStart = startOfMonth(monthDate);
-          const monthEnd = endOfMonth(monthDate);
-
-          const monthCalls = calls.filter(call => {
-            const callDate = parseISO(call.created_at);
-            return callDate >= monthStart && callDate <= monthEnd;
-          });
-
-          timeSavedData.push({
-            month: format(monthDate, 'MMM'),
-            hours: Math.round((monthCalls.length * 15) / 60)
-          });
-        }
-
-        // 6. Calls by Rep (top 5)
-        const repCounts: { [key: string]: number } = {};
-        currentMonthCalls.forEach(call => {
-          if (call.sales_rep) {
-            repCounts[call.sales_rep] = (repCounts[call.sales_rep] || 0) + 1;
-          }
-        });
-
-        const callsByRepData = Object.entries(repCounts)
-          .map(([rep, calls]) => ({ rep, calls }))
-          .sort((a, b) => b.calls - a.calls)
-          .slice(0, 5);
-
-        // 7. Sentiment Distribution
-        const sentimentCounts = {
-          positive: 0,
-          neutral: 0,
-          negative: 0
+        // Transform API response to match the expected analytics format
+        const analyticsData: AnalyticsData = {
+          totalTimeSaved: Math.round(data.overview.timeSaved / 60), // Convert minutes to hours
+          avgSentiment: Math.round((data.sentiment.average + 1) * 5), // Convert -1 to 1 scale to 0-10
+          activeReps: data.overview.activeUsers,
+          avgCallLength: Math.round(data.overview.avgCallDuration / 60), // Convert seconds to minutes
+          timeSavedData: data.trends.monthly.map((m: any) => ({
+            month: m.month,
+            hours: Math.round(m.totalDuration / 60) // Convert minutes to hours
+          })),
+          callsByRepData: data.team.topPerformers.map((p: any) => ({
+            rep: p.email.split('@')[0], // Use email prefix as rep name
+            calls: p.callCount
+          })),
+          sentimentData: [
+            {
+              name: "Positive",
+              value: Math.round((data.sentiment.distribution.positive / (data.sentiment.distribution.positive + data.sentiment.distribution.neutral + data.sentiment.distribution.negative)) * 100) || 0,
+              color: "#10B981"
+            },
+            {
+              name: "Neutral",
+              value: Math.round((data.sentiment.distribution.neutral / (data.sentiment.distribution.positive + data.sentiment.distribution.neutral + data.sentiment.distribution.negative)) * 100) || 0,
+              color: "#94A3B8"
+            },
+            {
+              name: "Negative",
+              value: Math.round((data.sentiment.distribution.negative / (data.sentiment.distribution.positive + data.sentiment.distribution.neutral + data.sentiment.distribution.negative)) * 100) || 0,
+              color: "#DC2626"
+            }
+          ],
+          keywordsData: data.keywords.top.slice(0, 6).map((k: any) => ({
+            keyword: k.keyword,
+            count: k.count,
+            trend: k.count > 10 ? 'up' : k.count > 5 ? 'neutral' : 'down'
+          })),
+          lastMonthTimeSaved: 0, // Will calculate from trends if needed
+          lastMonthSentiment: 0 // Will calculate from trends if needed
         };
 
-        currentMonthCalls.forEach(call => {
-          const type = call.sentiment_type?.toLowerCase();
-          if (type === 'positive') sentimentCounts.positive++;
-          else if (type === 'negative') sentimentCounts.negative++;
-          else sentimentCounts.neutral++;
-        });
-
-        const total = currentMonthCalls.length || 1;
-        const sentimentData = [
-          {
-            name: "Positive",
-            value: Math.round((sentimentCounts.positive / total) * 100),
-            color: "#10B981"
-          },
-          {
-            name: "Neutral",
-            value: Math.round((sentimentCounts.neutral / total) * 100),
-            color: "#94A3B8"
-          },
-          {
-            name: "Negative",
-            value: Math.round((sentimentCounts.negative / total) * 100),
-            color: "#DC2626"
-          }
-        ];
-
-        // 8. Top Keywords (from insights)
-        const keywordCounts: { [key: string]: number } = {};
-
-        insights.forEach(insight => {
-          const text = insight.insight_text.toLowerCase();
-
-          // Extract common keywords/phrases
-          const keywords = [
-            { keyword: 'Pricing concerns', patterns: ['price', 'cost', 'expensive', 'budget'] },
-            { keyword: 'Integration questions', patterns: ['integrate', 'integration', 'connect', 'api'] },
-            { keyword: 'Feature requests', patterns: ['feature', 'functionality', 'capability', 'need'] },
-            { keyword: 'Support needs', patterns: ['support', 'help', 'assistance', 'issue'] },
-            { keyword: 'Competitor comparison', patterns: ['competitor', 'alternative', 'vs', 'compared'] },
-            { keyword: 'Timeline concerns', patterns: ['timeline', 'deadline', 'urgency', 'when', 'schedule'] }
-          ];
-
-          keywords.forEach(({ keyword, patterns }) => {
-            if (patterns.some(pattern => text.includes(pattern))) {
-              keywordCounts[keyword] = (keywordCounts[keyword] || 0) + 1;
-            }
-          });
-        });
-
-        const keywordsData = Object.entries(keywordCounts)
-          .map(([keyword, count]) => ({
-            keyword,
-            count,
-            trend: count > 10 ? 'up' : count > 5 ? 'neutral' : 'down'
-          }))
-          .sort((a, b) => b.count - a.count)
-          .slice(0, 6);
+        // Calculate last month metrics from trends if available
+        if (data.trends.monthly.length >= 2) {
+          const lastMonth = data.trends.monthly[data.trends.monthly.length - 2];
+          analyticsData.lastMonthTimeSaved = Math.round(lastMonth.totalDuration / 60);
+          analyticsData.lastMonthSentiment = Math.round((lastMonth.avgSentiment + 1) * 5);
+        }
 
         // Set analytics data
         if (isMounted) {
-          setAnalytics({
-            totalTimeSaved,
-            avgSentiment,
-            activeReps,
-            avgCallLength,
-            timeSavedData,
-            callsByRepData,
-            sentimentData,
-            keywordsData,
-            lastMonthTimeSaved,
-            lastMonthSentiment
-          });
+          setAnalytics(analyticsData);
           setLoading(false);
         }
       } catch (err) {

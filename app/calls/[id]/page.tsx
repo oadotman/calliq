@@ -990,7 +990,7 @@ export default function CallDetailPage() {
         <div className="flex items-center justify-center p-8 lg:p-16">
           <div className="text-center">
             <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Call Not Found</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Call Not Found</h2>
             <p className="text-gray-600 mb-6">{error || "This call does not exist or you do not have access to it."}</p>
             <Link href="/calls">
               <Button className="bg-purple-600 hover:bg-purple-700">
@@ -1165,7 +1165,7 @@ export default function CallDetailPage() {
 
           <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                 Call with {call.customer_name || "Unknown Customer"}
               </h1>
               <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
@@ -1306,7 +1306,7 @@ export default function CallDetailPage() {
           <Card className="border border-gray-200 shadow-sm">
             <CardHeader className="bg-gradient-to-r from-violet-50 to-purple-50 border-b border-gray-200">
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-xl font-bold text-gray-900">
+                <CardTitle className="flex items-center gap-2 text-xl font-bold text-gray-900 dark:text-gray-100">
                   <Users className="w-5 h-5 text-violet-600" />
                   Call Participants ({participants.length})
                 </CardTitle>
@@ -1347,7 +1347,7 @@ export default function CallDetailPage() {
 
                       {/* Participant Info */}
                       <div className="space-y-2 mb-3">
-                        <h4 className="font-semibold text-gray-900">
+                        <h4 className="font-semibold text-gray-900 dark:text-gray-100">
                           {participant.name || "Unknown"}
                         </h4>
                         {participant.email && (
@@ -1422,31 +1422,31 @@ export default function CallDetailPage() {
               {/* Overall Analytics Summary */}
               {participantAnalytics.length > 0 && (
                 <div className="mt-6 pt-6 border-t border-gray-200">
-                  <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
                     <MessageSquare className="w-4 h-4 text-violet-600" />
                     Conversation Analytics
                   </h4>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="text-center p-3 bg-gray-50 rounded-lg">
-                      <div className="text-2xl font-bold text-gray-900">
+                    <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                         {participantAnalytics.length}
                       </div>
                       <div className="text-xs text-gray-600">Active Speakers</div>
                     </div>
-                    <div className="text-center p-3 bg-gray-50 rounded-lg">
-                      <div className="text-2xl font-bold text-gray-900">
+                    <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                         {Math.round(participantAnalytics.reduce((sum, p) => sum + p.talkTime, 0) / 60)}m
                       </div>
                       <div className="text-xs text-gray-600">Total Duration</div>
                     </div>
-                    <div className="text-center p-3 bg-gray-50 rounded-lg">
-                      <div className="text-2xl font-bold text-gray-900">
+                    <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                         {participantAnalytics.reduce((sum, p) => sum + p.wordCount, 0).toLocaleString()}
                       </div>
                       <div className="text-xs text-gray-600">Total Words</div>
                     </div>
-                    <div className="text-center p-3 bg-gray-50 rounded-lg">
-                      <div className="text-2xl font-bold text-gray-900">
+                    <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                         {participantAnalytics.reduce((sum, p) => sum + p.utteranceCount, 0)}
                       </div>
                       <div className="text-xs text-gray-600">Total Utterances</div>
@@ -1511,7 +1511,7 @@ export default function CallDetailPage() {
                 <div className="flex items-center justify-between mb-2">
                   {audioLoaded ? (
                     <span className={`text-sm font-mono font-semibold transition-all duration-300 ${
-                      isPlaying ? 'text-purple-600 animate-pulse' : 'text-gray-900'
+                      isPlaying ? 'text-purple-600 animate-pulse' : 'text-gray-900 dark:text-gray-100'
                     }`}>
                       <span className="text-lg">{formatTime(currentTime)}</span>
                       <span className="text-gray-400 mx-1">/</span>
@@ -1556,7 +1556,7 @@ export default function CallDetailPage() {
               <select
                 value={playbackSpeed}
                 onChange={(e) => setPlaybackSpeed(Number(e.target.value))}
-                className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer"
+                className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
               >
                 <option value={0.5}>0.5x</option>
                 <option value={0.75}>0.75x</option>
@@ -1583,8 +1583,8 @@ export default function CallDetailPage() {
 
         {/* Transcript Section - Full Width */}
         <Card className="border border-gray-200 shadow-sm">
-          <CardHeader className="bg-gray-50 border-b border-gray-200">
-            <CardTitle className="text-2xl font-bold text-gray-900">Call Transcript</CardTitle>
+          <CardHeader className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+            <CardTitle className="text-2xl font-bold text-gray-900 dark:text-gray-100">Call Transcript</CardTitle>
           </CardHeader>
           <CardContent className="p-6 space-y-4 max-h-[800px] overflow-y-auto">
                 {transcript && transcript.utterances && transcript.utterances.length > 0 ? (
@@ -1635,7 +1635,7 @@ export default function CallDetailPage() {
                         <div className="flex-1 min-w-0">
                           {/* Header */}
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="font-semibold text-sm text-gray-900">
+                            <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">
                               {speakerName}
                             </span>
                             {participant?.company && (
@@ -1670,7 +1670,7 @@ export default function CallDetailPage() {
                                 : "bg-gray-100 border-gray-200"
                             )}
                           >
-                            <p className="text-base text-gray-900 leading-relaxed">
+                            <p className="text-base text-gray-900 dark:text-gray-100 leading-relaxed">
                               {utterance.text}
                             </p>
                           </div>
@@ -1699,13 +1699,13 @@ export default function CallDetailPage() {
         {callDetail && (callDetail.call.status === 'completed' || callDetail.call.status === 'transcribed' || callDetail.call.status === 'processing' || callDetail.call.status === 'extracting') && (
           <Card className="border border-gray-200 shadow-sm">
             <CardHeader
-              className="bg-gray-50 border-b border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors"
+              className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               onClick={() => setNotesExpanded(!notesExpanded)}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <StickyNote className="w-5 h-5 text-gray-600" />
-                  <CardTitle className="text-lg font-semibold text-gray-900">
+                  <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                     Typed Notes
                   </CardTitle>
                   <span className="text-sm text-gray-500">
@@ -1749,7 +1749,7 @@ export default function CallDetailPage() {
                     value={typedNotes}
                     onChange={(e) => handleNotesChange(e.target.value)}
                     placeholder="Enter your typed notes here... (e.g., customer mentioned budget of $50k, considering Q2 implementation, main competitor is XYZ Corp)"
-                    className="w-full min-h-[150px] p-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-y text-gray-900 placeholder-gray-400"
+                    className="w-full min-h-[150px] p-4 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-y text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-800"
                     maxLength={5000}
                   />
                   <div className="flex items-center justify-between">
@@ -1767,16 +1767,16 @@ export default function CallDetailPage() {
         )}
 
         {/* CRM Output Section - Full Width */}
-        <Card className="border border-gray-200 shadow-sm">
-          <CardHeader className="bg-gray-50 border-b border-gray-200">
+        <Card className="border border-gray-200 dark:border-gray-700 shadow-sm">
+          <CardHeader className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <FileText className="w-5 h-5 text-purple-600" />
-                <CardTitle className="text-2xl font-bold text-gray-900">CRM Output</CardTitle>
+                <FileText className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                <CardTitle className="text-2xl font-bold text-gray-900 dark:text-gray-100">CRM Output</CardTitle>
               </div>
               <div className="flex items-center gap-4">
                 {callDetail?.call.template && (
-                  <Badge className="bg-purple-100 text-purple-800 border-purple-200">
+                  <Badge className="bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 border-purple-200 dark:border-purple-700">
                     Template: {callDetail.call.template.name}
                   </Badge>
                 )}
@@ -1791,7 +1791,7 @@ export default function CallDetailPage() {
                       setActiveTab(value);
                     }
                   }}
-                  className="px-3 py-1 text-sm border rounded-md bg-white"
+                  className="px-3 py-1 text-sm border rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                 >
                   <option value="plain">Plain Text</option>
                   {callDetail?.call.template && (
@@ -1813,10 +1813,10 @@ export default function CallDetailPage() {
                 <div className="mt-4">
                   <div className={`p-6 rounded-lg border ${
                     activeTab.startsWith('template_')
-                      ? 'bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200'
-                      : 'bg-gray-50 border-gray-200'
+                      ? 'bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border-purple-200 dark:border-purple-700'
+                      : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700'
                   } min-h-[400px] max-h-[600px] overflow-y-auto`}>
-                    <pre className="text-base text-gray-900 whitespace-pre-wrap font-mono leading-relaxed">
+                    <pre className="text-base text-gray-900 dark:text-gray-100 whitespace-pre-wrap font-mono leading-relaxed">
                       {generateCRMOutput(activeTab)}
                     </pre>
                   </div>
@@ -1848,7 +1848,7 @@ export default function CallDetailPage() {
 
               <Button
                 variant="outline"
-                className="h-12 border-2 border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold"
+                className="h-12 border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold"
                 onClick={handleDownloadPDF}
               >
                 <Download className="w-4 h-4 mr-2" />
