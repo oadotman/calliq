@@ -17,6 +17,7 @@ import {
   Users,
   Sparkles,
   Gift,
+  Sun,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -28,6 +29,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/lib/AuthContext";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -112,6 +114,15 @@ export function Sidebar() {
           </Link>
         )}
 
+        {/* Theme Toggle */}
+        <div className="flex items-center justify-between px-3 py-2 mb-2 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+          <div className="flex items-center gap-3">
+            <Sun className="w-5 h-5 text-gray-600 dark:text-slate-400" />
+            <span className="text-sm font-medium text-gray-700 dark:text-slate-300">Theme</span>
+          </div>
+          <ThemeToggle />
+        </div>
+
         <Link
           href="/help"
           onClick={() => setIsMobileOpen(false)}
@@ -157,17 +168,23 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile menu button */}
-      <button
-        onClick={() => setIsMobileOpen(!isMobileOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2.5 rounded-xl bg-white dark:bg-slate-800 shadow-lg border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 transition-all duration-200 flex items-center justify-center"
-      >
-        {isMobileOpen ? (
-          <X className="w-6 h-6 text-gray-700 dark:text-slate-300" />
-        ) : (
-          <Menu className="w-6 h-6 text-gray-700 dark:text-slate-300" />
-        )}
-      </button>
+      {/* Mobile menu button and theme toggle */}
+      <div className="lg:hidden fixed top-4 left-4 z-50 flex items-center gap-2">
+        <button
+          onClick={() => setIsMobileOpen(!isMobileOpen)}
+          className="p-2.5 rounded-xl bg-white dark:bg-slate-800 shadow-lg border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 transition-all duration-200 flex items-center justify-center"
+        >
+          {isMobileOpen ? (
+            <X className="w-6 h-6 text-gray-700 dark:text-slate-300" />
+          ) : (
+            <Menu className="w-6 h-6 text-gray-700 dark:text-slate-300" />
+          )}
+        </button>
+        {/* Mobile theme toggle */}
+        <div className="p-1 rounded-xl bg-white dark:bg-slate-800 shadow-lg border border-gray-200 dark:border-slate-700">
+          <ThemeToggle />
+        </div>
+      </div>
 
       {/* Mobile sidebar overlay */}
       {isMobileOpen && (
