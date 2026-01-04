@@ -224,7 +224,7 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="en" className="dark antialiased" suppressHydrationWarning>
+    <html lang="en" className="antialiased" suppressHydrationWarning>
       <head>
         {/* CRITICAL: Force canonical to prevent duplicate content issues */}
         <link rel="canonical" href="https://synqall.com/" />
