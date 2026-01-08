@@ -228,13 +228,43 @@ export async function POST(req: NextRequest) {
 
     // Step 2: Create organization (only if not invited)
     if (!isInvitedSignup) {
-      const orgSlug = `org-${userId.substring(0, 8)}`;
-      console.log('🔵 Signup API: Creating organization', {
-        orgName: cleanOrgName,
-        orgSlug,
-        userId,
-        billingEmail: cleanEmail
-      });
+      // CRITICAL: Check if user already has an organization (prevent duplicates)
+      const { data: existingMembership } = await supabaseAdmin
+        .from('user_organizations')
+        .select(`
+          organization_id,
+          organizations!inner (
+            id,
+            name,
+            slug,
+            plan_type,
+            billing_email,
+            subscription_status
+          )
+        `)
+        .eq('user_id', userId)
+        .single();
+
+      if (existingMembership?.organization_id) {
+        // Type assertion to access the nested organization object
+        const org = (existingMembership as any).organizations;
+        console.log('⚠️ Signup API: User already has an organization, using existing:', {
+          userId,
+          existingOrgId: existingMembership.organization_id,
+          existingOrgName: org?.name
+        });
+
+        orgData = org;
+        // Skip organization creation, user already has one
+      } else {
+        // User doesn't have an org yet, create one
+        const orgSlug = `org-${userId.substring(0, 8)}`;
+        console.log('🔵 Signup API: Creating organization', {
+          orgName: cleanOrgName,
+          orgSlug,
+          userId,
+          billingEmail: cleanEmail
+        });
 
       // Verify admin client is configured correctly
       console.log('🔵 Signup API: Admin client config check', {
@@ -308,6 +338,7 @@ export async function POST(req: NextRequest) {
       }
 
       orgData = newOrgData;
+      }  // End of else block for creating new organization
     }
 
     console.log('✅ Signup API: Organization ready', {
@@ -316,20 +347,34 @@ export async function POST(req: NextRequest) {
       role: membershipRole
     });
 
-    // Step 3: Link user to organization with appropriate role
-    console.log('🔵 Signup API: Creating membership', {
-      userId,
-      orgId: orgData.id,
-      role: membershipRole,
-      isInvited: isInvitedSignup
-    });
+    // Step 3: Link user to organization with appropriate role (if not already linked)
+    // Check if membership already exists (in case of re-signup or existing org)
+    const { data: existingLink } = await supabaseAdmin
+      .from('user_organizations')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('organization_id', orgData.id)
+      .single();
 
-    // Build membership object
-    const membershipData: any = {
-      user_id: userId,
-      organization_id: orgData.id,
-      role: membershipRole,
-    };
+    if (existingLink) {
+      console.log('✅ Signup API: User already linked to organization', {
+        userId,
+        orgId: orgData.id
+      });
+    } else {
+      console.log('🔵 Signup API: Creating membership', {
+        userId,
+        orgId: orgData.id,
+        role: membershipRole,
+        isInvited: isInvitedSignup
+      });
+
+      // Build membership object
+      const membershipData: any = {
+        user_id: userId,
+        organization_id: orgData.id,
+        role: membershipRole,
+      };
 
     // If this is an invited signup, add the invited_by field
     if (isInvitedSignup && inviteToken) {
@@ -380,6 +425,7 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }
+    } // End of else block for creating new membership
 
     // Step 4: Log the signup (optional - only if audit_logs table exists)
     try {

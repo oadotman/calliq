@@ -359,13 +359,21 @@ export async function POST(
     // =====================================================
 
     // IMPORTANT: AssemblyAI returns audio_duration in SECONDS, not milliseconds!
+    // CRITICAL FIX: Always use AssemblyAI's audio_duration, never fall back to call.duration
+    // call.duration might be corrupted or wrong
     const durationSeconds = transcriptionResult.audio_duration
       ? Math.round(transcriptionResult.audio_duration) // Already in seconds from AssemblyAI
-      : call.duration || null;
+      : null;
 
     const durationMinutes = durationSeconds
       ? Math.ceil(durationSeconds / 60) // Convert seconds to minutes
       : null;
+
+    // Log warning if duration is missing from AssemblyAI
+    if (!transcriptionResult.audio_duration) {
+      console.error('[Process] ⚠️ WARNING: No audio_duration from AssemblyAI!');
+      console.error('[Process] This should not happen - check AssemblyAI response');
+    }
 
     await supabase
       .from('calls')
@@ -417,28 +425,83 @@ export async function POST(
 
       // Record metrics - organization_id is required
       if (organizationId) {
-        const { error: metricsError } = await supabase
-          .from('usage_metrics')
-          .insert({
-            organization_id: organizationId,
-            user_id: call.user_id,
-            metric_type: 'minutes_transcribed', // Use the allowed metric type
-            metric_value: durationMinutes,
-            metadata: {
-              call_id: callId,
-              duration_seconds: durationSeconds,
-              duration_minutes: durationMinutes,
-              customer_name: call.customer_name,
-              sales_rep: call.sales_rep,
-              processed_at: new Date().toISOString(),
-            },
-          });
+        // IMPROVED: Check for existing usage with better query and retry logic
+        let retries = 3;
+        let usageRecorded = false;
 
-        if (metricsError) {
-          console.error('[Process] ⚠️ Failed to record usage metrics:', metricsError);
-          console.error('[Process] Metrics error details:', metricsError);
-        } else {
-          console.log(`[Process] ✅ Recorded ${durationMinutes} minutes usage for organization ${organizationId}`);
+        while (retries > 0 && !usageRecorded) {
+          // Check if usage was already tracked for this call
+          const { data: existingMetrics, error: checkError } = await supabase
+            .from('usage_metrics')
+            .select('id, metric_value, metadata')
+            .eq('organization_id', organizationId)
+            .eq('metric_type', 'minutes_transcribed');
+
+          // Check if any existing metric has this call_id
+          const hasExistingUsage = existingMetrics?.some(m =>
+            m.metadata && typeof m.metadata === 'object' && m.metadata.call_id === callId
+          );
+
+          if (hasExistingUsage) {
+            console.log(`[Process] ℹ️ Usage already tracked for call ${callId}, skipping duplicate entry`);
+            usageRecorded = true;
+          } else {
+            // No existing metric found, try to insert
+            const { error: metricsError } = await supabase
+              .from('usage_metrics')
+              .insert({
+                organization_id: organizationId,
+                user_id: call.user_id,
+                metric_type: 'minutes_transcribed',
+                metric_value: durationMinutes,
+                metadata: {
+                  call_id: callId,
+                  duration_seconds: durationSeconds,
+                  duration_minutes: durationMinutes,
+                  customer_name: call.customer_name,
+                  sales_rep: call.sales_rep,
+                  processed_at: new Date().toISOString(),
+                },
+              });
+
+            if (metricsError) {
+              // Check if it's a unique constraint violation (duplicate call_id)
+              if (metricsError.message?.includes('duplicate') || metricsError.code === '23505') {
+                console.log(`[Process] ℹ️ Usage already exists (constraint), skipping`);
+                usageRecorded = true;
+              } else if (retries > 1) {
+                console.error(`[Process] ⚠️ Failed to record usage, retrying... (${retries - 1} attempts left)`);
+                console.error('[Process] Error:', metricsError.message);
+                retries--;
+                // Wait a bit before retrying
+                await new Promise(resolve => setTimeout(resolve, 500));
+              } else {
+                console.error('[Process] ❌ Failed to record usage metrics after all retries:', metricsError);
+                console.error('[Process] Metrics error details:', metricsError);
+                break;
+              }
+            } else {
+              console.log(`[Process] ✅ Recorded ${durationMinutes} minutes usage for organization ${organizationId}`);
+              usageRecorded = true;
+
+              // Update the organization's used_minutes directly for immediate UI update
+              const { data: currentOrg } = await supabase
+                .from('organizations')
+                .select('used_minutes')
+                .eq('id', organizationId)
+                .single();
+
+              if (currentOrg) {
+                const newUsedMinutes = (currentOrg.used_minutes || 0) + durationMinutes;
+                await supabase
+                  .from('organizations')
+                  .update({ used_minutes: newUsedMinutes })
+                  .eq('id', organizationId);
+
+                console.log(`[Process] ✅ Updated organization used_minutes: ${currentOrg.used_minutes || 0} → ${newUsedMinutes}`);
+              }
+            }
+          }
         }
       } else {
         console.error('[Process] ❌ CRITICAL: No organization found for user, CANNOT record usage metrics!');

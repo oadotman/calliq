@@ -20,6 +20,8 @@ export function SignupForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [inviteOrganization, setInviteOrganization] = useState<{name: string, role: string} | null>(null)
+  const [loadingInvite, setLoadingInvite] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user } = useAuth()
@@ -43,6 +45,31 @@ export function SignupForm() {
       setEmail(inviteEmail)
     }
   }, [inviteEmail])
+
+  // Fetch invitation details
+  useEffect(() => {
+    if (inviteToken && inviteEmail) {
+      setLoadingInvite(true)
+
+      // Fetch invitation details to show organization info
+      fetch(`/api/invitations/verify?token=${inviteToken}&email=${encodeURIComponent(inviteEmail)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.valid && data.organization) {
+            setInviteOrganization({
+              name: data.organization.name,
+              role: data.role || 'member'
+            })
+          }
+        })
+        .catch(err => {
+          console.error('Failed to fetch invitation details:', err)
+        })
+        .finally(() => {
+          setLoadingInvite(false)
+        })
+    }
+  }, [inviteToken, inviteEmail])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -130,9 +157,13 @@ export function SignupForm() {
         <div className="flex justify-center mb-4">
           <Phone className="h-12 w-12 text-primary" />
         </div>
-        <CardTitle className="text-2xl">Create Your Account</CardTitle>
+        <CardTitle className="text-2xl">
+          {inviteToken ? "Join Your Team" : "Create Your Account"}
+        </CardTitle>
         <CardDescription>
-          {inviteToken
+          {inviteToken && inviteOrganization
+            ? `You've been invited to join ${inviteOrganization.name} as a ${inviteOrganization.role}`
+            : inviteToken
             ? "You've been invited! Complete your registration below."
             : "Start transforming sales calls into CRM data"
           }
@@ -173,7 +204,37 @@ export function SignupForm() {
             />
           </div>
 
-          {!inviteToken && (
+          {inviteToken ? (
+            // Show organization they're joining
+            inviteOrganization ? (
+              <div className="space-y-2">
+                <Label>Joining Organization</Label>
+                <div className="bg-muted/50 border rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">{inviteOrganization.name}</span>
+                    </div>
+                    <span className="text-sm text-muted-foreground">
+                      as {inviteOrganization.role}
+                    </span>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  You'll have access to all calls and data in this organization
+                </p>
+              </div>
+            ) : loadingInvite ? (
+              <div className="space-y-2">
+                <Label>Loading Organization Details...</Label>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm">Fetching invitation details...</span>
+                </div>
+              </div>
+            ) : null
+          ) : (
+            // Show organization name input for regular signup
             <div className="space-y-2">
               <Label htmlFor="organizationName">Organization Name</Label>
               <Input
