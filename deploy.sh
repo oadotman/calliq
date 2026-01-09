@@ -31,9 +31,11 @@ echo -e "${YELLOW}📥 Pulling latest code from GitHub...${NC}"
 git fetch origin
 git reset --hard origin/main
 
-# Step 3: Clean up old build
-echo -e "${YELLOW}🧹 Cleaning up old build...${NC}"
+# Step 3: Clean up old build and caches
+echo -e "${YELLOW}🧹 Cleaning up old build and caches...${NC}"
 rm -rf .next node_modules/.cache
+# Also clear Next.js cache specifically
+rm -rf .next/cache
 
 # Step 4: Install dependencies
 echo -e "${YELLOW}📚 Installing dependencies...${NC}"
@@ -59,10 +61,35 @@ else
     echo -e "${YELLOW}⚠ No static files to copy${NC}"
 fi
 
+# Step 7b: CRITICAL - Copy server files for API routes
+echo -e "${YELLOW}📂 Copying server files for API routes...${NC}"
+if [ -d ".next/server/app" ]; then
+    sudo -u www-data mkdir -p .next/standalone/.next/server
+    sudo -u www-data cp -r .next/server/app .next/standalone/.next/server/ 2>/dev/null || true
+    echo -e "${GREEN}✓ Server app files copied${NC}"
+fi
+if [ -d ".next/server/chunks" ]; then
+    sudo -u www-data cp -r .next/server/chunks .next/standalone/.next/server/ 2>/dev/null || true
+    echo -e "${GREEN}✓ Server chunks copied${NC}"
+fi
+# Verify analytics routes exist
+echo -e "${YELLOW}Verifying analytics API routes...${NC}"
+if find .next/standalone/.next/server -name "*analytics*" -type f 2>/dev/null | grep -q .; then
+    echo -e "${GREEN}✓ Analytics routes found in build${NC}"
+else
+    echo -e "${RED}⚠ Warning: Analytics routes not found in server build!${NC}"
+fi
+
 # Step 8: Copy public folder if exists
 if [ -d "public" ]; then
     sudo -u www-data cp -r public .next/standalone/
     echo -e "${GREEN}✓ Public folder copied${NC}"
+fi
+
+# Step 8b: Copy package.json for module resolution
+if [ -f "package.json" ]; then
+    sudo -u www-data cp package.json .next/standalone/
+    echo -e "${GREEN}✓ package.json copied${NC}"
 fi
 
 # Step 9: Set correct permissions
@@ -81,5 +108,16 @@ echo -e "${GREEN}✅ Deployment complete! Checking status...${NC}"
 pm2 status
 pm2 logs "$APP_NAME" --lines 20 --nostream
 
+# Step 13: Test API endpoints
+echo -e "${YELLOW}🧪 Testing API endpoints...${NC}"
+sleep 5  # Wait for app to fully start
+echo "Testing health endpoint:"
+curl -s -o /dev/null -w "  Status: %{http_code}\n" http://localhost:3000/api/health || echo "  Health check not available"
+echo "Testing analytics endpoint:"
+curl -s -o /dev/null -w "  Status: %{http_code}\n" http://localhost:3000/api/analytics/comprehensive || echo "  Analytics endpoint issue"
+echo "Testing test endpoint:"
+curl -s -o /dev/null -w "  Status: %{http_code}\n" http://localhost:3000/api/test-analytics || echo "  Test endpoint issue"
+
 echo -e "${GREEN}🎉 Deployment successful!${NC}"
 echo -e "${GREEN}🌐 Application should be running at https://synqall.com${NC}"
+echo -e "${YELLOW}📝 Note: Clear browser cache (Ctrl+F5) to see latest changes${NC}"
