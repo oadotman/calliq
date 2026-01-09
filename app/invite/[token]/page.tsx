@@ -12,7 +12,7 @@ import { createClient } from '@/lib/supabase/client';
 import { Loader2, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-type InvitationStatus = 'loading' | 'success' | 'error' | 'expired' | 'email_mismatch';
+type InvitationStatus = 'loading' | 'success' | 'error' | 'expired' | 'email_mismatch' | 'unauthenticated';
 
 interface Invitation {
   id: string;
@@ -113,9 +113,11 @@ export default function AcceptInvitationPage() {
 
       setInvitation(invite);
 
-      // If not logged in, redirect to dedicated invitation signup page
+      // If not logged in, show the invitation details first
+      // Don't immediately redirect - let the user see what they're accepting
       if (!user) {
-        router.push(`/invite-signup/${token}`);
+        console.log('👤 User not authenticated, showing invitation details');
+        setStatus('unauthenticated');
         return;
       }
 
@@ -228,12 +230,56 @@ export default function AcceptInvitationPage() {
   }, [token, user, authLoading, router]);
 
   // Loading state
-  if (authLoading || status === 'loading') {
+  if (authLoading || (status === 'loading' && !invitation)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-blue-600" />
           <p className="text-gray-600 text-lg">Processing invitation...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Unauthenticated state - show invitation details
+  if (status === 'unauthenticated' && invitation) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50">
+        <div className="text-center max-w-md bg-white p-8 rounded-lg shadow-lg">
+          <div className="mb-6">
+            <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+            </div>
+            <h1 className="text-3xl font-bold mb-2">You're Invited!</h1>
+            <p className="text-gray-600 mb-4">
+              You've been invited to join <span className="font-semibold">{invitation.organization?.name}</span> as a <span className="font-semibold capitalize">{invitation.role}</span>
+            </p>
+            <p className="text-sm text-gray-500 mb-6">
+              Invitation sent to: <span className="font-medium">{invitation.email}</span>
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <Button
+              onClick={() => router.push(`/invite-signup/${token}`)}
+              className="w-full"
+            >
+              Create Account & Accept
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                const loginUrl = new URL('/login', window.location.origin);
+                loginUrl.searchParams.set('redirect', `/invite/${token}`);
+                router.push(loginUrl.toString());
+              }}
+              className="w-full"
+            >
+              I Already Have an Account
+            </Button>
+          </div>
         </div>
       </div>
     );

@@ -34,6 +34,46 @@ export async function middleware(req: NextRequest) {
   }
 
   // =====================================================
+  // EARLY CHECK FOR PUBLIC PATHS
+  // Check if this is a public path BEFORE any auth operations
+  // This prevents unnecessary session checks for public routes
+  // =====================================================
+  const publicPaths = [
+    '/login',
+    '/signup',
+    '/forgot-password',
+    '/reset-password',
+    '/',
+    '/api/auth/signup',
+    '/api/health',
+    '/invite',  // Invitation pages are public
+    '/invite-signup'  // Invitation signup pages are public
+  ];
+
+  // Check if current path is public
+  const isPublicPath = publicPaths.some(path => {
+    if (path === '/') {
+      return pathname === '/';  // Exact match for root
+    }
+    return pathname === path || pathname.startsWith(path + '/');
+  });
+
+  // Log invitation paths for debugging
+  if (pathname.startsWith('/invite')) {
+    console.log('Middleware: Invitation path detected', {
+      pathname,
+      isPublicPath,
+      willSkipAuth: isPublicPath
+    });
+  }
+
+  // If it's a public path and not the root, skip auth entirely
+  if (isPublicPath && pathname !== '/') {
+    console.log('Middleware: Public path, skipping authentication', pathname);
+    return NextResponse.next();
+  }
+
+  // =====================================================
   // ADMIN ROUTES PROTECTION
   // Protect all admin routes - check before partner routes
   // =====================================================
@@ -266,37 +306,6 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  // Include invite paths as public since they handle their own auth flow
-  // Note: Removed trailing slashes for better matching
-  const publicPaths = [
-    '/login',
-    '/signup',
-    '/forgot-password',
-    '/reset-password',
-    '/',
-    '/api/auth/signup',
-    '/api/health',
-    '/invite',  // Matches /invite/* paths
-    '/invite-signup'  // Matches /invite-signup/* paths
-  ]
-  const isPublicPath = publicPaths.some(path => {
-    // Special handling for root path - must be exact match
-    if (path === '/') {
-      return req.nextUrl.pathname === '/';
-    }
-    // All other paths use startsWith
-    return req.nextUrl.pathname.startsWith(path);
-  })
-
-  // Debug logging for invite paths
-  if (req.nextUrl.pathname.startsWith('/invite')) {
-    console.log('Middleware: Invite path detected', {
-      pathname: req.nextUrl.pathname,
-      isPublicPath,
-      isAuthenticated: !!(session || user)
-    });
-  }
-
   // Check if user is authenticated (either via session or user)
   const isAuthenticated = !!(session || user)
 
@@ -306,8 +315,25 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', req.url))
   }
 
+  // Re-check public paths (we need this because we might have gotten here after auth check)
+  // This handles cases where we checked auth for admin routes, etc.
+  const publicPathsForRedirect = [
+    '/login',
+    '/signup',
+    '/forgot-password',
+    '/reset-password',
+    '/api/auth/signup',
+    '/api/health',
+    '/invite',
+    '/invite-signup'
+  ];
+
+  const isPublicForRedirect = publicPathsForRedirect.some(path => {
+    return pathname === path || pathname.startsWith(path + '/');
+  });
+
   // If user is not signed in and trying to access protected route, redirect to login
-  if (!isAuthenticated && !isPublicPath) {
+  if (!isAuthenticated && !isPublicForRedirect && pathname !== '/') {
     console.log('Middleware: No authentication on protected route, redirecting to /login')
     const redirectUrl = new URL('/login', req.url)
     redirectUrl.searchParams.set('redirect', req.nextUrl.pathname)
