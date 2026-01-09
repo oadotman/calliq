@@ -4,7 +4,7 @@
 // =====================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminClient } from '@/lib/supabase/server';
+import { createAdminClient, requireAuth } from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300; // 5 minutes max
@@ -16,6 +16,15 @@ export async function POST(
   const callId = params.id;
 
   try {
+    // CRITICAL SECURITY FIX: Authenticate user first
+    const user = await requireAuth();
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Authentication required' },
+        { status: 401 }
+      );
+    }
+
     const supabase = createAdminClient();
 
     // Get call details including template
@@ -31,6 +40,38 @@ export async function POST(
         { error: 'Call not found' },
         { status: 404 }
       );
+    }
+
+    // CRITICAL SECURITY FIX: Verify user has access to this call
+    // Check if user owns the call OR is in the same organization
+    if (call.user_id !== user.id) {
+      // Check if user is in the same organization with appropriate role
+      const { data: userOrg } = await supabase
+        .from('user_organizations')
+        .select('organization_id, role')
+        .eq('user_id', user.id)
+        .eq('organization_id', call.organization_id)
+        .single();
+
+      if (!userOrg) {
+        console.error('[Process] Unauthorized access attempt:', {
+          callId,
+          callOwner: call.user_id,
+          attemptBy: user.id
+        });
+        return NextResponse.json(
+          { error: 'Unauthorized - You do not have access to this call' },
+          { status: 403 }
+        );
+      }
+
+      // Only allow admin/owner to process others' calls
+      if (userOrg.role !== 'admin' && userOrg.role !== 'owner') {
+        return NextResponse.json(
+          { error: 'Unauthorized - Admin access required to process team calls' },
+          { status: 403 }
+        );
+      }
     }
 
     console.log('[Process] ========================================');

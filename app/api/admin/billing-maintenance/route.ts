@@ -12,11 +12,22 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
-    // Check for admin token or API key (add your own authentication)
+    // SECURITY FIX: Remove hardcoded fallback token
     const authHeader = req.headers.get('authorization');
-    const expectedToken = process.env.ADMIN_API_KEY || 'your-secret-admin-key';
+    const expectedToken = process.env.ADMIN_API_KEY;
 
-    if (authHeader !== `Bearer ${expectedToken}`) {
+    // Ensure ADMIN_API_KEY is configured
+    if (!expectedToken) {
+      console.error('[Billing Maintenance] ADMIN_API_KEY not configured');
+      return NextResponse.json(
+        { error: 'Server configuration error - Admin API key not set' },
+        { status: 500 }
+      );
+    }
+
+    // Validate authorization header
+    if (!authHeader || authHeader !== `Bearer ${expectedToken}`) {
+      console.warn('[Billing Maintenance] Unauthorized access attempt');
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -69,11 +80,22 @@ export async function POST(req: NextRequest) {
 // GET endpoint to check current status
 export async function GET(req: NextRequest) {
   try {
-    // Check for admin token
+    // SECURITY FIX: Remove hardcoded fallback token
     const authHeader = req.headers.get('authorization');
-    const expectedToken = process.env.ADMIN_API_KEY || 'your-secret-admin-key';
+    const expectedToken = process.env.ADMIN_API_KEY;
 
-    if (authHeader !== `Bearer ${expectedToken}`) {
+    // Ensure ADMIN_API_KEY is configured
+    if (!expectedToken) {
+      console.error('[Billing Maintenance] ADMIN_API_KEY not configured');
+      return NextResponse.json(
+        { error: 'Server configuration error - Admin API key not set' },
+        { status: 500 }
+      );
+    }
+
+    // Validate authorization header
+    if (!authHeader || authHeader !== `Bearer ${expectedToken}`) {
+      console.warn('[Billing Maintenance] Unauthorized GET access attempt');
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }

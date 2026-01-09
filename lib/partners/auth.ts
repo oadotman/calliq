@@ -7,10 +7,12 @@ import { createServerClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
 import { NextRequest } from 'next/server';
 import crypto from 'crypto';
+import * as bcrypt from 'bcryptjs';
 import type { Partner, PartnerSession } from './types';
 
 const PARTNER_SESSION_COOKIE = 'partner_session';
 const SESSION_DURATION = 30 * 24 * 60 * 60 * 1000; // 30 days
+const BCRYPT_ROUNDS = 12; // Secure number of rounds for bcrypt
 
 export class PartnerAuth {
   /**
@@ -21,20 +23,47 @@ export class PartnerAuth {
   }
 
   /**
-   * Hash password for storage (placeholder - will use Supabase auth in production)
+   * SECURITY FIX: Use bcrypt for password hashing instead of SHA256
+   * bcrypt is specifically designed for password hashing with built-in salting
    */
   static async hashPassword(password: string): Promise<string> {
-    // In production, this will be handled by Supabase Auth
-    // For now, using a simple hash for demonstration
-    return crypto.createHash('sha256').update(password).digest('hex');
+    // Validate password length
+    if (password.length < 8) {
+      throw new Error('Password must be at least 8 characters long');
+    }
+
+    // Use bcrypt with automatic salt generation
+    const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
+    return hashedPassword;
   }
 
   /**
-   * Verify password (placeholder - will use Supabase auth in production)
+   * SECURITY FIX: Use bcrypt for password verification
+   * bcrypt.compare handles timing-safe comparison automatically
    */
   static async verifyPassword(password: string, hash: string): Promise<boolean> {
-    const inputHash = await this.hashPassword(password);
-    return inputHash === hash;
+    try {
+      // Check if hash is in old SHA256 format (64 chars hex)
+      if (hash.length === 64 && /^[a-f0-9]+$/i.test(hash)) {
+        // Legacy SHA256 hash detected - force password reset
+        console.warn('Legacy SHA256 password hash detected - user should reset password');
+        // For backward compatibility, check SHA256 but require update
+        const legacyHash = crypto.createHash('sha256').update(password).digest('hex');
+        if (legacyHash === hash) {
+          // Password is correct but needs rehashing
+          // This should trigger a password update flow
+          return true; // Allow login but flag for update
+        }
+        return false;
+      }
+
+      // Use bcrypt for comparison (timing-safe)
+      const isValid = await bcrypt.compare(password, hash);
+      return isValid;
+    } catch (error) {
+      console.error('Password verification error:', error);
+      return false;
+    }
   }
 
   /**
