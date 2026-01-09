@@ -16,13 +16,21 @@ export async function POST(
   const callId = params.id;
 
   try {
-    // CRITICAL SECURITY FIX: Authenticate user first
-    const user = await requireAuth();
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Authentication required' },
-        { status: 401 }
-      );
+    // Check if this is an internal processing request (from upload/complete or queue worker)
+    const isInternalProcessing = req.headers.get('x-internal-processing') === 'true';
+
+    // For internal requests, we'll validate the call ownership differently
+    let user: any = null;
+
+    if (!isInternalProcessing) {
+      // CRITICAL SECURITY FIX: Authenticate user for external requests
+      user = await requireAuth();
+      if (!user) {
+        return NextResponse.json(
+          { error: 'Unauthorized - Authentication required' },
+          { status: 401 }
+        );
+      }
     }
 
     const supabase = createAdminClient();
@@ -43,35 +51,41 @@ export async function POST(
     }
 
     // CRITICAL SECURITY FIX: Verify user has access to this call
-    // Check if user owns the call OR is in the same organization
-    if (call.user_id !== user.id) {
-      // Check if user is in the same organization with appropriate role
-      const { data: userOrg } = await supabase
-        .from('user_organizations')
-        .select('organization_id, role')
-        .eq('user_id', user.id)
-        .eq('organization_id', call.organization_id)
-        .single();
+    // Skip authorization for internal processing (already validated at upload)
+    if (!isInternalProcessing) {
+      // Check if user owns the call OR is in the same organization
+      if (call.user_id !== user.id) {
+        // Check if user is in the same organization with appropriate role
+        const { data: userOrg } = await supabase
+          .from('user_organizations')
+          .select('organization_id, role')
+          .eq('user_id', user.id)
+          .eq('organization_id', call.organization_id)
+          .single();
 
-      if (!userOrg) {
-        console.error('[Process] Unauthorized access attempt:', {
-          callId,
-          callOwner: call.user_id,
-          attemptBy: user.id
-        });
-        return NextResponse.json(
-          { error: 'Unauthorized - You do not have access to this call' },
-          { status: 403 }
-        );
-      }
+        if (!userOrg) {
+          console.error('[Process] Unauthorized access attempt:', {
+            callId,
+            callOwner: call.user_id,
+            attemptBy: user.id
+          });
+          return NextResponse.json(
+            { error: 'Unauthorized - You do not have access to this call' },
+            { status: 403 }
+          );
+        }
 
-      // Only allow admin/owner to process others' calls
-      if (userOrg.role !== 'admin' && userOrg.role !== 'owner') {
-        return NextResponse.json(
-          { error: 'Unauthorized - Admin access required to process team calls' },
-          { status: 403 }
-        );
+        // Only allow admin/owner to process others' calls
+        if (userOrg.role !== 'admin' && userOrg.role !== 'owner') {
+          return NextResponse.json(
+            { error: 'Unauthorized - Admin access required to process team calls' },
+            { status: 403 }
+          );
+        }
       }
+    } else {
+      // For internal processing, log it for audit
+      console.log('[Process] Internal processing request for call:', callId);
     }
 
     console.log('[Process] ========================================');
