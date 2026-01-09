@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient, requireAuth } from '@/lib/supabase/server';
 import { calculateUsageAndOverage } from '@/lib/overage';
+import { ensureCurrentBillingPeriods } from '@/lib/billing-period-manager';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -74,6 +75,10 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // IMPORTANT: Ensure billing periods are current before fetching usage
+    // This automatically updates periods and resets usage if needed
+    await ensureCurrentBillingPeriods();
+
     // Fetch organization details
     const { data: org } = await supabase
       .from('organizations')
@@ -88,7 +93,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Calculate current billing period
+    // Calculate current billing period (should now be current after ensureCurrentBillingPeriods)
     const now = new Date();
     const periodStart = org.current_period_start || new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
     const periodEnd = org.current_period_end || new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
