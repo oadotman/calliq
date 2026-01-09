@@ -267,8 +267,35 @@ export async function middleware(req: NextRequest) {
   }
 
   // Include invite paths as public since they handle their own auth flow
-  const publicPaths = ['/login', '/signup', '/forgot-password', '/reset-password', '/', '/api/auth/signup', '/api/health', '/invite/', '/invite-signup/']
-  const isPublicPath = publicPaths.some(path => req.nextUrl.pathname.startsWith(path))
+  // Note: Removed trailing slashes for better matching
+  const publicPaths = [
+    '/login',
+    '/signup',
+    '/forgot-password',
+    '/reset-password',
+    '/',
+    '/api/auth/signup',
+    '/api/health',
+    '/invite',  // Matches /invite/* paths
+    '/invite-signup'  // Matches /invite-signup/* paths
+  ]
+  const isPublicPath = publicPaths.some(path => {
+    // Special handling for root path - must be exact match
+    if (path === '/') {
+      return req.nextUrl.pathname === '/';
+    }
+    // All other paths use startsWith
+    return req.nextUrl.pathname.startsWith(path);
+  })
+
+  // Debug logging for invite paths
+  if (req.nextUrl.pathname.startsWith('/invite')) {
+    console.log('Middleware: Invite path detected', {
+      pathname: req.nextUrl.pathname,
+      isPublicPath,
+      isAuthenticated: !!(session || user)
+    });
+  }
 
   // Check if user is authenticated (either via session or user)
   const isAuthenticated = !!(session || user)
