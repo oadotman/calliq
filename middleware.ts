@@ -67,7 +67,14 @@ export async function middleware(req: NextRequest) {
     });
   }
 
-  // If it's a public path and not the root, skip auth entirely
+  // If it's a public path (except root which needs special handling), skip auth entirely
+  // For invite paths, ALWAYS skip auth
+  if (pathname.startsWith('/invite')) {
+    console.log('Middleware: Invitation path detected, skipping all auth checks', pathname);
+    return NextResponse.next();
+  }
+
+  // For other public paths (not root)
   if (isPublicPath && pathname !== '/') {
     console.log('Middleware: Public path, skipping authentication', pathname);
     return NextResponse.next();

@@ -88,7 +88,8 @@
       "Bash(del appfeaturespage.tsx)",
       "Bash(npx next build:*)",
       "Bash(npm run test:infrastructure:*)",
-      "Bash(timeout /t 10 /nobreak)"
+      "Bash(timeout /t 10 /nobreak)",
+      "Bash(git rev-parse:*)"
     ],
     "deny": [],
     "ask": []
