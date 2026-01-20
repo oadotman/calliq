@@ -342,6 +342,15 @@ export async function middleware(req: NextRequest) {
     return pathname === path || pathname.startsWith(path + '/');
   });
 
+  // Allow internal processing calls (from queue worker) to bypass auth
+  const isInternalProcessingCall = req.headers.get('x-internal-processing') === 'true' &&
+    pathname.startsWith('/api/calls/') && pathname.includes('/process');
+
+  if (isInternalProcessingCall) {
+    console.log('Middleware: Internal processing call detected, bypassing auth', pathname);
+    return res;
+  }
+
   // If user is not signed in and trying to access protected route, redirect to login
   if (!isAuthenticated && !isPublicForRedirect && pathname !== '/') {
     console.log('Middleware: No authentication on protected route, redirecting to /login')

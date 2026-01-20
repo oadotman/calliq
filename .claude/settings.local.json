@@ -89,7 +89,9 @@
       "Bash(npx next build:*)",
       "Bash(npm run test:infrastructure:*)",
       "Bash(timeout /t 10 /nobreak)",
-      "Bash(git rev-parse:*)"
+      "Bash(git rev-parse:*)",
+      "Bash(where:*)",
+      "Bash(git remote show:*)"
     ],
     "deny": [],
     "ask": []
