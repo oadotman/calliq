@@ -149,7 +149,7 @@ export async function POST(
           password_hash: passwordHash,
           referral_code: referralCode,
           status: 'active',
-          tier: 'bronze',
+          tier: 'standard',  // Changed from 'bronze' to 'standard' - partners start at standard tier
           commission_rate: 0.25,  // 25% as decimal (was causing numeric overflow)
           // Note: application_id column doesn't exist in partners table
         })

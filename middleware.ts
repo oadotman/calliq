@@ -332,7 +332,10 @@ export async function middleware(req: NextRequest) {
     '/api/auth/signup',
     '/api/health',
     '/invite',
-    '/invite-signup'
+    '/invite-signup',
+    '/partners',  // Public partner landing page
+    '/partners/apply',  // Public partner application page
+    '/partners/login'  // Public partner login page
   ];
 
   const isPublicForRedirect = publicPathsForRedirect.some(path => {
