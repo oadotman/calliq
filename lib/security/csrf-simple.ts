@@ -7,10 +7,12 @@ const CSRF_HEADER_NAME = 'x-csrf-token';
  * Generate a secure CSRF token using Web Crypto API
  */
 export function generateCSRFToken(): string {
-  // Use Web Crypto API which is available in both browser and Node.js runtime
-  const array = new Uint8Array(32);
-  crypto.getRandomValues(array);
-  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+  // Use Web Crypto API which is available in Edge Runtime
+  // Generate a random string without using crypto module
+  const timestamp = Date.now().toString(36);
+  const randomStr = Math.random().toString(36).substring(2, 15);
+  const randomStr2 = Math.random().toString(36).substring(2, 15);
+  return `${timestamp}-${randomStr}-${randomStr2}`;
 }
 
 /**
