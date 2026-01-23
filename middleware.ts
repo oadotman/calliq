@@ -144,16 +144,26 @@ export async function middleware(req: NextRequest) {
     const webhookPaths = ['/api/webhooks/', '/api/paddle/webhook'];
     const cronPaths = ['/api/cron/'];
     const internalProcessingPaths = ['/process'];
-    const publicApiPaths = ['/api/partners/apply']; // Public partner application endpoint
-    const uploadPaths = ['/api/upload/']; // Temporarily exempt upload endpoints from CSRF
+    const publicApiPaths = [
+      '/api/partners/apply',  // Public partner application
+      '/api/auth/signup',     // Public signup
+      '/api/auth/callback'    // Auth callback
+    ];
+    // These paths need special handling or are called by external services
+    const csrfExemptPaths = [
+      '/api/upload/',           // File upload endpoints
+      '/api/calls/import-url',  // URL import (external fetch)
+      '/api/teams/invite',      // Team invitations (may come from email links)
+      '/api/referrals/activate' // Referral activation
+    ];
 
     const isWebhook = webhookPaths.some(path => req.nextUrl.pathname.startsWith(path));
     const isCron = cronPaths.some(path => req.nextUrl.pathname.startsWith(path));
     const isInternalProcessing = internalProcessingPaths.some(path => req.nextUrl.pathname.includes(path)) || internalProcessingHeader === 'true';
-    const isPublicApi = publicApiPaths.some(path => req.nextUrl.pathname === path);
-    const isUploadPath = uploadPaths.some(path => req.nextUrl.pathname.startsWith(path));
+    const isPublicApi = publicApiPaths.some(path => req.nextUrl.pathname.startsWith(path));
+    const isCsrfExempt = csrfExemptPaths.some(path => req.nextUrl.pathname.startsWith(path));
 
-    if (!isWebhook && !isCron && !isInternalProcessing && !isPublicApi && !isUploadPath) {
+    if (!isWebhook && !isCron && !isInternalProcessing && !isPublicApi && !isCsrfExempt) {
       // Get allowed origins - must be exact matches
       const allowedOrigins = getAllowedOrigins();
       const appUrl = new URL(getBaseUrlOrFallback());
