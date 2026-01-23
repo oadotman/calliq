@@ -100,7 +100,9 @@
       "Bash(npx husky init)",
       "Bash(npx husky@latest init)",
       "Bash(.husky/pre-commit:*)",
-      "Bash(.husky/commit-msg)"
+      "Bash(.husky/commit-msg)",
+      "Bash(del eslint.config.js)",
+      "Bash(npx eslint:*)"
     ],
     "deny": [],
     "ask": []
