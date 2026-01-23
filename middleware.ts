@@ -63,6 +63,8 @@ export async function middleware(req: NextRequest) {
     '/forgot-password',
     '/reset-password',
     '/',
+    '/pricing',  // Pricing page should be public
+    '/blog',     // Blog should be public
     '/api/auth/signup',
     '/api/health',
     '/invite',  // Invitation pages are public
@@ -388,6 +390,8 @@ export async function middleware(req: NextRequest) {
     '/signup',
     '/forgot-password',
     '/reset-password',
+    '/pricing',  // Pricing page should be public
+    '/blog',     // Blog should be public
     '/api/auth/signup',
     '/api/health',
     '/invite',
