@@ -7,7 +7,6 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { randomUUID } from 'crypto';
 
 /**
  * Request context for storing trace information
@@ -25,10 +24,14 @@ interface RequestContext {
 const requestContexts = new Map<string, RequestContext>();
 
 /**
- * Generate a unique request ID
+ * Generate a unique request ID without using crypto module
  */
 export function generateRequestId(): string {
-  return `req_${randomUUID()}`;
+  // Generate UUID-like string without crypto for Edge Runtime compatibility
+  const timestamp = Date.now().toString(36);
+  const random1 = Math.random().toString(36).substring(2, 9);
+  const random2 = Math.random().toString(36).substring(2, 9);
+  return `req_${timestamp}-${random1}-${random2}`;
 }
 
 /**
