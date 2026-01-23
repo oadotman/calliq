@@ -145,13 +145,15 @@ export async function middleware(req: NextRequest) {
     const cronPaths = ['/api/cron/'];
     const internalProcessingPaths = ['/process'];
     const publicApiPaths = ['/api/partners/apply']; // Public partner application endpoint
+    const uploadPaths = ['/api/upload/']; // Temporarily exempt upload endpoints from CSRF
 
     const isWebhook = webhookPaths.some(path => req.nextUrl.pathname.startsWith(path));
     const isCron = cronPaths.some(path => req.nextUrl.pathname.startsWith(path));
     const isInternalProcessing = internalProcessingPaths.some(path => req.nextUrl.pathname.includes(path)) || internalProcessingHeader === 'true';
     const isPublicApi = publicApiPaths.some(path => req.nextUrl.pathname === path);
+    const isUploadPath = uploadPaths.some(path => req.nextUrl.pathname.startsWith(path));
 
-    if (!isWebhook && !isCron && !isInternalProcessing && !isPublicApi) {
+    if (!isWebhook && !isCron && !isInternalProcessing && !isPublicApi && !isUploadPath) {
       // Get allowed origins - must be exact matches
       const allowedOrigins = getAllowedOrigins();
       const appUrl = new URL(getBaseUrlOrFallback());
