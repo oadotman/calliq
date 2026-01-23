@@ -24,6 +24,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ArrowLeft, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
+import { PartnerNavigation } from '@/components/partners/PartnerNavigation';
 
 interface ApplicationFormData {
   full_name: string;
@@ -175,8 +176,10 @@ export default function PartnerApplicationPage() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-gray-50 py-12">
-        <div className="max-w-2xl mx-auto px-6">
+      <div className="min-h-screen bg-gray-50">
+        <PartnerNavigation />
+        <div className="pt-28 pb-12">
+          <div className="max-w-2xl mx-auto px-6">
           <Card>
             <CardContent className="pt-8 pb-8">
               <div className="text-center">
@@ -197,12 +200,15 @@ export default function PartnerApplicationPage() {
           </Card>
         </div>
       </div>
+      </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-3xl mx-auto px-6">
+    <div className="min-h-screen bg-gray-50">
+      <PartnerNavigation />
+      <div className="pt-28 pb-12">
+        <div className="max-w-3xl mx-auto px-6">
         <div className="mb-6">
           <Link href="/partners">
             <Button variant="ghost" size="sm">
@@ -539,6 +545,7 @@ export default function PartnerApplicationPage() {
             </form>
           </CardContent>
         </Card>
+      </div>
       </div>
     </div>
   );

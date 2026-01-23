@@ -68,10 +68,10 @@ export async function exportUserData(userId: string): Promise<UserDataExport> {
       exportDate: new Date().toISOString(),
       userData: {
         profile: {
-          id: userData.user.id,
-          email: userData.user.email,
-          created_at: userData.user.created_at,
-          user_metadata: userData.user.user_metadata,
+          id: userData.user?.id || '',
+          email: userData.user?.email || '',
+          created_at: userData.user?.created_at || '',
+          user_metadata: userData.user?.user_metadata || {},
         },
         calls: calls || [],
         transcripts: transcripts || [],

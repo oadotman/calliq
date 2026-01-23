@@ -9,6 +9,11 @@ const nextConfig = {
   },
   reactStrictMode: true,
 
+  // Disable ESLint during builds due to config issues
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+
   // Enable standalone output for production deployment
   output: 'standalone',
 

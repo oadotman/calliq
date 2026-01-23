@@ -173,7 +173,7 @@ export class PartnerAuth {
   /**
    * Login partner
    */
-  static async login(email: string, password: string, req?: NextRequest): Promise<{ success: boolean; partner?: Partner; error?: string }> {
+  static async login(email: string, password: string, req?: NextRequest): Promise<{ success: boolean; partner?: Partner; error?: string; requiresPasswordReset?: boolean; email?: string }> {
     const supabase = createServerClient();
 
     // Get partner by email
@@ -192,11 +192,43 @@ export class PartnerAuth {
       return { success: false, error: 'Your partner account is not active. Please contact support.' };
     }
 
-    // Verify password (placeholder - will use Supabase auth)
+    // Verify password
     const passwordValid = await this.verifyPassword(password, partner.password_hash || '');
 
     if (!passwordValid) {
       return { success: false, error: 'Invalid email or password' };
+    }
+
+    // Check if this is a legacy SHA256 password that needs to be updated
+    const isLegacyPassword = partner.password_hash &&
+                            partner.password_hash.length === 64 &&
+                            /^[a-f0-9]+$/i.test(partner.password_hash);
+
+    if (isLegacyPassword) {
+      // Password is correct but using legacy SHA256 - force reset
+      console.warn(`Partner ${partner.id} is using legacy SHA256 password - forcing reset`);
+
+      // Update partner record to mark password as requiring reset
+      const { error: updateError } = await supabase
+        .from('partners')
+        .update({
+          requires_password_reset: true,
+          password_reset_token: crypto.randomUUID(),
+          password_reset_expires: new Date(Date.now() + 3600000).toISOString() // 1 hour
+        })
+        .eq('id', partner.id);
+
+      if (updateError) {
+        console.error('Error marking partner for password reset:', updateError);
+      }
+
+      // Return a special response indicating password reset is required
+      return {
+        success: false,
+        error: 'Your password needs to be updated for security reasons. Please check your email for reset instructions.',
+        requiresPasswordReset: true,
+        email: partner.email
+      };
     }
 
     // Create session
@@ -283,4 +315,11 @@ export class PartnerAuth {
       .delete()
       .lt('expires_at', new Date().toISOString());
   }
+}
+
+/**
+ * Verify partner session (standalone function for API routes)
+ */
+export async function verifyPartnerSession(): Promise<Partner | null> {
+  return await PartnerAuth.getCurrentPartner();
 }

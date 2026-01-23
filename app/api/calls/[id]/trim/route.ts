@@ -150,9 +150,9 @@ export async function POST(
           throw new Error(`Processing endpoint returned ${response.status}`);
         }
 
-      } catch (error) {
+      } catch (error: unknown) {
         lastError = error;
-        console.error('Failed to reach processing endpoint:', error.message);
+        console.error('Failed to reach processing endpoint:', error instanceof Error ? error.message : 'Unknown error');
 
         // Try queue as fallback
         try {
@@ -177,8 +177,8 @@ export async function POST(
           processingInitiated = true;
           console.log('✅ Fallback: Enqueued trimmed call to processing queue:', callId);
 
-        } catch (queueError) {
-          console.error('Queue fallback also failed:', queueError.message);
+        } catch (queueError: unknown) {
+          console.error('Queue fallback also failed:', queueError instanceof Error ? queueError.message : 'Unknown error');
         }
       }
 

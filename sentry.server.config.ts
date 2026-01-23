@@ -1,77 +1,89 @@
-// This file configures the initialization of Sentry on the server.
+// This file configures the initialization of Sentry on the server side.
 // The config you add here will be used whenever the server handles a request.
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
-import * as Sentry from '@sentry/nextjs';
+import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
-  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  dsn: process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN,
 
   // Adjust this value in production, or use tracesSampler for greater control
-  tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+  tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,
 
-  environment: process.env.NODE_ENV,
+  // Environment
+  environment: process.env.NODE_ENV || "development",
 
+  // Release tracking
+  release: process.env.SENTRY_RELEASE || process.env.NEXT_PUBLIC_SENTRY_RELEASE,
+
+  // Server-specific integrations
+  integrations: [],
+
+  // Filtering
   beforeSend(event, hint) {
-    // Filter out sensitive data
-    if (event.request) {
-      // Remove sensitive headers
-      delete event.request.cookies;
+    // Filter out specific errors
+    if (event.exception) {
+      const error = hint.originalException;
 
-      if (event.request.headers) {
-        const safeHeaders: Record<string, string> = {};
-        const allowedHeaders = ['content-type', 'user-agent', 'accept', 'content-length'];
+      // Filter out known non-critical errors
+      const ignoredErrors = [
+        "ECONNRESET",
+        "ECONNREFUSED",
+        "ETIMEDOUT",
+        "ENOTFOUND",
+        "Invalid refresh token",
+        "User not found"
+      ];
 
-        Object.keys(event.request.headers).forEach(key => {
-          if (allowedHeaders.includes(key.toLowerCase())) {
-            safeHeaders[key] = event.request!.headers![key];
-          }
-        });
-
-        event.request.headers = safeHeaders;
-      }
-
-      // Remove sensitive query params and body
-      if (event.request.data) {
-        // Redact password, token, key fields
-        const sanitizedData = JSON.parse(JSON.stringify(event.request.data));
-        const sensitiveFields = ['password', 'token', 'key', 'secret', 'apiKey', 'api_key'];
-
-        const redactSensitiveFields = (obj: any): any => {
-          if (typeof obj !== 'object' || obj === null) return obj;
-
-          Object.keys(obj).forEach(key => {
-            if (sensitiveFields.some(field => key.toLowerCase().includes(field))) {
-              obj[key] = '[REDACTED]';
-            } else if (typeof obj[key] === 'object') {
-              redactSensitiveFields(obj[key]);
-            }
-          });
-
-          return obj;
-        };
-
-        event.request.data = redactSensitiveFields(sanitizedData);
+      const errorMessage = error instanceof Error ? error.message : "";
+      if (ignoredErrors.some(ignored => errorMessage.includes(ignored))) {
+        return null;
       }
     }
 
-    // Filter out local development errors if needed
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Sentry event (server):', event);
-    }
+    // Add additional context
+    event.extra = {
+      ...event.extra,
+      nodeVersion: process.version,
+      platform: process.platform,
+      memoryUsage: process.memoryUsage(),
+    };
 
     return event;
   },
 
-  ignoreErrors: [
-    // Network timeouts
-    'ECONNRESET',
-    'ETIMEDOUT',
-    'ENOTFOUND',
-    // Common user errors
-    'Non-Error promise rejection captured',
+  // Ignore specific transactions
+  ignoreTransactions: [
+    "/api/health",
+    "/api/metrics",
+    "/_next/static",
+    "/favicon.ico"
   ],
+
+  // Configure sampling for performance monitoring
+  tracesSampler: (samplingContext) => {
+    // Drop all health check transactions
+    if (samplingContext.transactionContext.name === "/api/health") {
+      return 0;
+    }
+
+    // Sample 100% of critical business transactions in production
+    const criticalTransactions = [
+      "/api/calls/upload",
+      "/api/payments/webhook",
+      "/api/auth/signup",
+      "/api/teams/invite"
+    ];
+
+    if (process.env.NODE_ENV === "production" &&
+        criticalTransactions.includes(samplingContext.transactionContext.name)) {
+      return 1.0;
+    }
+
+    // Default sampling rate
+    return process.env.NODE_ENV === "production" ? 0.1 : 1.0;
+  },
 });

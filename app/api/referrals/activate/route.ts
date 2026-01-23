@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
         .eq('id', referralId)
         .single();
 
-      referral = data;
+      referral = data as any;
     } else {
       // Find referral by referred email
       const { data } = await supabase
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
         .limit(1)
         .single();
 
-      referral = data;
+      referral = data as any;
     }
 
     if (!referral) {
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
     // Process the referral reward
     const { data: rewardData, error: rewardError } = await supabase
       .rpc('process_referral_reward', {
-        p_referral_id: referral.id
+        p_referral_id: (referral as any).id
       });
 
     if (rewardError) {

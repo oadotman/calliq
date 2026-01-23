@@ -93,20 +93,20 @@ export async function GET(request: NextRequest) {
       .order('year', { ascending: false })
       .order('month', { ascending: false });
 
-    // Calculate metrics
-    const metrics = calculateMetrics(clickData, referralData, commissionData);
+    // Calculate metrics (handle null data gracefully)
+    const metrics = calculateMetrics(clickData || [], referralData || [], commissionData || []);
 
     // Generate time series data
-    const timeSeries = generateTimeSeries(clickData, referralData, dateFrom, dateTo);
+    const timeSeries = generateTimeSeries(clickData || [], referralData || [], dateFrom, dateTo);
 
     // Get conversion funnel
-    const funnel = calculateFunnel(clickData, referralData);
+    const funnel = calculateFunnel(clickData || [], referralData || []);
 
     // Get top performing campaigns
-    const campaigns = analyzeCampaigns(clickData, referralData);
+    const campaigns = analyzeCampaigns(clickData || [], referralData || []);
 
     // Get customer lifetime value distribution
-    const ltvDistribution = calculateLTVDistribution(referralData);
+    const ltvDistribution = calculateLTVDistribution(referralData || []);
 
     return NextResponse.json({
       metrics,

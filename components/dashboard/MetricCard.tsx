@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { memo } from 'react'
 import { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -23,7 +23,7 @@ interface MetricCardProps {
   }
 }
 
-export function MetricCard({
+export const MetricCard = memo(function MetricCard({
   icon: Icon,
   iconBgColor,
   cardBgColor,
@@ -102,4 +102,4 @@ export function MetricCard({
       )}
     </div>
   )
-}
+})

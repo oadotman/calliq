@@ -82,7 +82,13 @@ export async function GET(request: NextRequest) {
     };
 
     // Get recent activity with null safety
-    const recentActivity = [];
+    const recentActivity: Array<{
+      type: string;
+      description: string;
+      timestamp: string;
+      status?: string;
+      amount?: number;
+    }> = [];
 
     // Add recent applications
     if (applicationsResult.data && applicationsResult.data.length > 0) {

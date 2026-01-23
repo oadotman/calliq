@@ -798,7 +798,7 @@ export default function CallDetailPage() {
       customerName,
       salesRep,
       callDate: format(new Date(call.created_at), 'MMMM d, yyyy'),
-      duration: Math.round(call.duration / 60), // Convert to minutes
+      duration: call.duration ? Math.round(call.duration / 60) : 0, // Convert to minutes
       sentiment,
       content: output,
       format: activeTab

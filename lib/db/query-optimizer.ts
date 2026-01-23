@@ -128,7 +128,13 @@ export class QueryOptimizer {
     } = options;
 
     if (values.length === 0) {
-      return { rows: [], rowCount: 0 } as QueryResult<T>;
+      return {
+        rows: [],
+        rowCount: 0,
+        command: 'INSERT',
+        oid: 0,
+        fields: []
+      } as QueryResult<T>;
     }
 
     // Split into chunks for very large inserts
@@ -267,7 +273,7 @@ export class QueryOptimizer {
     });
 
     const result = await dbRouter.read(query, params);
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   /**
@@ -300,7 +306,13 @@ export class QueryOptimizer {
     updates: Array<{ id: string | number; data: Record<string, any> }>
   ): Promise<QueryResult<T>> {
     if (updates.length === 0) {
-      return { rows: [], rowCount: 0 } as QueryResult<T>;
+      return {
+        rows: [],
+        rowCount: 0,
+        command: 'UPDATE',
+        oid: 0,
+        fields: []
+      } as QueryResult<T>;
     }
 
     // Build a single UPDATE query using CASE statements

@@ -160,7 +160,7 @@ export function EnhancedEmailModal({
         // Generate subject line
         const subject = selectedTemplate
           ? generateSubjectLine(selectedTemplate, {
-              customerName,
+              customerName: customerName ?? undefined,
               companyName: callData?.fields?.find(f => f.field_name === 'company')?.field_value,
               date: new Date().toLocaleDateString(),
               mainTopic: callData?.fields?.find(f => f.field_name === 'summary')?.field_value,

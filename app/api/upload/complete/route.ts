@@ -220,9 +220,9 @@ export async function POST(req: NextRequest) {
             throw new Error(`Direct processing endpoint returned: ${processResponse.status}`);
           }
 
-        } catch (directError) {
+        } catch (directError: unknown) {
           lastError = directError;
-          console.error('Direct processing fallback failed:', directError.message);
+          console.error('Direct processing fallback failed:', directError instanceof Error ? directError.message : 'Unknown error');
         }
       }
 

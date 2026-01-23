@@ -108,11 +108,13 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
     if (!user || !isOpen) return;
 
     async function fetchTemplates() {
+      if (!user) return;
+
       const supabase = createClient();
       const { data: templatesData } = await supabase
         .from('custom_templates')
         .select('id, name, description')
-        .eq('user_id', user.id)
+        .eq('user_id', user!.id)  // Using non-null assertion since we check above
         .is('deleted_at', null)
         .order('created_at', { ascending: false });
 
@@ -410,7 +412,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
       const templateToSend = selectedTemplateId &&
         !['default', 'salesforce', 'hubspot', 'pipedrive', 'zoho', 'freshsales', 'monday'].includes(selectedTemplateId)
         ? selectedTemplateId
-        : null;
+        : undefined;
 
       // Get audio duration before upload
       let audioDuration: number | undefined;

@@ -3,9 +3,16 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getAllowedOrigins, getBaseUrlOrFallback } from './lib/utils/urls'
 import { partnerAuthMiddleware } from './middleware/partner-auth'
+import { csrfMiddleware, injectCSRFToken, setCSRFToken } from './lib/security/csrf-simple'
+import { bodySizeLimit, getBodySizeLimit } from './middleware/body-size-limit'
+import { getRequestId, addTracingHeaders } from './lib/middleware/request-tracing'
 
 export async function middleware(req: NextRequest) {
-  console.log('Middleware: Processing request for', req.nextUrl.pathname)
+  // Generate or extract request ID for tracing
+  const requestId = getRequestId(req);
+  const startTime = Date.now();
+
+  console.log(`[${requestId}] Middleware: Processing request for`, req.nextUrl.pathname)
 
   // =====================================================
   // SEARCH BOT DETECTION
@@ -18,6 +25,18 @@ export async function middleware(req: NextRequest) {
   if (isSearchBot) {
     console.log('Middleware: Search bot detected, skipping cookie operations', userAgent);
     return NextResponse.next();
+  }
+
+  // =====================================================
+  // REQUEST BODY SIZE LIMIT CHECK
+  // Prevent large request payloads based on route
+  // =====================================================
+  if (req.method !== 'GET' && req.method !== 'HEAD' && req.method !== 'OPTIONS') {
+    const maxSize = getBodySizeLimit(req.nextUrl.pathname);
+    const sizeCheckResult = await bodySizeLimit(req, { maxBodySize: maxSize });
+    if (sizeCheckResult) {
+      return sizeCheckResult;
+    }
   }
 
   // =====================================================
@@ -172,6 +191,16 @@ export async function middleware(req: NextRequest) {
     }
   }
 
+  // =====================================================
+  // CSRF TOKEN VALIDATION
+  // Validate CSRF tokens for state-changing operations
+  // =====================================================
+  const csrfResponse = await csrfMiddleware(req);
+  if (csrfResponse) {
+    console.log('[Middleware] CSRF validation failed');
+    return csrfResponse;
+  }
+
   let res = NextResponse.next({
     request: {
       headers: req.headers,
@@ -182,6 +211,9 @@ export async function middleware(req: NextRequest) {
   res.headers.set('X-Frame-Options', 'SAMEORIGIN');
   res.headers.set('X-Content-Type-Options', 'nosniff');
   res.headers.set('X-XSS-Protection', '1; mode=block');
+  res.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
   // Create a Supabase client configured to use cookies
   const supabase = createServerClient(
@@ -243,6 +275,16 @@ export async function middleware(req: NextRequest) {
         console.log('Middleware: Invalid refresh token detected, clearing session');
         // Don't log the full error to avoid cluttering logs
         await supabase.auth.signOut();
+
+        // Explicitly clear all auth-related cookies
+        const response = NextResponse.redirect(new URL('/login', req.url));
+        response.cookies.delete('sb-access-token');
+        response.cookies.delete('sb-refresh-token');
+        response.cookies.delete('sb-auth-token');
+        response.cookies.delete('csrf_token');
+        // Add header to clear all site cookies (browser support varies)
+        response.headers.set('Clear-Site-Data', '"cookies"');
+        return response;
       } else {
         console.error('Middleware: Error getting session:', error);
       }
@@ -273,11 +315,17 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(redirectUrl);
     }
 
-    // Check if user has admin/owner role
+    // Check if user has admin/owner role AND plan allows admin access
     try {
       const { data: userOrg, error: userOrgError } = await supabase
         .from('user_organizations')
-        .select('role')
+        .select(`
+          role,
+          organization:organizations (
+            id,
+            plan_type
+          )
+        `)
         .eq('user_id', user.id)
         .single();
 
@@ -285,7 +333,8 @@ export async function middleware(req: NextRequest) {
         userId: user.id,
         userOrg,
         userOrgError,
-        role: userOrg?.role
+        role: userOrg?.role,
+        planType: userOrg?.organization?.[0]?.plan_type
       });
 
       if (userOrgError || !userOrg) {
@@ -295,13 +344,23 @@ export async function middleware(req: NextRequest) {
         return NextResponse.redirect(errorUrl);
       }
 
-      const isAdmin = userOrg.role === 'owner' || userOrg.role === 'admin';
+      // Check both role AND plan type
+      const hasAdminRole = userOrg.role === 'owner' || userOrg.role === 'admin';
+      const planAllowsAdmin = userOrg.organization?.[0]?.plan_type &&
+        !['free', 'solo'].includes(userOrg.organization[0].plan_type);
 
-      if (!isAdmin) {
+      if (!hasAdminRole) {
         console.log('Middleware: User is not admin, role:', userOrg.role);
-        // Redirect to a custom error page or dashboard with error message
         const errorUrl = new URL('/dashboard', req.url);
         errorUrl.searchParams.set('error', 'admin_access_denied');
+        return NextResponse.redirect(errorUrl);
+      }
+
+      if (!planAllowsAdmin) {
+        console.log('Middleware: Plan does not allow admin access, plan:', userOrg.organization?.[0]?.plan_type);
+        const errorUrl = new URL('/dashboard', req.url);
+        errorUrl.searchParams.set('error', 'admin_feature_requires_upgrade');
+        errorUrl.searchParams.set('reason', 'Admin features are only available for Team and Enterprise plans');
         return NextResponse.redirect(errorUrl);
       }
     } catch (error) {
@@ -366,8 +425,12 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', req.url))
   }
 
-  console.log('Middleware: Allowing request through')
-  return res
+  // Add tracing headers to the response
+  const processingTime = Date.now() - startTime;
+  const tracedResponse = addTracingHeaders(res, requestId, processingTime);
+
+  console.log(`[${requestId}] Middleware: Completed in ${processingTime}ms`)
+  return tracedResponse
 }
 
 export const config = {

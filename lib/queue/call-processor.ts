@@ -202,7 +202,8 @@ export async function processCall(job: Job<CallProcessingJob>): Promise<Processi
       transcriptionId,
       transcription,
       extractedData,
-      processingTime: Date.now() - startTime
+      processingTime: Date.now() - startTime,
+      actualDuration: extractedData.actualDuration // Pass through actual duration from extraction
     });
 
     // Update progress
@@ -331,7 +332,8 @@ async function extractDataWithOpenAI(
     summary: `Call summary for ${job.callId}`,
     sentiment: 'positive',
     keyPoints: ['Point 1', 'Point 2'],
-    actionItems: []
+    actionItems: [],
+    actualDuration: 300 // In production, this would come from AssemblyAI
   };
 }
 
@@ -343,6 +345,17 @@ async function saveProcessingResults(
   results: any
 ): Promise<void> {
   const supabase = createClient();
+
+  // First, get the call to retrieve reservation ID from metadata
+  const { data: call, error: fetchError } = await supabase
+    .from('calls')
+    .select('metadata, organization_id')
+    .eq('id', callId)
+    .single();
+
+  if (fetchError) {
+    throw new Error(`Failed to fetch call: ${fetchError.message}`);
+  }
 
   const { error } = await supabase
     .from('calls')
@@ -361,6 +374,24 @@ async function saveProcessingResults(
   }
 
   console.log(`Results saved for call ${callId}`);
+
+  // Confirm usage reservation if it exists
+  if (call?.metadata?.reservationId && call?.organization_id) {
+    try {
+      const { confirmReservation } = await import('@/lib/usage-reservation');
+      const actualMinutes = results.actualDuration ? results.actualDuration / 60 : undefined;
+
+      await confirmReservation(
+        call.metadata.reservationId,
+        actualMinutes // Pass actual duration if available, otherwise uses estimated
+      );
+
+      console.log(`Confirmed reservation ${call.metadata.reservationId} for call ${callId}`);
+    } catch (error) {
+      console.error(`Failed to confirm reservation for call ${callId}:`, error);
+      // Don't throw - processing succeeded even if reservation confirmation failed
+    }
+  }
 }
 
 /**

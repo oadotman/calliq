@@ -20,6 +20,7 @@ import {
   Rocket
 } from 'lucide-react';
 import { EarningsAnimation } from '@/components/partners/EarningsAnimation';
+import { PartnerNavigation } from '@/components/partners/PartnerNavigation';
 
 export const metadata: Metadata = {
   title: "Partner Program - Earn 25-30% Recurring Commission | SynQall",
@@ -73,8 +74,10 @@ export const metadata: Metadata = {
 export default function PartnerLandingPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
-      {/* Hero Section */}
-      <section className="px-6 py-20 mx-auto max-w-7xl">
+      <PartnerNavigation />
+
+      {/* Hero Section - Added pt-16 to account for fixed nav */}
+      <section className="px-6 py-20 pt-32 mx-auto max-w-7xl">
         <div className="text-center">
           <div className="inline-flex items-center px-4 py-2 mb-6 text-sm font-medium text-blue-700 bg-blue-100 rounded-full">
             <Award className="w-4 h-4 mr-2" />

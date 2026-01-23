@@ -24,9 +24,30 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { callIds } = body;
 
+    // Add bulk operation size limit to prevent DoS
+    const MAX_BULK_DELETE = 100;
+
     if (!Array.isArray(callIds) || callIds.length === 0) {
       return NextResponse.json(
         { error: 'Invalid request - callIds array required' },
+        { status: 400 }
+      );
+    }
+
+    if (callIds.length > MAX_BULK_DELETE) {
+      return NextResponse.json(
+        { error: `Bulk delete limited to ${MAX_BULK_DELETE} items at a time. You tried to delete ${callIds.length} items.` },
+        { status: 400 }
+      );
+    }
+
+    // Validate that all IDs are valid UUIDs
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const invalidIds = callIds.filter(id => typeof id !== 'string' || !uuidRegex.test(id));
+
+    if (invalidIds.length > 0) {
+      return NextResponse.json(
+        { error: 'Invalid call IDs format - all IDs must be valid UUIDs' },
         { status: 400 }
       );
     }

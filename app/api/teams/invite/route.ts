@@ -8,65 +8,50 @@ import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { sanitizeEmail, sanitizeInput } from '@/lib/sanitize-simple';
 import { inviteRateLimiter } from '@/lib/rateLimit';
 import { randomBytes } from 'crypto';
+import { withValidation, CommonSchemas } from '@/lib/middleware/validate';
+import { z } from 'zod';
+
+// Define the schema for this route
+const InviteTeamMemberSchema = z.object({
+  email: z.string().email('Invalid email format'),
+  role: z.enum(['admin', 'member']),
+  organizationId: z.string().uuid('Invalid organization ID format')
+});
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 export const revalidate = 0;
 
-export async function POST(req: NextRequest) {
-  try {
-    // Rate limiting
-    const identifier = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'anonymous';
-
+export const POST = withValidation(
+  InviteTeamMemberSchema,
+  async (req: NextRequest, validatedData: z.infer<typeof InviteTeamMemberSchema>) => {
     try {
-      await inviteRateLimiter.check(identifier);
-    } catch (error) {
-      return NextResponse.json(
-        { error: 'Too many invitation requests. Please try again later.' },
-        { status: 429 }
-      );
-    }
+      // Rate limiting
+      const identifier = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'anonymous';
 
-    // Get authenticated user
-    const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+      try {
+        await inviteRateLimiter.check(identifier);
+      } catch (error) {
+        return NextResponse.json(
+          { error: 'Too many invitation requests. Please try again later.' },
+          { status: 429 }
+        );
+      }
 
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+      // Get authenticated user
+      const supabase = await createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-    // Parse request body
-    const body = await req.json();
-    const { email: rawEmail, role, organizationId } = body;
+      if (authError || !user) {
+        return NextResponse.json(
+          { error: 'Unauthorized' },
+          { status: 401 }
+        );
+      }
 
-    // Validate and sanitize input
-    if (!rawEmail || !role || !organizationId) {
-      return NextResponse.json(
-        { error: 'Missing required fields: email, role, organizationId' },
-        { status: 400 }
-      );
-    }
-
-    let email: string;
-    try {
-      email = sanitizeEmail(rawEmail);
-    } catch (error) {
-      return NextResponse.json(
-        { error: 'Invalid email format' },
-        { status: 400 }
-      );
-    }
-
-    if (!['admin', 'member'].includes(role)) {
-      return NextResponse.json(
-        { error: 'Invalid role. Must be "admin" or "member".' },
-        { status: 400 }
-      );
-    }
+      // Use validated data
+      const { email, role, organizationId } = validatedData;
 
     // Verify user has permission to invite (owner or admin)
     const { data: membership, error: membershipError } = await supabase
@@ -91,6 +76,15 @@ export async function POST(req: NextRequest) {
     }
 
     const organization = membership.organization as any;
+
+    // Check if plan allows team invitations (free and solo plans cannot invite members)
+    const planType = organization?.plan_type;
+    if (planType && ['free', 'solo'].includes(planType)) {
+      return NextResponse.json(
+        { error: 'Team invitations are not available on Free and Solo plans. Please upgrade to a Team plan.' },
+        { status: 403 }
+      );
+    }
 
     // Check if user with this email is already a member
     // We'll use admin client to check if the user exists
@@ -281,14 +275,15 @@ export async function POST(req: NextRequest) {
       },
     });
 
-  } catch (error) {
-    console.error('Team invitation error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    } catch (error) {
+      console.error('Team invitation error:', error);
+      return NextResponse.json(
+        { error: 'Internal server error' },
+        { status: 500 }
+      );
+    }
   }
-}
+);
 
 // GET: List pending invitations for an organization
 export async function GET(req: NextRequest) {

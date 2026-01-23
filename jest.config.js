@@ -11,8 +11,14 @@ const customJestConfig = {
   testEnvironment: 'jest-environment-jsdom',
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
+    '^@/components/(.*)$': '<rootDir>/components/$1',
+    '^@/lib/(.*)$': '<rootDir>/lib/$1',
+    '^@/hooks/(.*)$': '<rootDir>/hooks/$1',
+    '^@/app/(.*)$': '<rootDir>/app/$1',
   },
   testMatch: [
+    '<rootDir>/tests/unit/**/*.test.{js,jsx,ts,tsx}',
+    '<rootDir>/tests/integration/**/*.test.{js,jsx,ts,tsx}',
     '**/__tests__/**/*.test.[jt]s?(x)',
     '**/?(*.)+(spec|test).[jt]s?(x)',
   ],
@@ -28,10 +34,10 @@ const customJestConfig = {
   ],
   coverageThreshold: {
     global: {
-      statements: 70,
-      branches: 70,
-      functions: 70,
-      lines: 70,
+      statements: 80,
+      branches: 80,
+      functions: 80,
+      lines: 80,
     },
   },
 }

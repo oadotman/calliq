@@ -1,14 +1,14 @@
-// This file configures the initialization of Sentry on the client.
-// The config you add here will be used whenever a users loads a page in their browser.
+// This file configures the initialization of Sentry on the client side.
+// The config you add here will be used whenever a user loads a page in their browser.
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
-import * as Sentry from '@sentry/nextjs';
+import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
   // Adjust this value in production, or use tracesSampler for greater control
-  tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+  tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,
@@ -17,64 +17,70 @@ Sentry.init({
 
   // This sets the sample rate to be 10%. You may want this to be 100% while
   // in development and sample at a lower rate in production
-  replaysSessionSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 0,
+  replaysSessionSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
 
   // You can remove this option if you're not planning to use the Sentry Session Replay feature:
   integrations: [
     Sentry.replayIntegration({
-      // Additional Replay configuration goes in here, for example:
-      maskAllText: true,
-      blockAllMedia: true,
+      // Additional Replay configuration goes here
+      maskAllText: false,
+      blockAllMedia: false,
     }),
   ],
 
-  // Note: if you want to override the automatic release value, do not set a
-  // `release` value here - use the environment variable `SENTRY_RELEASE`, so
-  // that it will also get attached to your source maps
+  // Environment
+  environment: process.env.NODE_ENV || "development",
 
-  environment: process.env.NODE_ENV,
+  // Release tracking
+  release: process.env.NEXT_PUBLIC_SENTRY_RELEASE,
 
+  // Filtering
   beforeSend(event, hint) {
-    // Filter out sensitive data
-    if (event.request) {
-      // Remove cookies and headers that might contain tokens
-      delete event.request.cookies;
+    // Filter out specific errors
+    if (event.exception) {
+      const error = hint.originalException;
 
-      // Keep only safe headers
-      if (event.request.headers) {
-        const safeHeaders: Record<string, string> = {};
-        const allowedHeaders = ['content-type', 'user-agent', 'accept'];
+      // Don't send network errors in development
+      if (process.env.NODE_ENV === "development" &&
+          error instanceof Error &&
+          error.message?.includes("fetch")) {
+        return null;
+      }
 
-        Object.keys(event.request.headers).forEach(key => {
-          if (allowedHeaders.includes(key.toLowerCase())) {
-            safeHeaders[key] = event.request!.headers![key];
-          }
-        });
+      // Filter out known non-critical errors
+      const ignoredErrors = [
+        "ResizeObserver loop limit exceeded",
+        "Non-Error promise rejection captured",
+        "Network request failed"
+      ];
 
-        event.request.headers = safeHeaders;
+      const errorMessage = error instanceof Error ? error.message : "";
+      if (ignoredErrors.some(ignored => errorMessage.includes(ignored))) {
+        return null;
       }
     }
 
-    // Filter out local development errors if needed
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Sentry event (dev):', event);
+    // Add user context
+    if (typeof window !== "undefined") {
+      const userId = window.localStorage?.getItem("userId");
+      const organizationId = window.localStorage?.getItem("organizationId");
+
+      if (userId || organizationId) {
+        event.user = {
+          ...event.user,
+          id: userId || undefined,
+          organizationId
+        };
+      }
     }
 
     return event;
   },
 
-  ignoreErrors: [
-    // Browser extensions
-    'top.GLOBALS',
-    // Random plugins/extensions
-    'originalCreateNotification',
-    'canvas.contentDocument',
-    'MyApp_RemoveAllHighlights',
-    // Network errors that are not our fault
-    'Non-Error promise rejection captured',
-    'Network request failed',
-    'Failed to fetch',
-    // Common user errors
-    'ResizeObserver loop limit exceeded',
+  // Ignore specific transactions
+  ignoreTransactions: [
+    "/api/health",
+    "/_next/static",
+    "/favicon.ico"
   ],
 });

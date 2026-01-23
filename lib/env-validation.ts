@@ -48,14 +48,13 @@ const EnvSchema = z.object({
     .min(1, 'OPENAI_API_KEY is required')
     .regex(/^sk-[A-Za-z0-9_-]{20,}$/, 'Invalid OpenAI API key format'),
 
-  // Inngest (Required)
-  INNGEST_EVENT_KEY: z
-    .string()
-    .min(1, 'INNGEST_EVENT_KEY is required'),
-
-  INNGEST_SIGNING_KEY: z
-    .string()
-    .min(1, 'INNGEST_SIGNING_KEY is required'),
+  // Queue Management - Redis (Optional)
+  // Note: The app can work without Redis but will process calls synchronously
+  // For production, Redis is recommended for better performance
+  REDIS_HOST: z.string().optional(),
+  REDIS_PORT: z.string().optional(),
+  REDIS_PASSWORD: z.string().optional(),
+  REDIS_DB: z.string().optional(),
 
   // Application Configuration (Required)
   NEXT_PUBLIC_APP_URL: z
@@ -309,13 +308,10 @@ export async function checkCriticalServices(): Promise<{
     errors.push('AssemblyAI API key not configured');
   }
 
-  // Check Inngest
-  services.inngest = !!(
-    process.env.INNGEST_EVENT_KEY &&
-    process.env.INNGEST_SIGNING_KEY
-  );
-  if (!services.inngest) {
-    errors.push('Inngest not configured');
+  // Check Redis/Queue (optional but recommended)
+  services.redis = !!(process.env.REDIS_URL || process.env.REDIS_HOST);
+  if (!services.redis) {
+    console.warn('Redis not configured - calls will be processed synchronously');
   }
 
   const healthy = Object.values(services).every((status) => status);

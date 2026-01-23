@@ -154,7 +154,24 @@ export default function AdminDashboard() {
     );
   }
 
-  const adminSections = [
+  // Define types for admin section items
+  type AdminSectionItem = {
+    label: string;
+    href: string;
+    icon: any;
+    badge?: string | null;
+    badgeVariant?: string;
+  };
+
+  type AdminSection = {
+    title: string;
+    description: string;
+    icon: any;
+    color: string;
+    items: AdminSectionItem[];
+  };
+
+  const adminSections: AdminSection[] = [
     {
       title: 'Partner Program',
       description: 'Manage partners, applications, and commissions',
@@ -323,7 +340,7 @@ export default function AdminDashboard() {
                                   <span className="font-medium">{item.label}</span>
                                 </div>
                                 {item.badge && (
-                                  <Badge variant={item.badgeVariant as any || 'default'}>
+                                  <Badge variant={(item.badgeVariant || 'default') as 'default' | 'secondary' | 'destructive' | 'outline' | 'warning'}>
                                     {item.badge}
                                   </Badge>
                                 )}

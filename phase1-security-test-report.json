@@ -1,0 +1,78 @@
+{
+  "date": "2026-01-21T17:57:16.476Z",
+  "environment": "http://localhost:3000",
+  "summary": {
+    "total": 26,
+    "passed": 16,
+    "failed": 10,
+    "warnings": 3,
+    "successRate": "61.5%"
+  },
+  "results": {
+    "passed": [
+      "Team invitations blocked for free/solo plans",
+      "POST request without CSRF token blocked",
+      "GET requests work without CSRF token",
+      "Invalid CSRF token rejected",
+      "Invalid session redirects to login",
+      "X-Frame-Options present",
+      "X-Content-Type-Options present",
+      "X-XSS-Protection present",
+      "Strict-Transport-Security present",
+      "Referrer-Policy present",
+      "Permissions-Policy present",
+      "Password reset endpoint available",
+      "File size limit enforced",
+      "Concurrent upload handling",
+      "Invalid origin rejected",
+      "Valid origin accepted"
+    ],
+    "failed": [
+      {
+        "test": "Admin route blocks free/solo plans",
+        "error": "Status: 307"
+      },
+      {
+        "test": "Clear-Site-Data header present",
+        "error": "Header not present"
+      },
+      {
+        "test": "Auth cookies explicitly deleted",
+        "error": "Checking Set-Cookie headers"
+      },
+      {
+        "test": "SQL injection pattern blocked: '; DROP TABLE users;...",
+        "error": "Status: 200"
+      },
+      {
+        "test": "SQL injection pattern blocked: 1' OR '1'='1...",
+        "error": "Status: 200"
+      },
+      {
+        "test": "SQL injection pattern blocked: admin'--...",
+        "error": "Status: 200"
+      },
+      {
+        "test": "SQL injection pattern blocked: 1; DELETE FROM partn...",
+        "error": "Status: 200"
+      },
+      {
+        "test": "SQL injection pattern blocked: ' UNION SELECT * FRO...",
+        "error": "Status: 200"
+      },
+      {
+        "test": "Legacy password handling",
+        "error": "Unexpected response: 403"
+      },
+      {
+        "test": "Invalid file type rejected",
+        "error": "Status: 403"
+      }
+    ],
+    "warnings": [
+      "Rate limiting may not be working properly - no 429 response received",
+      "Upload rate limiting may not be working - no 429 response",
+      "Some uploads were rejected - possible quota enforcement"
+    ]
+  }
+}

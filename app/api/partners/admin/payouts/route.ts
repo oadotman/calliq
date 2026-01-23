@@ -150,6 +150,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Limit bulk payout operations to prevent DoS and ensure manageable transactions
+    const MAX_BULK_PAYOUTS = 50;
+    if (commissionIds.length > MAX_BULK_PAYOUTS) {
+      return NextResponse.json(
+        { error: `Maximum ${MAX_BULK_PAYOUTS} payouts can be processed at once. You tried to process ${commissionIds.length} payouts.` },
+        { status: 400 }
+      );
+    }
+
     if (!action || !['approve', 'pay', 'reject'].includes(action)) {
       return NextResponse.json(
         { error: 'Valid action required (approve, pay, reject)' },

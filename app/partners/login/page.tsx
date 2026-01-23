@@ -26,6 +26,7 @@ import {
   Award
 } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
+import { PartnerNavigation } from '@/components/partners/PartnerNavigation';
 
 export default function PartnerLoginPage() {
   const router = useRouter();
@@ -111,8 +112,10 @@ export default function PartnerLoginPage() {
 
   if (showForgotPassword) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center px-6 py-12">
-        <div className="w-full max-w-md">
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+        <PartnerNavigation />
+        <div className="flex items-center justify-center px-6 py-12 pt-28">
+          <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900">SynQall Partners</h1>
             <p className="text-gray-600 mt-2">Reset your password</p>
@@ -195,12 +198,14 @@ export default function PartnerLoginPage() {
           </Card>
         </div>
       </div>
+      </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      <div className="flex">
+      <PartnerNavigation />
+      <div className="flex pt-16">
         {/* Left Panel - Login Form */}
         <div className="flex-1 flex items-center justify-center px-6 py-12">
           <div className="w-full max-w-md">

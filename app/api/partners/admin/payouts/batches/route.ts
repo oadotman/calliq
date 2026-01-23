@@ -138,6 +138,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Limit bulk batch creation to prevent DoS and database overload
+    const MAX_BULK_BATCHES = 25;
+    if (partnerIds.length > MAX_BULK_BATCHES) {
+      return NextResponse.json(
+        { error: `Maximum ${MAX_BULK_BATCHES} partner batches can be created at once. You tried to create ${partnerIds.length} batches.` },
+        { status: 400 }
+      );
+    }
+
     // Create payout batches for each partner
     const batches = [];
     for (const partnerId of partnerIds) {

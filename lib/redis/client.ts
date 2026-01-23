@@ -49,7 +49,7 @@ redisClient.on('close', () => {
   console.log('Redis connection closed');
 });
 
-redisClient.on('reconnecting', (time) => {
+redisClient.on('reconnecting', (time: any) => {
   console.log(`Redis reconnecting in ${time}ms`);
 });
 

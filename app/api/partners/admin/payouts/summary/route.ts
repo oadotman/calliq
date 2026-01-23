@@ -104,7 +104,14 @@ export async function GET(request: NextRequest) {
       ).size,
 
       // Monthly breakdown (last 6 months)
-      monthlyBreakdown: []
+      monthlyBreakdown: [] as Array<{
+        month: string;
+        commissionsCount: number;
+        pendingAmount: number;
+        approvedAmount: number;
+        paidAmount: number;
+        totalAmount: number;
+      }>
     };
 
     // Calculate monthly breakdown

@@ -31,6 +31,19 @@ export async function POST(req: NextRequest) {
     const result = await PartnerAuth.login(email, password, req);
 
     if (!result.success) {
+      // Check if this is a forced password reset
+      if (result.requiresPasswordReset) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: result.error || 'Password reset required',
+            requiresPasswordReset: true,
+            email: result.email,
+          },
+          { status: 403 } // 403 Forbidden - access denied until password reset
+        );
+      }
+
       return NextResponse.json(
         {
           success: false,

@@ -134,6 +134,33 @@ export async function validateRequestBody<T>(
 }
 
 /**
+ * Validate password strength
+ */
+export function validatePassword(password: string): { valid: boolean; error?: string } {
+  if (!password || password.length < 8) {
+    return { valid: false, error: 'Password must be at least 8 characters' };
+  }
+
+  if (password.length > 128) {
+    return { valid: false, error: 'Password too long' };
+  }
+
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasNumber = /\d/.test(password);
+  const hasSpecialChar = /[@$!%*?&]/.test(password);
+
+  if (!hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecialChar) {
+    return {
+      valid: false,
+      error: 'Password must contain uppercase, lowercase, number, and special character'
+    };
+  }
+
+  return { valid: true };
+}
+
+/**
  * Validate file upload security
  */
 export function validateFileUpload(file: {

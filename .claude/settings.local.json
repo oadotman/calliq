@@ -91,7 +91,16 @@
       "Bash(timeout /t 10 /nobreak)",
       "Bash(git rev-parse:*)",
       "Bash(where:*)",
-      "Bash(git remote show:*)"
+      "Bash(git remote show:*)",
+      "Bash(playwright.config.ts)",
+      "Bash(\"C:\\Users\\User\\Desktop\\Eledami\\fresh ideas\\Final\\calliq\\.env.example\")",
+      "Bash(sentry.client.config.ts)",
+      "Bash(sentry.server.config.ts)",
+      "Bash(npm test:*)",
+      "Bash(npx husky init)",
+      "Bash(npx husky@latest init)",
+      "Bash(.husky/pre-commit:*)",
+      "Bash(.husky/commit-msg)"
     ],
     "deny": [],
     "ask": []
