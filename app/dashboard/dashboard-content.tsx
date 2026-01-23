@@ -325,23 +325,10 @@ export default function DashboardContent() {
     setIsUploadModalOpen(false);
   }, []);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white">
-        <div className="flex items-center justify-center p-12">
-          <div className="text-center">
-            <Loader2 className="w-12 h-12 animate-spin text-violet-600 mx-auto mb-4" />
-            <p className="text-gray-500 font-medium">Loading dashboard...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Get plan type display with memoization
+  // Get plan type display with memoization - moved before conditional return
   const planDisplay = useMemo(() => {
     if (!organization) return "Starter Plan";
-    switch (organization.plan_type) {
+    switch (organization?.plan_type) {
       case 'free':
         return 'Free Plan';
       case 'solo':
@@ -354,6 +341,19 @@ export default function DashboardContent() {
         return 'Starter Plan';
     }
   }, [organization]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="flex items-center justify-center p-12">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 animate-spin text-violet-600 mx-auto mb-4" />
+            <p className="text-gray-500 font-medium">Loading dashboard...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">
