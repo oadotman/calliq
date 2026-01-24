@@ -102,7 +102,12 @@ export async function csrfMiddleware(request: Request): Promise<Response | null>
     url.pathname.startsWith('/api/webhooks/') ||
     url.pathname.startsWith('/api/cron/') ||
     url.pathname.startsWith('/api/public/') ||
-    url.pathname.startsWith('/api/health');
+    url.pathname.startsWith('/api/health') ||
+    url.pathname.startsWith('/api/upload/') ||
+    url.pathname.startsWith('/api/auth/') ||
+    url.pathname.startsWith('/api/teams/invite') ||
+    url.pathname.startsWith('/api/referrals/activate') ||
+    url.pathname === '/api/calls/import-url';
 
   if (isPublicPath) {
     return null;

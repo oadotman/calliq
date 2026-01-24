@@ -27,9 +27,9 @@ export async function fetchCurrentUsage(): Promise<UsageInfo | null> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 
-    // Get user's organization
+    // Get user's organization (correct table name is user_organizations)
     const { data: membership } = await supabase
-      .from('organization_members')
+      .from('user_organizations')
       .select('organization_id')
       .eq('user_id', user.id)
       .single();

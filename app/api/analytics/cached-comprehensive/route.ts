@@ -204,9 +204,9 @@ async function getTeamMetricsWithCache(organizationId: string) {
     async () => {
       const supabase = createClient();
 
-      // Get team members
+      // Get team members (correct table name is user_organizations)
       const { data: members, error } = await supabase
-        .from('organization_members')
+        .from('user_organizations')
         .select('user_id, role, created_at')
         .eq('organization_id', organizationId);
 
