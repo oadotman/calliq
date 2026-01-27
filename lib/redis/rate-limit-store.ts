@@ -27,6 +27,15 @@ export class RedisRateLimitStore {
     const windowStart = now - windowMs;
     const prefixedKey = `rate_limit:${key}`;
 
+    // If Redis is not available, allow all requests (fail open)
+    if (!this.redis) {
+      return {
+        allowed: true,
+        remaining: limit,
+        resetTime: now + windowMs,
+      };
+    }
+
     try {
       // Use Redis pipeline for atomic operations
       const pipeline = this.redis.pipeline();
@@ -58,7 +67,7 @@ export class RedisRateLimitStore {
       let resetTime = now + windowMs;
       if (count > limit) {
         // Get the oldest entry to calculate exact reset time
-        const oldestEntry = await this.redis.zrange(prefixedKey, 0, 0, 'WITHSCORES');
+        const oldestEntry = await this.redis!.zrange(prefixedKey, 0, 0, 'WITHSCORES');
         if (oldestEntry.length >= 2) {
           const oldestTimestamp = parseInt(oldestEntry[1]);
           resetTime = oldestTimestamp + windowMs;
@@ -69,7 +78,7 @@ export class RedisRateLimitStore {
         allowed: count <= limit,
         remaining: Math.max(0, limit - count),
         resetTime,
-        retryAfter: count > limit ? Math.ceil((resetTime - now) / 1000) : undefined
+        retryAfter: count > limit ? Math.ceil((resetTime - now) / 1000) : undefined,
       };
     } catch (error) {
       console.error('Redis rate limit error:', error);
@@ -77,7 +86,7 @@ export class RedisRateLimitStore {
       return {
         allowed: true,
         remaining: limit,
-        resetTime: now + windowMs
+        resetTime: now + windowMs,
       };
     }
   }
@@ -93,6 +102,15 @@ export class RedisRateLimitStore {
     const windowStart = now - windowMs;
     const prefixedKey = `rate_limit:${key}`;
 
+    // If Redis is not available, allow all requests (fail open)
+    if (!this.redis) {
+      return {
+        allowed: true,
+        remaining: limit,
+        resetTime: now + windowMs,
+      };
+    }
+
     try {
       // Count requests in the current window
       const count = await this.redis.zcount(prefixedKey, windowStart, now);
@@ -100,7 +118,7 @@ export class RedisRateLimitStore {
       let resetTime = now + windowMs;
       if (count >= limit) {
         // Get the oldest entry to calculate exact reset time
-        const oldestEntry = await this.redis.zrange(prefixedKey, 0, 0, 'WITHSCORES');
+        const oldestEntry = await this.redis!.zrange(prefixedKey, 0, 0, 'WITHSCORES');
         if (oldestEntry.length >= 2) {
           const oldestTimestamp = parseInt(oldestEntry[1]);
           resetTime = oldestTimestamp + windowMs;
@@ -111,7 +129,7 @@ export class RedisRateLimitStore {
         allowed: count < limit,
         remaining: Math.max(0, limit - count),
         resetTime,
-        retryAfter: count >= limit ? Math.ceil((resetTime - now) / 1000) : undefined
+        retryAfter: count >= limit ? Math.ceil((resetTime - now) / 1000) : undefined,
       };
     } catch (error) {
       console.error('Redis rate limit check error:', error);
@@ -119,7 +137,7 @@ export class RedisRateLimitStore {
       return {
         allowed: true,
         remaining: limit,
-        resetTime: now + windowMs
+        resetTime: now + windowMs,
       };
     }
   }
@@ -130,6 +148,9 @@ export class RedisRateLimitStore {
    */
   async reset(key: string): Promise<void> {
     const prefixedKey = `rate_limit:${key}`;
+    if (!this.redis) {
+      return;
+    }
     try {
       await this.redis.del(prefixedKey);
     } catch (error) {
@@ -141,9 +162,12 @@ export class RedisRateLimitStore {
    * Get all active rate limit keys (for monitoring)
    */
   async getActiveKeys(): Promise<string[]> {
+    if (!this.redis) {
+      return [];
+    }
     try {
       const keys = await this.redis.keys('rate_limit:*');
-      return keys.map(key => key.replace('rate_limit:', ''));
+      return keys.map((key) => key.replace('rate_limit:', ''));
     } catch (error) {
       console.error('Redis get active keys error:', error);
       return [];
@@ -155,6 +179,9 @@ export class RedisRateLimitStore {
    * This is usually handled automatically by Redis TTL, but can be called manually
    */
   async cleanup(): Promise<number> {
+    if (!this.redis) {
+      return 0;
+    }
     try {
       const keys = await this.redis.keys('rate_limit:*');
       let cleaned = 0;
