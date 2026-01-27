@@ -46,7 +46,12 @@ import { useAuth } from '@/lib/AuthContext';
 import { getPlanDetails } from '@/lib/pricing';
 import { useDirectUpload } from '@/lib/hooks/useDirectUpload';
 import { createClient } from '@/lib/supabase/client';
-import { estimateAudioDurationClient, checkDurationLimit } from '@/lib/client-usage';
+import {
+  estimateAudioDurationClient,
+  checkDurationLimit,
+  fetchCurrentUsage,
+  type UsageInfo,
+} from '@/lib/client-usage';
 
 interface UploadModalProps {
   isOpen: boolean;
@@ -105,6 +110,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
     { id: '1', fieldName: '', fieldType: 'text', description: '' },
   ]);
   const [typedNotes, setTypedNotes] = useState('');
+  const [currentUsage, setCurrentUsage] = useState<UsageInfo | null>(null);
   // Usage display removed - shown in dashboard instead
   const { toast } = useToast();
   const router = useRouter();
@@ -136,8 +142,12 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
   useEffect(() => {
     if (!user || !isOpen) return;
 
-    async function fetchTemplates() {
+    async function fetchTemplatesAndUsage() {
       if (!user) return;
+
+      // Fetch current usage
+      const usage = await fetchCurrentUsage();
+      setCurrentUsage(usage);
 
       const supabase = createClient();
       const { data: templatesData } = await supabase
@@ -152,8 +162,8 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
       }
     }
 
-    // Usage is displayed in the main dashboard, not in upload modal
-    fetchTemplates();
+    // Fetch both templates and usage
+    fetchTemplatesAndUsage();
   }, [user, isOpen]);
 
   // Browser visibility detection and upload protection
