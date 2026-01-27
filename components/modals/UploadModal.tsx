@@ -46,12 +46,13 @@ import { useAuth } from '@/lib/AuthContext';
 import { getPlanDetails } from '@/lib/pricing';
 import { useDirectUpload } from '@/lib/hooks/useDirectUpload';
 import { createClient } from '@/lib/supabase/client';
+// Use V2 usage tracking for accurate, real-time usage
 import {
   estimateAudioDurationClient,
-  checkDurationLimit,
-  fetchCurrentUsage,
-  type UsageInfo,
-} from '@/lib/client-usage';
+  checkDurationLimitV2,
+  fetchCurrentUsageV2,
+  type UsageInfoV2,
+} from '@/lib/client-usage-v2';
 
 interface UploadModalProps {
   isOpen: boolean;
@@ -110,7 +111,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
     { id: '1', fieldName: '', fieldType: 'text', description: '' },
   ]);
   const [typedNotes, setTypedNotes] = useState('');
-  const [currentUsage, setCurrentUsage] = useState<UsageInfo | null>(null);
+  const [currentUsage, setCurrentUsage] = useState<UsageInfoV2 | null>(null);
   // Usage display removed - shown in dashboard instead
   const { toast } = useToast();
   const router = useRouter();
@@ -145,8 +146,8 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
     async function fetchTemplatesAndUsage() {
       if (!user) return;
 
-      // Fetch current usage
-      const usage = await fetchCurrentUsage();
+      // Fetch current usage with V2 API (force sync on modal open)
+      const usage = await fetchCurrentUsageV2(true);
       setCurrentUsage(usage);
 
       const supabase = createClient();
@@ -313,7 +314,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
 
         // Check against available minutes for ALL plans
         if (currentUsage) {
-          const durationCheck = checkDurationLimit(durationToCheck, currentUsage.remainingMinutes);
+          const durationCheck = checkDurationLimitV2(durationToCheck, currentUsage);
 
           if (!durationCheck.allowed) {
             durationError =

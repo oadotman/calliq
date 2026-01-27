@@ -103,7 +103,9 @@
       "Bash(.husky/commit-msg)",
       "Bash(del eslint.config.js)",
       "Bash(npx eslint:*)",
-      "Bash(timeout 30 git push origin main)"
+      "Bash(timeout 30 git push origin main)",
+      "Bash(set SKIP_REDIS=true)",
+      "Bash(git fetch:*)"
     ],
     "deny": [],
     "ask": []
