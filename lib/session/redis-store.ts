@@ -24,7 +24,7 @@ export class RedisSessionStore {
   async get(sessionId: string): Promise<SessionData | null> {
     try {
       const key = `${this.prefix}${sessionId}`;
-      const data = await redisClient.get(key);
+      const data = await redisClient!.get(key);
 
       if (!data) {
         return null;
@@ -56,14 +56,10 @@ export class RedisSessionStore {
       // Add expiration timestamp to session data
       const sessionData = {
         ...data,
-        expiresAt: Date.now() + (ttlSeconds * 1000)
+        expiresAt: Date.now() + ttlSeconds * 1000,
       };
 
-      await redisClient.setex(
-        key,
-        ttlSeconds,
-        JSON.stringify(sessionData)
-      );
+      await redisClient!.setex(key, ttlSeconds, JSON.stringify(sessionData));
 
       return true;
     } catch (error) {
@@ -80,7 +76,7 @@ export class RedisSessionStore {
       const key = `${this.prefix}${sessionId}`;
       const ttlSeconds = ttl || this.defaultTTL;
 
-      const exists = await redisClient.expire(key, ttlSeconds);
+      const exists = await redisClient!.expire(key, ttlSeconds);
       return exists === 1;
     } catch (error) {
       console.error('Error touching session:', error);
@@ -94,7 +90,7 @@ export class RedisSessionStore {
   async destroy(sessionId: string): Promise<boolean> {
     try {
       const key = `${this.prefix}${sessionId}`;
-      const deleted = await redisClient.del(key);
+      const deleted = await redisClient!.del(key);
       return deleted === 1;
     } catch (error) {
       console.error('Error destroying session:', error);
@@ -108,12 +104,12 @@ export class RedisSessionStore {
   async getUserSessions(userId: string): Promise<string[]> {
     try {
       const pattern = `${this.prefix}*`;
-      const keys = await redisClient.keys(pattern);
+      const keys = await redisClient!.keys(pattern);
 
       const userSessions: string[] = [];
 
       for (const key of keys) {
-        const data = await redisClient.get(key);
+        const data = await redisClient!.get(key);
         if (data) {
           const session = JSON.parse(data);
           if (session.userId === userId) {
@@ -156,7 +152,7 @@ export class RedisSessionStore {
   async getSessionCount(): Promise<number> {
     try {
       const pattern = `${this.prefix}*`;
-      const keys = await redisClient.keys(pattern);
+      const keys = await redisClient!.keys(pattern);
       return keys.length;
     } catch (error) {
       console.error('Error getting session count:', error);

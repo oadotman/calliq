@@ -9,7 +9,7 @@ import redisClient from '@/lib/redis/client';
 export enum CircuitState {
   CLOSED = 'CLOSED', // Normal operation
   OPEN = 'OPEN', // Service is down, reject requests
-  HALF_OPEN = 'HALF_OPEN' // Testing if service recovered
+  HALF_OPEN = 'HALF_OPEN', // Testing if service recovered
 }
 
 export interface CircuitBreakerOptions {
@@ -87,7 +87,7 @@ export class CircuitBreaker<T = any> {
       fn(),
       new Promise<T>((_, reject) =>
         setTimeout(() => reject(new Error('Request timeout')), this.requestTimeout)
-      )
+      ),
     ]);
   }
 
@@ -120,11 +120,14 @@ export class CircuitBreaker<T = any> {
     this.lastFailureTime = Date.now();
 
     // Log the error
-    logger.error({
-      error: error.message,
-      failures: this.failures,
-      state: this.state
-    }, `Circuit breaker failure for ${this.serviceName}`);
+    logger.error(
+      {
+        error: error.message,
+        failures: this.failures,
+        state: this.state,
+      },
+      `Circuit breaker failure for ${this.serviceName}`
+    );
 
     // Record metrics
     this.recordMetric('failure');
@@ -164,10 +167,13 @@ export class CircuitBreaker<T = any> {
     this.state = CircuitState.OPEN;
     this.nextAttempt = Date.now() + this.resetTimeout;
 
-    logger.warn({
-      failures: this.failures,
-      nextAttempt: new Date(this.nextAttempt).toISOString()
-    }, `Circuit breaker opened for ${this.serviceName}`);
+    logger.warn(
+      {
+        failures: this.failures,
+        nextAttempt: new Date(this.nextAttempt).toISOString(),
+      },
+      `Circuit breaker opened for ${this.serviceName}`
+    );
 
     // Send alert
     this.sendAlert('opened');
@@ -224,7 +230,7 @@ export class CircuitBreaker<T = any> {
       successes: this.successes,
       requestCount: this.requestCount,
       lastFailureTime: this.lastFailureTime,
-      nextAttempt: this.nextAttempt
+      nextAttempt: this.nextAttempt,
     };
   }
 
@@ -234,7 +240,7 @@ export class CircuitBreaker<T = any> {
   private async loadState(): Promise<void> {
     try {
       const key = `circuit:${this.serviceName}`;
-      const data = await redisClient.get(key);
+      const data = await redisClient!.get(key);
 
       if (data) {
         const state = JSON.parse(data);
@@ -257,7 +263,7 @@ export class CircuitBreaker<T = any> {
     try {
       const key = `circuit:${this.serviceName}`;
       const data = JSON.stringify(this.getState());
-      await redisClient.setex(key, 300, data); // 5 minute TTL
+      await redisClient!.setex(key, 300, data); // 5 minute TTL
     } catch (error) {
       logger.error({ error }, `Failed to save circuit breaker state for ${this.serviceName}`);
     }
@@ -269,7 +275,7 @@ export class CircuitBreaker<T = any> {
   private async recordMetric(type: 'success' | 'failure' | 'rejection'): Promise<void> {
     try {
       const key = `metrics:circuit:${this.serviceName}:${type}`;
-      await redisClient.incr(key);
+      await redisClient!.incr(key);
     } catch (error) {
       // Ignore metric errors
     }
@@ -282,12 +288,16 @@ export class CircuitBreaker<T = any> {
     try {
       // This would integrate with your alerting system
       const alertKey = `alerts:circuit:${this.serviceName}`;
-      await redisClient.setex(alertKey, 3600, JSON.stringify({
-        service: this.serviceName,
-        event,
-        timestamp: new Date().toISOString(),
-        state: this.getState()
-      }));
+      await redisClient!.setex(
+        alertKey,
+        3600,
+        JSON.stringify({
+          service: this.serviceName,
+          event,
+          timestamp: new Date().toISOString(),
+          state: this.getState(),
+        })
+      );
     } catch (error) {
       // Ignore alert errors
     }
@@ -351,8 +361,10 @@ export class CircuitBreakerFactory {
         }
 
         // Wait before retrying
-        logger.info(`Retrying ${serviceName} after ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        logger.info(
+          `Retrying ${serviceName} after ${delay}ms (attempt ${attempt + 1}/${maxRetries})`
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
 
         // Exponential backoff
         delay = Math.min(delay * factor, maxDelay);
@@ -366,14 +378,14 @@ export class CircuitBreakerFactory {
    * Get all circuit breaker states
    */
   static getAllStates(): Array<ReturnType<CircuitBreaker['getState']>> {
-    return Array.from(this.breakers.values()).map(breaker => breaker.getState());
+    return Array.from(this.breakers.values()).map((breaker) => breaker.getState());
   }
 
   /**
    * Reset all circuit breakers
    */
   static resetAll(): void {
-    this.breakers.forEach(breaker => breaker.reset());
+    this.breakers.forEach((breaker) => breaker.reset());
   }
 }
 
@@ -381,47 +393,52 @@ export class CircuitBreakerFactory {
  * Predefined circuit breakers for external services
  */
 export const circuitBreakers = {
-  assemblyAI: () => CircuitBreakerFactory.getBreaker('AssemblyAI', {
-    failureThreshold: 5,
-    resetTimeout: 60000,
-    requestTimeout: 30000,
-    fallback: async () => ({
-      error: 'Transcription service temporarily unavailable',
-      fallback: true
-    })
-  }),
+  assemblyAI: () =>
+    CircuitBreakerFactory.getBreaker('AssemblyAI', {
+      failureThreshold: 5,
+      resetTimeout: 60000,
+      requestTimeout: 30000,
+      fallback: async () => ({
+        error: 'Transcription service temporarily unavailable',
+        fallback: true,
+      }),
+    }),
 
-  openAI: () => CircuitBreakerFactory.getBreaker('OpenAI', {
-    failureThreshold: 5,
-    resetTimeout: 60000,
-    requestTimeout: 30000,
-    fallback: async () => ({
-      error: 'AI extraction service temporarily unavailable',
-      fallback: true
-    })
-  }),
+  openAI: () =>
+    CircuitBreakerFactory.getBreaker('OpenAI', {
+      failureThreshold: 5,
+      resetTimeout: 60000,
+      requestTimeout: 30000,
+      fallback: async () => ({
+        error: 'AI extraction service temporarily unavailable',
+        fallback: true,
+      }),
+    }),
 
-  paddle: () => CircuitBreakerFactory.getBreaker('Paddle', {
-    failureThreshold: 3,
-    resetTimeout: 120000,
-    requestTimeout: 10000,
-    errorThresholdPercentage: 30
-  }),
+  paddle: () =>
+    CircuitBreakerFactory.getBreaker('Paddle', {
+      failureThreshold: 3,
+      resetTimeout: 120000,
+      requestTimeout: 10000,
+      errorThresholdPercentage: 30,
+    }),
 
-  resend: () => CircuitBreakerFactory.getBreaker('Resend', {
-    failureThreshold: 10,
-    resetTimeout: 30000,
-    requestTimeout: 5000,
-    fallback: async () => ({
-      queued: true,
-      message: 'Email queued for later delivery'
-    })
-  }),
+  resend: () =>
+    CircuitBreakerFactory.getBreaker('Resend', {
+      failureThreshold: 10,
+      resetTimeout: 30000,
+      requestTimeout: 5000,
+      fallback: async () => ({
+        queued: true,
+        message: 'Email queued for later delivery',
+      }),
+    }),
 
-  supabase: () => CircuitBreakerFactory.getBreaker('Supabase', {
-    failureThreshold: 10,
-    resetTimeout: 30000,
-    requestTimeout: 5000,
-    errorThresholdPercentage: 20
-  })
+  supabase: () =>
+    CircuitBreakerFactory.getBreaker('Supabase', {
+      failureThreshold: 10,
+      resetTimeout: 30000,
+      requestTimeout: 5000,
+      errorThresholdPercentage: 20,
+    }),
 };

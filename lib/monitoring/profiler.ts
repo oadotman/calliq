@@ -93,11 +93,14 @@ export class PerformanceProfiler {
     // Clean up
     this.profiles.delete(profileId);
 
-    logger.debug({
-      id: profileId,
-      duration: profile.duration,
-      operation: profile.operation,
-    }, 'Performance profile completed');
+    logger.debug(
+      {
+        id: profileId,
+        duration: profile.duration,
+        operation: profile.operation,
+      },
+      'Performance profile completed'
+    );
 
     return profile;
   }
@@ -126,12 +129,7 @@ export class PerformanceProfiler {
   /**
    * Measure between two marks
    */
-  measure(
-    profileId: string,
-    measureName: string,
-    startMark: string,
-    endMark?: string
-  ): void {
+  measure(profileId: string, measureName: string, startMark: string, endMark?: string): void {
     const profile = this.profiles.get(profileId);
 
     if (!profile) {
@@ -147,9 +145,7 @@ export class PerformanceProfiler {
       return;
     }
 
-    const endTime = endMark
-      ? this.globalMarks.get(`${profileId}-${endMark}`)
-      : performance.now();
+    const endTime = endMark ? this.globalMarks.get(`${profileId}-${endMark}`) : performance.now();
 
     if (!endTime) {
       logger.warn({ endMark }, 'End mark not found');
@@ -176,7 +172,7 @@ export class PerformanceProfiler {
 
     const entries = window.performance.getEntriesByType('resource') as PerformanceResourceTiming[];
 
-    return entries.slice(-50).map(entry => ({
+    return entries.slice(-50).map((entry) => ({
       name: entry.name,
       type: entry.initiatorType,
       duration: entry.duration,
@@ -190,7 +186,7 @@ export class PerformanceProfiler {
   private async storeProfile(profile: PerformanceProfile): Promise<void> {
     try {
       const key = `performance:${profile.operation}:${profile.id}`;
-      await redisClient.setex(key, 3600, JSON.stringify(profile)); // 1 hour TTL
+      await redisClient!.setex(key, 3600, JSON.stringify(profile)); // 1 hour TTL
 
       // Update aggregated metrics
       await this.updateAggregatedMetrics(profile);
@@ -207,35 +203,40 @@ export class PerformanceProfiler {
       const metricsKey = `metrics:performance:${profile.operation}`;
 
       // Update operation count
-      await redisClient.hincrby(metricsKey, 'count', 1);
+      await redisClient!.hincrby(metricsKey, 'count', 1);
 
       // Update total duration
-      await redisClient.hincrbyfloat(metricsKey, 'totalDuration', profile.duration || 0);
+      await redisClient!.hincrbyfloat(metricsKey, 'totalDuration', profile.duration || 0);
 
       // Update min/max duration
-      const currentMin = await redisClient.hget(metricsKey, 'minDuration');
-      const currentMax = await redisClient.hget(metricsKey, 'maxDuration');
+      const currentMin = await redisClient!.hget(metricsKey, 'minDuration');
+      const currentMax = await redisClient!.hget(metricsKey, 'maxDuration');
 
       if (!currentMin || profile.duration! < parseFloat(currentMin)) {
-        await redisClient.hset(metricsKey, 'minDuration', profile.duration!.toString());
+        await redisClient!.hset(metricsKey, 'minDuration', profile.duration!.toString());
       }
 
       if (!currentMax || profile.duration! > parseFloat(currentMax)) {
-        await redisClient.hset(metricsKey, 'maxDuration', profile.duration!.toString());
+        await redisClient!.hset(metricsKey, 'maxDuration', profile.duration!.toString());
       }
 
       // Store slow operations
-      if (profile.duration! > 1000) { // Operations slower than 1 second
+      if (profile.duration! > 1000) {
+        // Operations slower than 1 second
         const slowKey = `metrics:slow:${profile.operation}`;
-        await redisClient.zadd(slowKey, profile.duration!, JSON.stringify({
-          id: profile.id,
-          duration: profile.duration,
-          timestamp: new Date().toISOString(),
-          metadata: profile.metadata,
-        }));
+        await redisClient!.zadd(
+          slowKey,
+          profile.duration!,
+          JSON.stringify({
+            id: profile.id,
+            duration: profile.duration,
+            timestamp: new Date().toISOString(),
+            metadata: profile.metadata,
+          })
+        );
 
         // Keep only top 100 slow operations
-        await redisClient.zremrangebyrank(slowKey, 0, -101);
+        await redisClient!.zremrangebyrank(slowKey, 0, -101);
       }
     } catch (error) {
       logger.error({ error }, 'Failed to update aggregated metrics');
@@ -256,7 +257,7 @@ export class PerformanceProfiler {
   } | null> {
     try {
       const metricsKey = `metrics:performance:${operation}`;
-      const data = await redisClient.hgetall(metricsKey);
+      const data = await redisClient!.hgetall(metricsKey);
 
       if (!data || !data.count) {
         return null;
@@ -267,7 +268,7 @@ export class PerformanceProfiler {
 
       // Get percentiles from recent operations
       const recentKey = `performance:recent:${operation}`;
-      const recentOps = await redisClient.zrange(recentKey, 0, -1, 'WITHSCORES');
+      const recentOps = await redisClient!.zrange(recentKey, 0, -1, 'WITHSCORES');
 
       const durations: number[] = [];
       for (let i = 1; i < recentOps.length; i += 2) {
@@ -303,11 +304,7 @@ export const profiler = new PerformanceProfiler();
  * Performance decorator for automatic profiling
  */
 export function profile(operationName?: string) {
-  return function (
-    target: any,
-    propertyKey: string,
-    descriptor: PropertyDescriptor
-  ) {
+  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
     const name = operationName || `${target.constructor.name}.${propertyKey}`;
 
@@ -374,7 +371,16 @@ export class BrowserPerformanceObserver {
 
     // Observe different performance entry types
     try {
-      this.observer.observe({ entryTypes: ['navigation', 'resource', 'paint', 'largest-contentful-paint', 'first-input', 'layout-shift'] });
+      this.observer.observe({
+        entryTypes: [
+          'navigation',
+          'resource',
+          'paint',
+          'largest-contentful-paint',
+          'first-input',
+          'layout-shift',
+        ],
+      });
     } catch (e) {
       // Some entry types might not be supported
       this.observer.observe({ entryTypes: ['navigation', 'resource'] });
@@ -408,7 +414,8 @@ export class BrowserPerformanceObserver {
 export class ServerPerformanceMonitor {
   private interval: NodeJS.Timeout | null = null;
 
-  start(intervalMs: number = 60000) { // Default 1 minute
+  start(intervalMs: number = 60000) {
+    // Default 1 minute
     this.interval = setInterval(() => {
       this.collectMetrics();
     }, intervalMs);
@@ -431,15 +438,11 @@ export class ServerPerformanceMonitor {
 
     // Store metrics
     try {
-      await redisClient.zadd(
-        'metrics:server:performance',
-        Date.now(),
-        JSON.stringify(metrics)
-      );
+      await redisClient!.zadd('metrics:server:performance', Date.now(), JSON.stringify(metrics));
 
       // Keep only last 24 hours
       const dayAgo = Date.now() - 86400000;
-      await redisClient.zremrangebyscore('metrics:server:performance', '-inf', dayAgo);
+      await redisClient!.zremrangebyscore('metrics:server:performance', '-inf', dayAgo);
     } catch (error) {
       logger.error({ error }, 'Failed to collect server metrics');
     }

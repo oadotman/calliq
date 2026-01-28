@@ -22,7 +22,7 @@ export class CacheManager {
       const cacheKey = `${this.prefix}${key}`;
 
       // Try to get from cache
-      const cached = await redisClient.get(cacheKey);
+      const cached = await redisClient!.get(cacheKey);
       if (cached) {
         console.log(`Cache hit for key: ${key}`);
         return JSON.parse(cached);
@@ -34,11 +34,7 @@ export class CacheManager {
 
       // Store in cache
       if (data !== null && data !== undefined) {
-        await redisClient.setex(
-          cacheKey,
-          ttl,
-          JSON.stringify(data)
-        );
+        await redisClient!.setex(cacheKey, ttl, JSON.stringify(data));
       }
 
       return data;
@@ -55,7 +51,7 @@ export class CacheManager {
   async get<T>(key: string): Promise<T | null> {
     try {
       const cacheKey = `${this.prefix}${key}`;
-      const cached = await redisClient.get(cacheKey);
+      const cached = await redisClient!.get(cacheKey);
       return cached ? JSON.parse(cached) : null;
     } catch (error) {
       console.error('Error getting from cache:', error);
@@ -69,7 +65,7 @@ export class CacheManager {
   async set(key: string, value: any, ttl: number = 300): Promise<boolean> {
     try {
       const cacheKey = `${this.prefix}${key}`;
-      await redisClient.setex(cacheKey, ttl, JSON.stringify(value));
+      await redisClient!.setex(cacheKey, ttl, JSON.stringify(value));
       return true;
     } catch (error) {
       console.error('Error setting cache:', error);
@@ -83,7 +79,7 @@ export class CacheManager {
   async delete(key: string): Promise<boolean> {
     try {
       const cacheKey = `${this.prefix}${key}`;
-      const deleted = await redisClient.del(cacheKey);
+      const deleted = await redisClient!.del(cacheKey);
       return deleted === 1;
     } catch (error) {
       console.error('Error deleting from cache:', error);
@@ -98,13 +94,13 @@ export class CacheManager {
   async invalidatePattern(pattern: string): Promise<number> {
     try {
       const searchPattern = `${this.prefix}${pattern}`;
-      const keys = await redisClient.keys(searchPattern);
+      const keys = await redisClient!.keys(searchPattern);
 
       if (keys.length === 0) {
         return 0;
       }
 
-      const deleted = await redisClient.del(...keys);
+      const deleted = await redisClient!.del(...keys);
       console.log(`Invalidated ${deleted} cache keys matching pattern: ${pattern}`);
       return deleted;
     } catch (error) {
@@ -119,13 +115,13 @@ export class CacheManager {
   async clearAll(): Promise<number> {
     try {
       const pattern = `${this.prefix}*`;
-      const keys = await redisClient.keys(pattern);
+      const keys = await redisClient!.keys(pattern);
 
       if (keys.length === 0) {
         return 0;
       }
 
-      const deleted = await redisClient.del(...keys);
+      const deleted = await redisClient!.del(...keys);
       console.log(`Cleared ${deleted} cache entries`);
       return deleted;
     } catch (error) {
@@ -144,8 +140,8 @@ export class CacheManager {
   }> {
     try {
       const pattern = `${this.prefix}*`;
-      const keys = await redisClient.keys(pattern);
-      const info = await redisClient.info('memory');
+      const keys = await redisClient!.keys(pattern);
+      const info = await redisClient!.info('memory');
 
       // Parse memory usage from Redis INFO command
       const memMatch = info.match(/used_memory_human:(\S+)/);
@@ -154,14 +150,14 @@ export class CacheManager {
       return {
         totalKeys: keys.length,
         memoryUsage,
-        connected: redisClient.status === 'ready'
+        connected: redisClient?.status === 'ready',
       };
     } catch (error) {
       console.error('Error getting cache stats:', error);
       return {
         totalKeys: 0,
         memoryUsage: 'unknown',
-        connected: false
+        connected: false,
       };
     }
   }

@@ -36,37 +36,44 @@ async function checkDatabase(): Promise<HealthCheck> {
     const supabase = createClient();
 
     // Simple query to check database connectivity
-    const { error } = await supabase
-      .from('organizations')
-      .select('id')
-      .limit(1)
-      .single();
+    const { error } = await supabase.from('organizations').select('id').limit(1).single();
 
     const responseTime = Date.now() - start;
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows" which is fine
+    if (error && error.code !== 'PGRST116') {
+      // PGRST116 is "no rows" which is fine
       return {
         status: 'unhealthy',
         responseTime,
-        error: error.message
+        error: error.message,
       };
     }
 
     return {
       status: responseTime > 1000 ? 'degraded' : 'healthy',
-      responseTime
+      responseTime,
     };
   } catch (error) {
     return {
       status: 'unhealthy',
       responseTime: Date.now() - start,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
 
 async function checkRedis(): Promise<HealthCheck> {
   const start = Date.now();
+
+  // If Redis is not configured, return healthy (optional service)
+  if (!redisClient) {
+    return {
+      status: 'healthy',
+      responseTime: 0,
+      error: 'Redis not configured (optional)',
+    };
+  }
+
   try {
     // Check Redis connectivity
     await redisClient.ping();
@@ -79,19 +86,19 @@ async function checkRedis(): Promise<HealthCheck> {
       return {
         status: 'unhealthy',
         responseTime,
-        error: `Redis status: ${status}`
+        error: `Redis status: ${status}`,
       };
     }
 
     return {
       status: responseTime > 100 ? 'degraded' : 'healthy',
-      responseTime
+      responseTime,
     };
   } catch (error) {
     return {
       status: 'unhealthy',
       responseTime: Date.now() - start,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
@@ -118,19 +125,19 @@ async function checkCache(): Promise<HealthCheck> {
       return {
         status: 'unhealthy',
         responseTime,
-        error: 'Cache read/write test failed'
+        error: 'Cache read/write test failed',
       };
     }
 
     return {
       status: responseTime > 50 ? 'degraded' : 'healthy',
-      responseTime
+      responseTime,
     };
   } catch (error) {
     return {
       status: 'unhealthy',
       responseTime: Date.now() - start,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
@@ -145,7 +152,7 @@ async function checkSession(): Promise<HealthCheck> {
     const testData = {
       userId: 'health-check',
       test: true,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     // Test set and get
@@ -159,19 +166,19 @@ async function checkSession(): Promise<HealthCheck> {
       return {
         status: 'unhealthy',
         responseTime,
-        error: 'Session store test failed'
+        error: 'Session store test failed',
       };
     }
 
     return {
       status: responseTime > 50 ? 'degraded' : 'healthy',
-      responseTime
+      responseTime,
     };
   } catch (error) {
     return {
       status: 'unhealthy',
       responseTime: Date.now() - start,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
@@ -182,9 +189,11 @@ export async function GET(request: NextRequest) {
     const simple = request.nextUrl.searchParams.get('simple') === 'true';
 
     if (simple) {
-      // Quick check - just verify Redis connectivity
+      // Quick check - just verify Redis connectivity (if available)
       try {
-        await redisClient.ping();
+        if (redisClient) {
+          await redisClient.ping();
+        }
         return new NextResponse('OK', { status: 200 });
       } catch {
         return new NextResponse('Service Unavailable', { status: 503 });
@@ -196,35 +205,47 @@ export async function GET(request: NextRequest) {
       checkDatabase(),
       checkRedis(),
       checkCache(),
-      checkSession()
+      checkSession(),
     ]);
 
     const services = {
-      database: database.status === 'fulfilled' ? database.value : {
-        status: 'unhealthy' as const,
-        error: 'Check failed'
-      },
-      redis: redis.status === 'fulfilled' ? redis.value : {
-        status: 'unhealthy' as const,
-        error: 'Check failed'
-      },
-      cache: cache.status === 'fulfilled' ? cache.value : {
-        status: 'unhealthy' as const,
-        error: 'Check failed'
-      },
-      session: session.status === 'fulfilled' ? session.value : {
-        status: 'unhealthy' as const,
-        error: 'Check failed'
-      }
+      database:
+        database.status === 'fulfilled'
+          ? database.value
+          : {
+              status: 'unhealthy' as const,
+              error: 'Check failed',
+            },
+      redis:
+        redis.status === 'fulfilled'
+          ? redis.value
+          : {
+              status: 'unhealthy' as const,
+              error: 'Check failed',
+            },
+      cache:
+        cache.status === 'fulfilled'
+          ? cache.value
+          : {
+              status: 'unhealthy' as const,
+              error: 'Check failed',
+            },
+      session:
+        session.status === 'fulfilled'
+          ? session.value
+          : {
+              status: 'unhealthy' as const,
+              error: 'Check failed',
+            },
     };
 
     // Determine overall status
-    const statuses = Object.values(services).map(s => s.status);
+    const statuses = Object.values(services).map((s) => s.status);
     let overallStatus: 'healthy' | 'degraded' | 'unhealthy';
 
-    if (statuses.every(s => s === 'healthy')) {
+    if (statuses.every((s) => s === 'healthy')) {
       overallStatus = 'healthy';
-    } else if (statuses.some(s => s === 'unhealthy')) {
+    } else if (statuses.some((s) => s === 'unhealthy')) {
       overallStatus = 'unhealthy';
     } else {
       overallStatus = 'degraded';
@@ -243,8 +264,8 @@ export async function GET(request: NextRequest) {
             rss: `${Math.round(memoryUsage.rss / 1024 / 1024)}MB`,
             heapTotal: `${Math.round(memoryUsage.heapTotal / 1024 / 1024)}MB`,
             heapUsed: `${Math.round(memoryUsage.heapUsed / 1024 / 1024)}MB`,
-            external: `${Math.round(memoryUsage.external / 1024 / 1024)}MB`
-          }
+            external: `${Math.round(memoryUsage.external / 1024 / 1024)}MB`,
+          },
         };
       } catch (error) {
         console.error('Error getting metrics:', error);
@@ -256,24 +277,23 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
       services,
-      ...(metrics && { metrics })
+      ...(metrics && { metrics }),
     };
 
     return NextResponse.json(response, {
       status: overallStatus === 'healthy' ? 200 : 503,
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'X-Health-Status': overallStatus
-      }
+        'X-Health-Status': overallStatus,
+      },
     });
-
   } catch (error) {
     console.error('Health check error:', error);
     return NextResponse.json(
       {
         status: 'unhealthy',
         timestamp: new Date().toISOString(),
-        error: 'Health check failed'
+        error: 'Health check failed',
       },
       { status: 503 }
     );

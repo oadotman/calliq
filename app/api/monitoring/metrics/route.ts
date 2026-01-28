@@ -17,13 +17,13 @@ export async function GET(request: NextRequest) {
   try {
     // Check authorization (only admins should access metrics)
     const supabase = createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Get query parameters
@@ -51,20 +51,13 @@ export async function GET(request: NextRequest) {
         break;
 
       default:
-        return NextResponse.json(
-          { error: 'Invalid metrics type' },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: 'Invalid metrics type' }, { status: 400 });
     }
 
     return NextResponse.json(metrics);
-
   } catch (error) {
     console.error('Metrics API error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch metrics' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch metrics' }, { status: 500 });
   }
 }
 
@@ -99,20 +92,13 @@ export async function POST(request: NextRequest) {
         break;
 
       default:
-        return NextResponse.json(
-          { error: 'Invalid metric type' },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: 'Invalid metric type' }, { status: 400 });
     }
 
     return NextResponse.json({ success: true });
-
   } catch (error) {
     console.error('Metrics recording error:', error);
-    return NextResponse.json(
-      { error: 'Failed to record metric' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to record metric' }, { status: 500 });
   }
 }
 
@@ -131,17 +117,35 @@ async function getMetricsSummary() {
     ...summary,
     alerts: {
       active: activeAlerts.length,
-      list: activeAlerts.slice(0, 5) // Last 5 alerts
+      list: activeAlerts.slice(0, 5), // Last 5 alerts
     },
     system: systemInfo,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 }
 
 async function getDetailedMetrics(period: string) {
   const now = Date.now();
-  const windowMs = period === 'day' ? 86400000 :
-                   period === 'hour' ? 3600000 : 300000; // 5 min default
+  const windowMs = period === 'day' ? 86400000 : period === 'hour' ? 3600000 : 300000; // 5 min default
+
+  // If Redis is not available, return empty metrics
+  if (!redisClient) {
+    return {
+      responseTimeDistribution: [],
+      errorDistribution: {},
+      queueMetrics: {},
+      cacheMetrics: {
+        hitRate: 0,
+        misses: 0,
+        hits: 0,
+        totalRequests: 0,
+      },
+      sessionMetrics: {
+        activeSessions: 0,
+        totalSessions: 0,
+      },
+    };
+  }
 
   // Get response time distribution
   const responseTimeKeys = await redisClient.keys('metrics:response_times:*:stats');
@@ -157,7 +161,7 @@ async function getDetailedMetrics(period: string) {
         min: parseInt(stats.min || '0'),
         max: parseInt(stats.max || '0'),
         count: parseInt(stats.count || '0'),
-        lastUpdate: parseInt(stats.lastUpdate || '0')
+        lastUpdate: parseInt(stats.lastUpdate || '0'),
       });
     }
   }
@@ -181,25 +185,25 @@ async function getDetailedMetrics(period: string) {
     const maxDepth = await redisClient.get(`metrics:queue:${queue}:max`);
     queueData[queue] = {
       current: parseInt(depth || '0'),
-      max: parseInt(maxDepth || '0')
+      max: parseInt(maxDepth || '0'),
     };
   }
 
   // Get slow queries
   const slowQueries = await redisClient.lrange('metrics:slow_queries', 0, 49);
-  const parsedSlowQueries = slowQueries.map(q => JSON.parse(q));
+  const parsedSlowQueries = slowQueries.map((q) => JSON.parse(q));
 
   return {
     period,
     window: {
       start: new Date(now - windowMs).toISOString(),
-      end: new Date(now).toISOString()
+      end: new Date(now).toISOString(),
     },
     responseTime: responseTimeData,
     errors: errorData,
     queues: queueData,
     slowQueries: parsedSlowQueries.slice(0, 10),
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 }
 
@@ -208,11 +212,22 @@ async function getRealtimeMetrics() {
   const now = Date.now();
   const oneMinuteAgo = now - 60000;
 
+  // If Redis is not available, return empty metrics
+  if (!redisClient) {
+    return {
+      responseTime: { p50: 0, p95: 0, p99: 0 },
+      errorRate: 0,
+      cacheHitRate: 0,
+      redis: { connectedClients: 0, opsPerSec: 0 },
+    };
+  }
+
   // Get recent response times
   const recentResponseTimes: number[] = [];
   const responseTimeKeys = await redisClient.keys('metrics:response_times:*');
 
-  for (const key of responseTimeKeys.slice(0, 5)) { // Sample 5 routes
+  for (const key of responseTimeKeys.slice(0, 5)) {
+    // Sample 5 routes
     const recent = await redisClient.zrangebyscore(key, oneMinuteAgo, now, 'WITHSCORES');
     for (let i = 0; i < recent.length; i += 2) {
       const value = recent[i];
@@ -243,28 +258,28 @@ async function getRealtimeMetrics() {
       p50,
       p95,
       p99,
-      samples: recentResponseTimes.length
+      samples: recentResponseTimes.length,
     },
     errorRate: {
-      perMinute: errorRate
+      perMinute: errorRate,
     },
     cache: {
       hits: parseInt(cacheHits || '0'),
       misses: parseInt(cacheMisses || '0'),
-      operations: parseInt(cacheHits || '0') + parseInt(cacheMisses || '0')
+      operations: parseInt(cacheHits || '0') + parseInt(cacheMisses || '0'),
     },
     redis: {
       connectedClients: parseInt(connectedClients),
-      opsPerSec: parseInt(opsPerSec)
+      opsPerSec: parseInt(opsPerSec),
     },
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 }
 
 async function getAlertsData() {
   const [activeAlerts, alertHistory] = await Promise.all([
     AlertManager.getActiveAlerts(),
-    AlertManager.getAlertHistory(50)
+    AlertManager.getAlertHistory(50),
   ]);
 
   // Group alerts by type and severity
@@ -272,7 +287,7 @@ async function getAlertsData() {
     byType: {} as Record<string, number>,
     bySeverity: {} as Record<string, number>,
     total: alertHistory.length,
-    active: activeAlerts.length
+    active: activeAlerts.length,
   };
 
   for (const alert of alertHistory) {
@@ -284,7 +299,7 @@ async function getAlertsData() {
     active: activeAlerts,
     history: alertHistory.slice(0, 20), // Last 20 alerts
     stats: alertStats,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 }
 
@@ -304,15 +319,15 @@ function getSystemInfo() {
         rss: memUsage.rss,
         heapTotal: memUsage.heapTotal,
         heapUsed: memUsage.heapUsed,
-        external: memUsage.external
-      }
+        external: memUsage.external,
+      },
     },
     cpu: {
       cores: os.cpus().length,
       model: os.cpus()[0]?.model,
-      speed: os.cpus()[0]?.speed
+      speed: os.cpus()[0]?.speed,
     },
-    load: os.loadavg()
+    load: os.loadavg(),
   };
 }
 

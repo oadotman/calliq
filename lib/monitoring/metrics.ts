@@ -14,6 +14,8 @@ export class Metrics {
    * Record API response time
    */
   static async recordResponseTime(route: string, duration: number): Promise<void> {
+    if (!redisClient) return;
+
     try {
       const key = `${this.METRICS_PREFIX}response_times:${route}`;
       const timestamp = Date.now();
@@ -22,7 +24,7 @@ export class Metrics {
       await redisClient.zadd(key, timestamp, `${timestamp}:${duration}`);
 
       // Remove old entries (older than window)
-      await redisClient.zremrangebyscore(key, '-inf', timestamp - (this.WINDOW_SIZE * 1000));
+      await redisClient.zremrangebyscore(key, '-inf', timestamp - this.WINDOW_SIZE * 1000);
 
       // Set expiry
       await redisClient.expire(key, this.WINDOW_SIZE);
@@ -38,6 +40,8 @@ export class Metrics {
    * Record an error occurrence
    */
   static async recordError(route: string, errorType: string): Promise<void> {
+    if (!redisClient) return;
+
     try {
       const hourKey = `${this.METRICS_PREFIX}errors:${route}:${this.getCurrentHour()}`;
       const totalKey = `${this.METRICS_PREFIX}errors:total`;
@@ -61,6 +65,8 @@ export class Metrics {
    * Record queue depth
    */
   static async recordQueueDepth(queueName: string, depth: number): Promise<void> {
+    if (!redisClient) return;
+
     try {
       const key = `${this.METRICS_PREFIX}queue:${queueName}`;
       await redisClient.set(key, depth, 'EX', 60); // Expire after 1 minute
@@ -80,12 +86,14 @@ export class Metrics {
    * Record database query time
    */
   static async recordDatabaseQuery(operation: string, duration: number): Promise<void> {
+    if (!redisClient) return;
+
     try {
       const key = `${this.METRICS_PREFIX}db:${operation}`;
       const timestamp = Date.now();
 
       await redisClient.zadd(key, timestamp, `${timestamp}:${duration}`);
-      await redisClient.zremrangebyscore(key, '-inf', timestamp - (this.WINDOW_SIZE * 1000));
+      await redisClient.zremrangebyscore(key, '-inf', timestamp - this.WINDOW_SIZE * 1000);
       await redisClient.expire(key, this.WINDOW_SIZE);
 
       // Track slow queries
@@ -101,10 +109,10 @@ export class Metrics {
    * Record cache hit/miss
    */
   static async recordCacheOperation(hit: boolean): Promise<void> {
+    if (!redisClient) return;
+
     try {
-      const key = hit
-        ? `${this.METRICS_PREFIX}cache:hits`
-        : `${this.METRICS_PREFIX}cache:misses`;
+      const key = hit ? `${this.METRICS_PREFIX}cache:hits` : `${this.METRICS_PREFIX}cache:misses`;
 
       await redisClient.incr(key);
       await redisClient.expire(key, this.WINDOW_SIZE);
@@ -117,6 +125,8 @@ export class Metrics {
    * Record memory usage
    */
   static async recordMemoryUsage(): Promise<void> {
+    if (!redisClient) return;
+
     try {
       const memUsage = process.memoryUsage();
       const key = `${this.METRICS_PREFIX}memory:node`;
@@ -126,7 +136,7 @@ export class Metrics {
         heapTotal: memUsage.heapTotal,
         heapUsed: memUsage.heapUsed,
         external: memUsage.external,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
       await redisClient.expire(key, 300); // 5 minutes
     } catch (error) {
@@ -138,20 +148,17 @@ export class Metrics {
    * Get current metrics summary
    */
   static async getMetricsSummary(): Promise<any> {
+    if (!redisClient) return null;
+
     try {
-      const [
-        responseTimeStats,
-        errorCount,
-        cacheHits,
-        cacheMisses,
-        memoryUsage
-      ] = await Promise.all([
-        this.getResponseTimeStats(),
-        redisClient.get(`${this.METRICS_PREFIX}errors:total`),
-        redisClient.get(`${this.METRICS_PREFIX}cache:hits`),
-        redisClient.get(`${this.METRICS_PREFIX}cache:misses`),
-        redisClient.hgetall(`${this.METRICS_PREFIX}memory:node`)
-      ]);
+      const [responseTimeStats, errorCount, cacheHits, cacheMisses, memoryUsage] =
+        await Promise.all([
+          this.getResponseTimeStats(),
+          redisClient.get(`${this.METRICS_PREFIX}errors:total`),
+          redisClient.get(`${this.METRICS_PREFIX}cache:hits`),
+          redisClient.get(`${this.METRICS_PREFIX}cache:misses`),
+          redisClient.hgetall(`${this.METRICS_PREFIX}memory:node`),
+        ]);
 
       const cacheHitRate = this.calculateCacheHitRate(
         parseInt(cacheHits || '0'),
@@ -162,19 +169,21 @@ export class Metrics {
         responseTime: responseTimeStats,
         errors: {
           total: parseInt(errorCount || '0'),
-          rate: await this.getErrorRate()
+          rate: await this.getErrorRate(),
         },
         cache: {
           hits: parseInt(cacheHits || '0'),
           misses: parseInt(cacheMisses || '0'),
-          hitRate: cacheHitRate
+          hitRate: cacheHitRate,
         },
-        memory: memoryUsage ? {
-          rss: this.formatBytes(parseInt(memoryUsage.rss || '0')),
-          heapUsed: this.formatBytes(parseInt(memoryUsage.heapUsed || '0')),
-          heapTotal: this.formatBytes(parseInt(memoryUsage.heapTotal || '0'))
-        } : null,
-        timestamp: new Date().toISOString()
+        memory: memoryUsage
+          ? {
+              rss: this.formatBytes(parseInt(memoryUsage.rss || '0')),
+              heapUsed: this.formatBytes(parseInt(memoryUsage.heapUsed || '0')),
+              heapTotal: this.formatBytes(parseInt(memoryUsage.heapTotal || '0')),
+            }
+          : null,
+        timestamp: new Date().toISOString(),
       };
     } catch (error) {
       console.error('Error getting metrics summary:', error);
@@ -186,6 +195,8 @@ export class Metrics {
    * Get average response time for a route
    */
   static async getAverageResponseTime(route?: string): Promise<number> {
+    if (!redisClient) return 0;
+
     try {
       const pattern = route
         ? `${this.METRICS_PREFIX}response_times:${route}`
@@ -216,7 +227,12 @@ export class Metrics {
 
   // Private helper methods
 
-  private static async updateResponseTimeAggregates(route: string, duration: number): Promise<void> {
+  private static async updateResponseTimeAggregates(
+    route: string,
+    duration: number
+  ): Promise<void> {
+    if (!redisClient) return;
+
     const key = `${this.METRICS_PREFIX}response_times:${route}:stats`;
 
     const stats = await redisClient.hgetall(key);
@@ -232,13 +248,15 @@ export class Metrics {
       max,
       avg: Math.round(total / count),
       last: duration,
-      lastUpdate: Date.now()
+      lastUpdate: Date.now(),
     });
 
     await redisClient.expire(key, this.WINDOW_SIZE);
   }
 
   private static async updateErrorRate(): Promise<void> {
+    if (!redisClient) return;
+
     const key = `${this.METRICS_PREFIX}errors:rate`;
     const timestamp = Date.now();
 
@@ -248,17 +266,21 @@ export class Metrics {
   }
 
   private static async getErrorRate(): Promise<number> {
+    if (!redisClient) return 0;
+
     const key = `${this.METRICS_PREFIX}errors:rate`;
     const count = await redisClient.zcard(key);
     return count; // Errors per minute
   }
 
   private static async recordSlowQuery(operation: string, duration: number): Promise<void> {
+    if (!redisClient) return;
+
     const key = `${this.METRICS_PREFIX}slow_queries`;
     const entry = JSON.stringify({
       operation,
       duration,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     await redisClient.lpush(key, entry);
@@ -267,6 +289,8 @@ export class Metrics {
   }
 
   private static async getResponseTimeStats(): Promise<any> {
+    if (!redisClient) return { avg: 0, min: 0, max: 0, count: 0 };
+
     const statsKey = `${this.METRICS_PREFIX}response_times:*:stats`;
     const keys = await redisClient.keys(statsKey);
 
@@ -293,7 +317,7 @@ export class Metrics {
       avg: totalCount > 0 ? Math.round(totalAvg / totalCount) : 0,
       min: minTime === Infinity ? 0 : minTime,
       max: maxTime,
-      count: totalCount
+      count: totalCount,
     };
   }
 
@@ -307,7 +331,7 @@ export class Metrics {
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
   }
 
   private static getCurrentHour(): string {

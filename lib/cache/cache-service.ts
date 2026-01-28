@@ -23,7 +23,7 @@ export class CacheService {
   async get<T>(key: string): Promise<T | null> {
     try {
       const fullKey = this.keyPrefix + key;
-      const cached = await redisClient.get(fullKey);
+      const cached = await redisClient!.get(fullKey);
 
       if (!cached) {
         return null;
@@ -50,7 +50,7 @@ export class CacheService {
       const serialized = JSON.stringify(value);
 
       // Set with TTL
-      await redisClient.setex(fullKey, ttl, serialized);
+      await redisClient!.setex(fullKey, ttl, serialized);
 
       // Handle tags for cache invalidation
       if (options.tags && options.tags.length > 0) {
@@ -74,7 +74,7 @@ export class CacheService {
   async delete(key: string): Promise<boolean> {
     try {
       const fullKey = this.keyPrefix + key;
-      await redisClient.del(fullKey);
+      await redisClient!.del(fullKey);
 
       // Remove from tags
       await this.removeFromTags(key);
@@ -93,18 +93,18 @@ export class CacheService {
   async invalidateTag(tag: string): Promise<number> {
     try {
       const tagKey = this.tagPrefix + tag;
-      const keys = await redisClient.smembers(tagKey);
+      const keys = await redisClient!.smembers(tagKey);
 
       if (keys.length === 0) {
         return 0;
       }
 
       // Delete all keys with this tag
-      const fullKeys = keys.map(k => this.keyPrefix + k);
-      await redisClient.del(...fullKeys);
+      const fullKeys = keys.map((k) => this.keyPrefix + k);
+      await redisClient!.del(...fullKeys);
 
       // Clean up the tag set
-      await redisClient.del(tagKey);
+      await redisClient!.del(tagKey);
 
       logger.info({ tag, count: keys.length }, 'Cache tag invalidated');
       return keys.length;
@@ -146,10 +146,10 @@ export class CacheService {
    */
   async warmCache(entries: Array<{ key: string; value: any; options?: CacheOptions }>) {
     const results = await Promise.allSettled(
-      entries.map(entry => this.set(entry.key, entry.value, entry.options))
+      entries.map((entry) => this.set(entry.key, entry.value, entry.options))
     );
 
-    const successful = results.filter(r => r.status === 'fulfilled').length;
+    const successful = results.filter((r) => r.status === 'fulfilled').length;
     logger.info({ total: entries.length, successful }, 'Cache warming completed');
 
     return { total: entries.length, successful };
@@ -160,15 +160,15 @@ export class CacheService {
    */
   async clear(): Promise<void> {
     try {
-      const keys = await redisClient.keys(this.keyPrefix + '*');
+      const keys = await redisClient!.keys(this.keyPrefix + '*');
       if (keys.length > 0) {
-        await redisClient.del(...keys);
+        await redisClient!.del(...keys);
       }
 
       // Clear all tags
-      const tagKeys = await redisClient.keys(this.tagPrefix + '*');
+      const tagKeys = await redisClient!.keys(this.tagPrefix + '*');
       if (tagKeys.length > 0) {
-        await redisClient.del(...tagKeys);
+        await redisClient!.del(...tagKeys);
       }
 
       logger.info({ count: keys.length }, 'Cache cleared');
@@ -194,7 +194,7 @@ export class CacheService {
         this.getMetric('misses'),
         this.getMetric('sets'),
         this.getMetric('deletes'),
-        this.getMetric('errors')
+        this.getMetric('errors'),
       ]);
 
       const total = hits + misses;
@@ -211,9 +211,10 @@ export class CacheService {
    * Private: Add key to tags for invalidation
    */
   private async addToTags(key: string, tags: string[]): Promise<void> {
-    const promises = tags.map(tag => {
+    if (!redisClient) return;
+    const promises = tags.map((tag) => {
       const tagKey = this.tagPrefix + tag;
-      return redisClient.sadd(tagKey, key);
+      return redisClient!.sadd(tagKey, key);
     });
     await Promise.all(promises);
   }
@@ -222,11 +223,12 @@ export class CacheService {
    * Private: Remove key from all tags
    */
   private async removeFromTags(key: string): Promise<void> {
+    if (!redisClient) return;
     // This is a simplified version - in production you might want to track
     // which tags a key belongs to for more efficient removal
     const tagKeys = await redisClient.keys(this.tagPrefix + '*');
     if (tagKeys.length > 0) {
-      const promises = tagKeys.map(tagKey => redisClient.srem(tagKey, key));
+      const promises = tagKeys.map((tagKey) => redisClient!.srem(tagKey, key));
       await Promise.all(promises);
     }
   }
@@ -235,6 +237,7 @@ export class CacheService {
    * Private: Increment a metric counter
    */
   private async incrementMetric(metric: string): Promise<void> {
+    if (!redisClient) return;
     const metricKey = `metrics:cache:${metric}`;
     await redisClient.incr(metricKey);
   }
@@ -243,6 +246,7 @@ export class CacheService {
    * Private: Get a metric value
    */
   private async getMetric(metric: string): Promise<number> {
+    if (!redisClient) return 0;
     const metricKey = `metrics:cache:${metric}`;
     const value = await redisClient.get(metricKey);
     return value ? parseInt(value, 10) : 0;

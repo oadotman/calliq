@@ -72,7 +72,7 @@ export class ErrorTracker {
       route,
       method,
       statusCode,
-      api: true
+      api: true,
     };
 
     await this.trackError(error, errorContext);
@@ -92,7 +92,7 @@ export class ErrorTracker {
     const errorContext = {
       database: true,
       operation,
-      query: query ? query.substring(0, 200) : undefined // Truncate long queries
+      query: query ? query.substring(0, 200) : undefined, // Truncate long queries
     };
 
     await this.trackError(error, errorContext);
@@ -109,7 +109,7 @@ export class ErrorTracker {
     const errorContext = {
       ...context,
       external: true,
-      service
+      service,
     };
 
     await this.trackError(error, errorContext);
@@ -121,7 +121,7 @@ export class ErrorTracker {
   static async getErrorStats(hours: number = 24): Promise<any> {
     try {
       const now = Date.now();
-      const startTime = now - (hours * 3600000);
+      const startTime = now - hours * 3600000;
 
       // Get error counts by type
       const errorTypes: Record<string, number> = {};
@@ -162,11 +162,11 @@ export class ErrorTracker {
 
       return {
         period: `${hours} hours`,
-        total: recentErrors.filter(e => e.timestamp.getTime() >= startTime).length,
+        total: recentErrors.filter((e) => e.timestamp.getTime() >= startTime).length,
         byType: topErrors,
         byRoute: topRoutes,
         statusCodes,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
     } catch (error) {
       console.error('Failed to get error stats:', error);
@@ -178,15 +178,17 @@ export class ErrorTracker {
    * Get recent errors
    */
   static async getRecentErrors(limit: number = 50): Promise<ErrorInfo[]> {
+    if (!redisClient) return [];
+
     try {
       const key = `${this.ERROR_PREFIX}recent`;
       const errors = await redisClient.lrange(key, 0, limit - 1);
 
-      return errors.map(e => {
+      return errors.map((e) => {
         const parsed = JSON.parse(e);
         return {
           ...parsed,
-          timestamp: new Date(parsed.timestamp)
+          timestamp: new Date(parsed.timestamp),
         };
       });
     } catch (error) {
@@ -199,6 +201,8 @@ export class ErrorTracker {
    * Clear old errors
    */
   static async clearOldErrors(): Promise<number> {
+    if (!redisClient) return 0;
+
     try {
       const key = `${this.ERROR_PREFIX}recent`;
       const errors = await redisClient.lrange(key, 0, -1);
@@ -234,10 +238,7 @@ export class ErrorTracker {
 
   // Private helper methods
 
-  private static parseError(
-    error: Error | unknown,
-    context?: Record<string, any>
-  ): ErrorInfo {
+  private static parseError(error: Error | unknown, context?: Record<string, any>): ErrorInfo {
     let errorInfo: ErrorInfo;
 
     if (error instanceof Error) {
@@ -246,21 +247,21 @@ export class ErrorTracker {
         stack: error.stack?.substring(0, this.MAX_ERROR_LENGTH * 2),
         type: error.name || 'Error',
         timestamp: new Date(),
-        ...context
+        ...context,
       };
     } else if (typeof error === 'string') {
       errorInfo = {
         message: error.substring(0, this.MAX_ERROR_LENGTH),
         type: 'StringError',
         timestamp: new Date(),
-        ...context
+        ...context,
       };
     } else {
       errorInfo = {
         message: JSON.stringify(error).substring(0, this.MAX_ERROR_LENGTH),
         type: 'UnknownError',
         timestamp: new Date(),
-        ...context
+        ...context,
       };
     }
 
@@ -271,6 +272,8 @@ export class ErrorTracker {
   }
 
   private static async storeError(errorInfo: ErrorInfo): Promise<void> {
+    if (!redisClient) return;
+
     const key = `${this.ERROR_PREFIX}recent`;
     const errorString = JSON.stringify(errorInfo);
 
@@ -299,6 +302,8 @@ export class ErrorTracker {
   }
 
   private static async trackStatusCode(route: string, statusCode: number): Promise<void> {
+    if (!redisClient) return;
+
     const key = `${this.ERROR_PREFIX}status:${statusCode}`;
     await redisClient.hincrby(key, route, 1);
     await redisClient.expire(key, 3600);
@@ -325,10 +330,10 @@ export class ErrorTracker {
       /token['":\s]*['"]\w+['"]/gi,
       /api[_-]?key['":\s]*['"]\w+['"]/gi,
       /secret['":\s]*['"]\w+['"]/gi,
-      /Bearer\s+[\w-]+/gi
+      /Bearer\s+[\w-]+/gi,
     ];
 
-    let sanitized = { ...errorInfo };
+    const sanitized = { ...errorInfo };
 
     if (sanitized.message) {
       for (const pattern of sensitivePatterns) {
