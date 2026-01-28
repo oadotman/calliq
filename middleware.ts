@@ -221,10 +221,17 @@ export async function middleware(req: NextRequest) {
   // CSRF TOKEN VALIDATION
   // Validate CSRF tokens for state-changing operations
   // =====================================================
-  const csrfResponse = await csrfMiddleware(req);
-  if (csrfResponse) {
-    console.log('[Middleware] CSRF validation failed');
-    return csrfResponse;
+  // Skip CSRF token validation for internal processing requests
+  const isInternalRequest = req.headers.get('x-internal-processing') === 'true';
+
+  if (!isInternalRequest) {
+    const csrfResponse = await csrfMiddleware(req);
+    if (csrfResponse) {
+      console.log('[Middleware] CSRF validation failed');
+      return csrfResponse;
+    }
+  } else {
+    console.log('[Middleware] Skipping CSRF token validation for internal request');
   }
 
   let res = NextResponse.next({

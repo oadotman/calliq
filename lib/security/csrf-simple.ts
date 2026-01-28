@@ -94,6 +94,14 @@ export async function validateCSRFToken(request: Request): Promise<boolean> {
  * Middleware to check CSRF tokens
  */
 export async function csrfMiddleware(request: Request): Promise<Response | null> {
+  // Skip for internal processing requests
+  const isInternalProcessing = request.headers.get('x-internal-processing') === 'true';
+  if (isInternalProcessing) {
+    const url = new URL(request.url);
+    console.log('[CSRF] Skipping validation for internal processing request:', url.pathname);
+    return null;
+  }
+
   // Skip for public paths and API keys
   const url = new URL(request.url);
   const isPublicPath =
@@ -122,13 +130,10 @@ export async function csrfMiddleware(request: Request): Promise<Response | null>
   // Validate CSRF token for state-changing operations
   const valid = await validateCSRFToken(request);
   if (!valid && !['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
-    return new Response(
-      JSON.stringify({ error: 'Invalid or missing CSRF token' }),
-      {
-        status: 403,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
+    return new Response(JSON.stringify({ error: 'Invalid or missing CSRF token' }), {
+      status: 403,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   return null;
@@ -147,6 +152,6 @@ export async function injectCSRFToken(response: Response): Promise<Response> {
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
-    headers: newHeaders
+    headers: newHeaders,
   });
 }
