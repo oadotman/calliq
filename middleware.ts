@@ -1,25 +1,28 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-import { getAllowedOrigins, getBaseUrlOrFallback } from './lib/utils/urls'
-import { partnerAuthMiddleware } from './middleware/partner-auth'
-import { csrfMiddleware, injectCSRFToken, setCSRFToken } from './lib/security/csrf-simple'
-import { bodySizeLimit, getBodySizeLimit } from './middleware/body-size-limit'
-import { getRequestId, addTracingHeaders } from './lib/middleware/request-tracing'
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { getAllowedOrigins, getBaseUrlOrFallback } from './lib/utils/urls';
+import { partnerAuthMiddleware } from './middleware/partner-auth';
+import { csrfMiddleware, injectCSRFToken, setCSRFToken } from './lib/security/csrf-simple';
+import { bodySizeLimit, getBodySizeLimit } from './middleware/body-size-limit';
+import { getRequestId, addTracingHeaders } from './lib/middleware/request-tracing';
 
 export async function middleware(req: NextRequest) {
   // Generate or extract request ID for tracing
   const requestId = getRequestId(req);
   const startTime = Date.now();
 
-  console.log(`[${requestId}] Middleware: Processing request for`, req.nextUrl.pathname)
+  console.log(`[${requestId}] Middleware: Processing request for`, req.nextUrl.pathname);
 
   // =====================================================
   // SEARCH BOT DETECTION
   // Skip all cookie operations for search engine bots
   // =====================================================
   const userAgent = req.headers.get('user-agent') || '';
-  const isSearchBot = /googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|facebookexternalhit|twitterbot|linkedinbot|whatsapp|applebot/i.test(userAgent);
+  const isSearchBot =
+    /googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|facebookexternalhit|twitterbot|linkedinbot|whatsapp|applebot/i.test(
+      userAgent
+    );
 
   // For search bots, return a clean response without any cookie operations
   if (isSearchBot) {
@@ -63,18 +66,18 @@ export async function middleware(req: NextRequest) {
     '/forgot-password',
     '/reset-password',
     '/',
-    '/pricing',  // Pricing page should be public
-    '/blog',     // Blog should be public
+    '/pricing', // Pricing page should be public
+    '/blog', // Blog should be public
     '/api/auth/signup',
     '/api/health',
-    '/invite',  // Invitation pages are public
-    '/invite-signup'  // Invitation signup pages are public
+    '/invite', // Invitation pages are public
+    '/invite-signup', // Invitation signup pages are public
   ];
 
   // Check if current path is public
-  const isPublicPath = publicPaths.some(path => {
+  const isPublicPath = publicPaths.some((path) => {
     if (path === '/') {
-      return pathname === '/';  // Exact match for root
+      return pathname === '/'; // Exact match for root
     }
     return pathname === path || pathname.startsWith(path + '/');
   });
@@ -84,7 +87,7 @@ export async function middleware(req: NextRequest) {
     console.log('Middleware: Invitation path detected', {
       pathname,
       isPublicPath,
-      willSkipAuth: isPublicPath
+      willSkipAuth: isPublicPath,
     });
   }
 
@@ -135,72 +138,81 @@ export async function middleware(req: NextRequest) {
   // Verify origin for state-changing requests
   // =====================================================
   if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
-    const origin = req.headers.get('origin');
-    const host = req.headers.get('host');
-    const referer = req.headers.get('referer');
+    // Check for internal processing header FIRST
     const internalProcessingHeader = req.headers.get('x-internal-processing');
 
-    // Webhook endpoints, cron jobs, internal processing, and public endpoints are exempt from CSRF checks
-    const webhookPaths = ['/api/webhooks/', '/api/paddle/webhook'];
-    const cronPaths = ['/api/cron/'];
-    const internalProcessingPaths = ['/process'];
-    const publicApiPaths = [
-      '/api/partners/apply',  // Public partner application
-      '/api/auth/signup',     // Public signup
-      '/api/auth/callback'    // Auth callback
-    ];
-    // These paths need special handling or are called by external services
-    const csrfExemptPaths = [
-      '/api/upload/',           // File upload endpoints
-      '/api/calls/import-url',  // URL import (external fetch)
-      '/api/teams/invite',      // Team invitations (may come from email links)
-      '/api/referrals/activate' // Referral activation
-    ];
+    // Skip CSRF checks entirely for internal processing
+    if (internalProcessingHeader === 'true') {
+      console.log('Middleware: Internal processing request detected, skipping CSRF checks');
+      // Continue to next middleware without CSRF validation
+    } else {
+      const origin = req.headers.get('origin');
+      const host = req.headers.get('host');
+      const referer = req.headers.get('referer');
 
-    const isWebhook = webhookPaths.some(path => req.nextUrl.pathname.startsWith(path));
-    const isCron = cronPaths.some(path => req.nextUrl.pathname.startsWith(path));
-    const isInternalProcessing = internalProcessingPaths.some(path => req.nextUrl.pathname.includes(path)) || internalProcessingHeader === 'true';
-    const isPublicApi = publicApiPaths.some(path => req.nextUrl.pathname.startsWith(path));
-    const isCsrfExempt = csrfExemptPaths.some(path => req.nextUrl.pathname.startsWith(path));
+      // Webhook endpoints, cron jobs, internal processing, and public endpoints are exempt from CSRF checks
+      const webhookPaths = ['/api/webhooks/', '/api/paddle/webhook'];
+      const cronPaths = ['/api/cron/'];
+      const internalProcessingPaths = ['/process'];
+      const publicApiPaths = [
+        '/api/partners/apply', // Public partner application
+        '/api/auth/signup', // Public signup
+        '/api/auth/callback', // Auth callback
+      ];
+      // These paths need special handling or are called by external services
+      const csrfExemptPaths = [
+        '/api/upload/', // File upload endpoints
+        '/api/calls/import-url', // URL import (external fetch)
+        '/api/teams/invite', // Team invitations (may come from email links)
+        '/api/referrals/activate', // Referral activation
+      ];
 
-    if (!isWebhook && !isCron && !isInternalProcessing && !isPublicApi && !isCsrfExempt) {
-      // Get allowed origins - must be exact matches
-      const allowedOrigins = getAllowedOrigins();
-      const appUrl = new URL(getBaseUrlOrFallback());
+      const isWebhook = webhookPaths.some((path) => req.nextUrl.pathname.startsWith(path));
+      const isCron = cronPaths.some((path) => req.nextUrl.pathname.startsWith(path));
+      const isInternalProcessing = internalProcessingPaths.some((path) =>
+        req.nextUrl.pathname.includes(path)
+      );
+      const isPublicApi = publicApiPaths.some((path) => req.nextUrl.pathname.startsWith(path));
+      const isCsrfExempt = csrfExemptPaths.some((path) => req.nextUrl.pathname.startsWith(path));
 
-      // Check if request comes from allowed origin
-      let isValidOrigin = false;
+      if (!isWebhook && !isCron && !isInternalProcessing && !isPublicApi && !isCsrfExempt) {
+        // Get allowed origins - must be exact matches
+        const allowedOrigins = getAllowedOrigins();
+        const appUrl = new URL(getBaseUrlOrFallback());
 
-      if (origin) {
-        // Strict exact match - no startsWith
-        isValidOrigin = allowedOrigins.includes(origin);
-      } else if (referer) {
-        // Parse referer and check origin
-        try {
-          const refererUrl = new URL(referer);
-          isValidOrigin = allowedOrigins.includes(refererUrl.origin);
-        } catch {
-          isValidOrigin = false;
-        }
-      } else {
-        // No origin or referer header - reject for API routes
-        if (req.nextUrl.pathname.startsWith('/api/')) {
-          isValidOrigin = false;
+        // Check if request comes from allowed origin
+        let isValidOrigin = false;
+
+        if (origin) {
+          // Strict exact match - no startsWith
+          isValidOrigin = allowedOrigins.includes(origin);
+        } else if (referer) {
+          // Parse referer and check origin
+          try {
+            const refererUrl = new URL(referer);
+            isValidOrigin = allowedOrigins.includes(refererUrl.origin);
+          } catch {
+            isValidOrigin = false;
+          }
         } else {
-          // For page requests (form submissions), allow if host matches
-          const expectedHost = appUrl.host;
-          isValidOrigin = host === expectedHost;
+          // No origin or referer header - reject for API routes
+          if (req.nextUrl.pathname.startsWith('/api/')) {
+            isValidOrigin = false;
+          } else {
+            // For page requests (form submissions), allow if host matches
+            const expectedHost = appUrl.host;
+            isValidOrigin = host === expectedHost;
+          }
         }
-      }
 
-      if (!isValidOrigin) {
-        console.error(`🚨 CSRF: Blocked request from origin: ${origin}, referer: ${referer}, host: ${host}`);
-        console.error(`🚨 CSRF: Allowed origins: ${allowedOrigins.join(', ')}`);
+        if (!isValidOrigin) {
+          console.error(
+            `🚨 CSRF: Blocked request from origin: ${origin}, referer: ${referer}, host: ${host}`
+          );
+          console.error(`🚨 CSRF: Allowed origins: ${allowedOrigins.join(', ')}`);
 
-        return NextResponse.json(
-          { error: 'Forbidden - Invalid origin' },
-          { status: 403 }
-        );
+          return NextResponse.json({ error: 'Forbidden - Invalid origin' }, { status: 403 });
+        }
       }
     }
   }
@@ -219,7 +231,7 @@ export async function middleware(req: NextRequest) {
     request: {
       headers: req.headers,
     },
-  })
+  });
 
   // Add security headers
   res.headers.set('X-Frame-Options', 'SAMEORIGIN');
@@ -236,45 +248,45 @@ export async function middleware(req: NextRequest) {
     {
       cookies: {
         get(name: string) {
-          return req.cookies.get(name)?.value
+          return req.cookies.get(name)?.value;
         },
         set(name: string, value: string, options: CookieOptions) {
           req.cookies.set({
             name,
             value,
             ...options,
-          })
+          });
           res = NextResponse.next({
             request: {
               headers: req.headers,
             },
-          })
+          });
           res.cookies.set({
             name,
             value,
             ...options,
-          })
+          });
         },
         remove(name: string, options: CookieOptions) {
           req.cookies.set({
             name,
             value: '',
             ...options,
-          })
+          });
           res = NextResponse.next({
             request: {
               headers: req.headers,
             },
-          })
+          });
           res.cookies.set({
             name,
             value: '',
             ...options,
-          })
+          });
         },
       },
     }
-  )
+  );
 
   // Refresh session if expired - required for Server Components
   let session = null;
@@ -313,8 +325,8 @@ export async function middleware(req: NextRequest) {
   console.log('Middleware: Session check', {
     pathname: req.nextUrl.pathname,
     hasSession: !!session,
-    hasUser: !!user
-  })
+    hasUser: !!user,
+  });
 
   // =====================================================
   // ADMIN ROUTES ACCESS CHECK
@@ -333,13 +345,15 @@ export async function middleware(req: NextRequest) {
     try {
       const { data: userOrg, error: userOrgError } = await supabase
         .from('user_organizations')
-        .select(`
+        .select(
+          `
           role,
           organization:organizations (
             id,
             plan_type
           )
-        `)
+        `
+        )
         .eq('user_id', user.id)
         .single();
 
@@ -348,7 +362,7 @@ export async function middleware(req: NextRequest) {
         userOrg,
         userOrgError,
         role: userOrg?.role,
-        planType: userOrg?.organization?.[0]?.plan_type
+        planType: userOrg?.organization?.[0]?.plan_type,
       });
 
       if (userOrgError || !userOrg) {
@@ -360,7 +374,8 @@ export async function middleware(req: NextRequest) {
 
       // Check both role AND plan type
       const hasAdminRole = userOrg.role === 'owner' || userOrg.role === 'admin';
-      const planAllowsAdmin = userOrg.organization?.[0]?.plan_type &&
+      const planAllowsAdmin =
+        userOrg.organization?.[0]?.plan_type &&
         !['free', 'solo'].includes(userOrg.organization[0].plan_type);
 
       if (!hasAdminRole) {
@@ -371,10 +386,16 @@ export async function middleware(req: NextRequest) {
       }
 
       if (!planAllowsAdmin) {
-        console.log('Middleware: Plan does not allow admin access, plan:', userOrg.organization?.[0]?.plan_type);
+        console.log(
+          'Middleware: Plan does not allow admin access, plan:',
+          userOrg.organization?.[0]?.plan_type
+        );
         const errorUrl = new URL('/dashboard', req.url);
         errorUrl.searchParams.set('error', 'admin_feature_requires_upgrade');
-        errorUrl.searchParams.set('reason', 'Admin features are only available for Team and Enterprise plans');
+        errorUrl.searchParams.set(
+          'reason',
+          'Admin features are only available for Team and Enterprise plans'
+        );
         return NextResponse.redirect(errorUrl);
       }
     } catch (error) {
@@ -387,12 +408,12 @@ export async function middleware(req: NextRequest) {
   }
 
   // Check if user is authenticated (either via session or user)
-  const isAuthenticated = !!(session || user)
+  const isAuthenticated = !!(session || user);
 
   // If user is signed in and on root path, redirect to dashboard
   if (isAuthenticated && req.nextUrl.pathname === '/') {
-    console.log('Middleware: User authenticated on root path, redirecting to /dashboard')
-    return NextResponse.redirect(new URL('/dashboard', req.url))
+    console.log('Middleware: User authenticated on root path, redirecting to /dashboard');
+    return NextResponse.redirect(new URL('/dashboard', req.url));
   }
 
   // Re-check public paths (we need this because we might have gotten here after auth check)
@@ -402,24 +423,26 @@ export async function middleware(req: NextRequest) {
     '/signup',
     '/forgot-password',
     '/reset-password',
-    '/pricing',  // Pricing page should be public
-    '/blog',     // Blog should be public
+    '/pricing', // Pricing page should be public
+    '/blog', // Blog should be public
     '/api/auth/signup',
     '/api/health',
     '/invite',
     '/invite-signup',
-    '/partners',  // Public partner landing page
-    '/partners/apply',  // Public partner application page
-    '/partners/login'  // Public partner login page
+    '/partners', // Public partner landing page
+    '/partners/apply', // Public partner application page
+    '/partners/login', // Public partner login page
   ];
 
-  const isPublicForRedirect = publicPathsForRedirect.some(path => {
+  const isPublicForRedirect = publicPathsForRedirect.some((path) => {
     return pathname === path || pathname.startsWith(path + '/');
   });
 
   // Allow internal processing calls (from queue worker) to bypass auth
-  const isInternalProcessingCall = req.headers.get('x-internal-processing') === 'true' &&
-    pathname.startsWith('/api/calls/') && pathname.includes('/process');
+  const isInternalProcessingCall =
+    req.headers.get('x-internal-processing') === 'true' &&
+    pathname.startsWith('/api/calls/') &&
+    pathname.includes('/process');
 
   if (isInternalProcessingCall) {
     console.log('Middleware: Internal processing call detected, bypassing auth', pathname);
@@ -428,25 +451,27 @@ export async function middleware(req: NextRequest) {
 
   // If user is not signed in and trying to access protected route, redirect to login
   if (!isAuthenticated && !isPublicForRedirect && pathname !== '/') {
-    console.log('Middleware: No authentication on protected route, redirecting to /login')
-    const redirectUrl = new URL('/login', req.url)
-    redirectUrl.searchParams.set('redirect', req.nextUrl.pathname)
-    return NextResponse.redirect(redirectUrl)
+    console.log('Middleware: No authentication on protected route, redirecting to /login');
+    const redirectUrl = new URL('/login', req.url);
+    redirectUrl.searchParams.set('redirect', req.nextUrl.pathname);
+    return NextResponse.redirect(redirectUrl);
   }
 
   // If user is signed in and trying to access auth pages, redirect to dashboard
-  const isAuthPage = ['/login', '/signup', '/forgot-password', '/reset-password'].some(path => req.nextUrl.pathname.startsWith(path))
+  const isAuthPage = ['/login', '/signup', '/forgot-password', '/reset-password'].some((path) =>
+    req.nextUrl.pathname.startsWith(path)
+  );
   if (isAuthenticated && isAuthPage) {
-    console.log('Middleware: User authenticated on auth page, redirecting to /dashboard')
-    return NextResponse.redirect(new URL('/dashboard', req.url))
+    console.log('Middleware: User authenticated on auth page, redirecting to /dashboard');
+    return NextResponse.redirect(new URL('/dashboard', req.url));
   }
 
   // Add tracing headers to the response
   const processingTime = Date.now() - startTime;
   const tracedResponse = addTracingHeaders(res, requestId, processingTime);
 
-  console.log(`[${requestId}] Middleware: Completed in ${processingTime}ms`)
-  return tracedResponse
+  console.log(`[${requestId}] Middleware: Completed in ${processingTime}ms`);
+  return tracedResponse;
 }
 
 export const config = {
@@ -460,4 +485,4 @@ export const config = {
      */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
-}
+};

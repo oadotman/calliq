@@ -9,7 +9,7 @@ require('dotenv').config({ path: '.env.local' });
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY // Use service role for admin access
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY // Use service role for admin access
 );
 
 async function recoverStuckCalls() {
@@ -61,7 +61,7 @@ async function recoverStuckCalls() {
         .update({
           status: 'failed',
           processing_error: 'Max retry attempts exceeded',
-          last_processing_attempt: new Date().toISOString()
+          last_processing_attempt: new Date().toISOString(),
         })
         .eq('id', call.id);
 
@@ -80,7 +80,7 @@ async function recoverStuckCalls() {
         processing_error: `Recovered from stuck state after ${minutesStuck} minutes`,
         last_processing_attempt: new Date().toISOString(),
         processing_progress: 0,
-        processing_message: 'Queued for retry'
+        processing_message: 'Queued for retry',
       })
       .eq('id', call.id);
 
@@ -97,8 +97,10 @@ async function recoverStuckCalls() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-service-role': process.env.SUPABASE_SERVICE_ROLE_KEY // Auth for internal API
-          }
+            'x-internal-processing': 'true', // Mark as internal to bypass auth
+            'x-service-role':
+              process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY, // Auth for internal API
+          },
         });
 
         if (response.ok) {
@@ -171,7 +173,7 @@ async function retryFailedCalls() {
         processing_attempts: call.processing_attempts + 1,
         last_processing_attempt: new Date().toISOString(),
         processing_progress: 0,
-        processing_message: 'Queued for retry'
+        processing_message: 'Queued for retry',
       })
       .eq('id', call.id);
 
