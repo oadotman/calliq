@@ -1,0 +1,23 @@
+# COPY AND PASTE THESE COMMANDS INTO YOUR VPS TERMINAL:
+# SSH into your VPS first, then run these commands one by one
+
+# 1. Navigate to your app directory
+cd /var/www/synqall
+
+# 2. Pull the latest code with the CSRF fix
+git pull origin main
+
+# 3. Install dependencies and build
+npm install && npm run build
+
+# 4. Restart the application
+pm2 restart synqall
+
+# 5. Wait a moment for the app to start, then check status
+sleep 10 && pm2 status
+
+# 6. Run the recovery script to fix stuck calls
+node scripts/recover-stuck-calls.js
+
+# 7. Check the logs to verify everything is working
+pm2 logs synqall --lines 30 --nostream
