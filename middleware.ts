@@ -128,9 +128,11 @@ export async function middleware(req: NextRequest) {
 
     // Apply partner authentication middleware
     const partnerResponse = await partnerAuthMiddleware(req);
+    // Only return the partnerResponse if it's a redirect or error (not a normal 200 OK)
     if (partnerResponse.status !== 200 || partnerResponse.headers.get('Location')) {
       return partnerResponse;
     }
+    // If the partner middleware returns 200 OK, continue processing
   }
 
   // =====================================================
