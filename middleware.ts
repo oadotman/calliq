@@ -68,8 +68,13 @@ export async function middleware(req: NextRequest) {
     '/',
     '/pricing', // Pricing page should be public
     '/blog', // Blog should be public
+    '/partners', // Partner pages are public
     '/api/auth/signup',
+    '/api/auth/callback',
     '/api/health',
+    '/api/partners/apply', // Public partner application API
+    '/api/partners/auth/login', // Public partner login API
+    '/api/partners/tracking', // Public partner tracking API
     '/invite', // Invitation pages are public
     '/invite-signup', // Invitation signup pages are public
   ];
@@ -443,12 +448,14 @@ export async function middleware(req: NextRequest) {
     '/pricing', // Pricing page should be public
     '/blog', // Blog should be public
     '/api/auth/signup',
+    '/api/auth/callback',
     '/api/health',
+    '/api/partners/apply', // Public partner application API
+    '/api/partners/auth/login', // Public partner login API
+    '/api/partners/tracking', // Public partner tracking API
     '/invite',
     '/invite-signup',
-    '/partners', // Public partner landing page
-    '/partners/apply', // Public partner application page
-    '/partners/login', // Public partner login page
+    '/partners', // Public partner pages (landing, apply, login)
   ];
 
   const isPublicForRedirect = publicPathsForRedirect.some((path) => {
