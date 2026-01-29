@@ -223,17 +223,25 @@ export async function middleware(req: NextRequest) {
   // CSRF TOKEN VALIDATION
   // Validate CSRF tokens for state-changing operations
   // =====================================================
-  // Skip CSRF token validation for internal processing requests
+  // Skip CSRF token validation for internal processing requests AND public API endpoints
   const isInternalRequest = req.headers.get('x-internal-processing') === 'true';
 
-  if (!isInternalRequest) {
+  // Check if this is a public API endpoint that should skip CSRF token validation
+  const publicApiPaths = [
+    '/api/partners/apply', // Public partner application
+    '/api/auth/signup', // Public signup
+    '/api/auth/callback', // Auth callback
+  ];
+  const isPublicApi = publicApiPaths.some((path) => req.nextUrl.pathname.startsWith(path));
+
+  if (!isInternalRequest && !isPublicApi) {
     const csrfResponse = await csrfMiddleware(req);
     if (csrfResponse) {
       console.log('[Middleware] CSRF validation failed');
       return csrfResponse;
     }
   } else {
-    console.log('[Middleware] Skipping CSRF token validation for internal request');
+    console.log('[Middleware] Skipping CSRF token validation for internal or public API request');
   }
 
   let res = NextResponse.next({

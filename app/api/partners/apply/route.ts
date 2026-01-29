@@ -11,6 +11,18 @@ import { sendPartnerApplicationEmail } from '@/lib/emails/partners/application';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+// OPTIONS handler for CORS preflight
+export async function OPTIONS(req: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
+  });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -58,14 +70,12 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (existingApplication) {
-      const message = existingApplication.status === 'approved'
-        ? 'This email is already registered as a partner. Please use the login page.'
-        : 'An application with this email is already pending review.';
+      const message =
+        existingApplication.status === 'approved'
+          ? 'This email is already registered as a partner. Please use the login page.'
+          : 'An application with this email is already pending review.';
 
-      return NextResponse.json(
-        { success: false, message },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, message }, { status: 400 });
     }
 
     // Check if email is already a partner
@@ -77,7 +87,10 @@ export async function POST(req: NextRequest) {
 
     if (existingPartner) {
       return NextResponse.json(
-        { success: false, message: 'This email is already registered as a partner. Please use the login page.' },
+        {
+          success: false,
+          message: 'This email is already registered as a partner. Please use the login page.',
+        },
         { status: 400 }
       );
     }
@@ -116,7 +129,7 @@ export async function POST(req: NextRequest) {
         message: error.message,
         details: error.details,
         hint: error.hint,
-        application
+        application,
       });
 
       // Provide more specific error messages
@@ -145,9 +158,9 @@ export async function POST(req: NextRequest) {
             debug: {
               code: error.code,
               details: error.message,
-              hint: error.hint
-            }
-          })
+              hint: error.hint,
+            },
+          }),
         },
         { status: 500 }
       );
@@ -155,11 +168,7 @@ export async function POST(req: NextRequest) {
 
     // Send confirmation email to applicant
     try {
-      await sendPartnerApplicationEmail(
-        application.email!,
-        application.full_name!,
-        'received'
-      );
+      await sendPartnerApplicationEmail(application.email!, application.full_name!, 'received');
     } catch (emailError) {
       console.error('Failed to send application email:', emailError);
       // Don't fail the request if email fails
@@ -175,18 +184,16 @@ export async function POST(req: NextRequest) {
         .single();
 
       if (owner) {
-        await supabase
-          .from('notifications')
-          .insert({
-            id: crypto.randomUUID(),
-            user_id: owner.user_id,
-            notification_type: 'partner_application',
-            title: 'New Partner Application',
-            message: `${application.full_name} from ${application.company_name || 'Individual'} has applied to become a partner.`,
-            link: '/admin/partners/applications',
-            is_read: false,
-            created_at: new Date().toISOString()
-          });
+        await supabase.from('notifications').insert({
+          id: crypto.randomUUID(),
+          user_id: owner.user_id,
+          notification_type: 'partner_application',
+          title: 'New Partner Application',
+          message: `${application.full_name} from ${application.company_name || 'Individual'} has applied to become a partner.`,
+          link: '/admin/partners/applications',
+          is_read: false,
+          created_at: new Date().toISOString(),
+        });
       }
     } catch (notifError) {
       console.error('Failed to create owner notification:', notifError);
@@ -196,17 +203,12 @@ export async function POST(req: NextRequest) {
     // Send notification email to admin (you)
     try {
       const adminEmail = process.env.PARTNER_ADMIN_EMAIL || 'adeliyitomiwa@yahoo.com';
-      await sendPartnerApplicationEmail(
-        adminEmail,
-        'Admin',
-        'new_application',
-        {
-          applicant_name: application.full_name,
-          applicant_email: application.email,
-          partner_type: application.partner_type,
-          company: application.company_name,
-        }
-      );
+      await sendPartnerApplicationEmail(adminEmail, 'Admin', 'new_application', {
+        applicant_name: application.full_name,
+        applicant_email: application.email,
+        partner_type: application.partner_type,
+        company: application.company_name,
+      });
     } catch (emailError) {
       console.error('Failed to send admin notification:', emailError);
     }
@@ -223,20 +225,21 @@ export async function POST(req: NextRequest) {
     console.error('Partner application error:', {
       error,
       message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
+      stack: error instanceof Error ? error.stack : undefined,
     });
 
-    const errorMessage = error instanceof Error
-      ? `Application error: ${error.message}`
-      : 'An unexpected error occurred while processing your application';
+    const errorMessage =
+      error instanceof Error
+        ? `Application error: ${error.message}`
+        : 'An unexpected error occurred while processing your application';
 
     return NextResponse.json(
       {
         success: false,
         message: errorMessage,
         ...(process.env.NODE_ENV === 'development' && {
-          debug: error instanceof Error ? error.message : String(error)
-        })
+          debug: error instanceof Error ? error.message : String(error),
+        }),
       },
       { status: 500 }
     );
@@ -250,10 +253,7 @@ export async function GET(req: NextRequest) {
     const email = searchParams.get('email');
 
     if (!email) {
-      return NextResponse.json(
-        { success: false, message: 'Email is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, message: 'Email is required' }, { status: 400 });
     }
 
     const supabase = createServerClient();
@@ -283,9 +283,6 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error('Application status check error:', error);
-    return NextResponse.json(
-      { success: false, message: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 });
   }
 }
