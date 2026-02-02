@@ -176,7 +176,13 @@ export async function middleware(req: NextRequest) {
         '/api/upload/', // File upload endpoints
         '/api/calls/import-url', // URL import (external fetch)
         '/api/teams/invite', // Team invitations (may come from email links)
+        '/api/teams/accept-invitation', // Accept team invitation
         '/api/referrals/activate', // Referral activation
+        '/api/referrals/send-invitation', // Send referral invitations
+        '/api/referrals/generate', // Generate referral code
+        '/api/invitations/verify', // Verify invitations
+        '/api/partners/auth/reset-password', // Partner password reset
+        '/api/partners/admin/applications/', // Partner application reviews
       ];
 
       const isWebhook = webhookPaths.some((path) => req.nextUrl.pathname.startsWith(path));
@@ -236,22 +242,37 @@ export async function middleware(req: NextRequest) {
   // Skip CSRF token validation for internal processing requests AND public API endpoints
   const isInternalRequest = req.headers.get('x-internal-processing') === 'true';
 
-  // Check if this is a public API endpoint that should skip CSRF token validation
-  const publicApiPaths = [
+  // Check if this is an endpoint that should skip CSRF token validation
+  const csrfTokenExemptPaths = [
+    // Public endpoints
     '/api/partners/apply', // Public partner application
     '/api/auth/signup', // Public signup
     '/api/auth/callback', // Auth callback
+    // Email and invitation endpoints (authenticated but need CSRF exemption)
+    '/api/teams/invite', // Team invitations
+    '/api/teams/accept-invitation', // Accept team invitation
+    '/api/referrals/send-invitation', // Send referral invitations
+    '/api/referrals/activate', // Referral activation
+    '/api/referrals/generate', // Generate referral code
+    '/api/invitations/verify', // Verify invitations
+    '/api/partners/auth/reset-password', // Partner password reset
+    '/api/partners/admin/applications/', // Partner application reviews
+    // File operations
+    '/api/upload/', // File uploads
+    '/api/calls/import-url', // URL imports
   ];
-  const isPublicApi = publicApiPaths.some((path) => req.nextUrl.pathname.startsWith(path));
+  const isCsrfTokenExempt = csrfTokenExemptPaths.some((path) =>
+    req.nextUrl.pathname.startsWith(path)
+  );
 
-  if (!isInternalRequest && !isPublicApi) {
+  if (!isInternalRequest && !isCsrfTokenExempt) {
     const csrfResponse = await csrfMiddleware(req);
     if (csrfResponse) {
-      console.log('[Middleware] CSRF validation failed');
+      console.log('[Middleware] CSRF validation failed for:', req.nextUrl.pathname);
       return csrfResponse;
     }
   } else {
-    console.log('[Middleware] Skipping CSRF token validation for internal or public API request');
+    console.log('[Middleware] Skipping CSRF token validation for:', req.nextUrl.pathname);
   }
 
   let res = NextResponse.next({
