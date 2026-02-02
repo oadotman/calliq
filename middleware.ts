@@ -1,3 +1,9 @@
+// =====================================================
+// IMPORTANT: Admin Access Control
+// Only adeliyitomiwa@yahoo.com (the system owner) can access admin pages
+// All /admin/* routes are restricted to this single email address
+// =====================================================
+
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
@@ -435,16 +441,32 @@ export async function middleware(req: NextRequest) {
         return NextResponse.redirect(errorUrl);
       }
 
-      // Check both role AND plan type
-      const hasAdminRole = userOrg.role === 'owner' || userOrg.role === 'admin';
+      // IMPORTANT: Only adeliyitomiwa@yahoo.com (the owner) can access admin pages
+      // Check if the user is the owner by email
+      const OWNER_EMAIL = 'adeliyitomiwa@yahoo.com';
+      const isOwner = user.email?.toLowerCase() === OWNER_EMAIL.toLowerCase();
+
+      // Also check role for additional security (they should have owner role)
+      const hasOwnerRole = userOrg.role === 'owner';
       const planAllowsAdmin =
         userOrg.organization?.[0]?.plan_type &&
         !['free', 'solo'].includes(userOrg.organization[0].plan_type);
 
-      if (!hasAdminRole) {
-        console.log('Middleware: User is not admin, role:', userOrg.role);
+      if (!isOwner) {
+        console.log(`Middleware: User ${user.email} is not the owner (${OWNER_EMAIL})`);
         const errorUrl = new URL('/dashboard', req.url);
         errorUrl.searchParams.set('error', 'admin_access_denied');
+        errorUrl.searchParams.set('reason', 'Only the system owner can access admin features');
+        return NextResponse.redirect(errorUrl);
+      }
+
+      if (!hasOwnerRole) {
+        console.log(
+          `Middleware: Owner email ${user.email} doesn't have owner role: ${userOrg.role}`
+        );
+        const errorUrl = new URL('/dashboard', req.url);
+        errorUrl.searchParams.set('error', 'admin_role_mismatch');
+        errorUrl.searchParams.set('reason', 'Please run the admin role fix SQL query');
         return NextResponse.redirect(errorUrl);
       }
 
