@@ -12,7 +12,12 @@ export async function middleware(req: NextRequest) {
   const requestId = getRequestId(req);
   const startTime = Date.now();
 
-  console.log(`[${requestId}] Middleware: Processing request for`, req.nextUrl.pathname);
+  console.log(
+    `[${requestId}] Middleware: Processing request for`,
+    req.nextUrl.pathname,
+    'Method:',
+    req.method
+  );
 
   // =====================================================
   // SEARCH BOT DETECTION
@@ -318,36 +323,51 @@ export async function middleware(req: NextRequest) {
     const { data, error } = await supabase.auth.getSession();
 
     if (error) {
-      // If refresh token error, try to clear the invalid session
+      // Only redirect to login for critical auth errors
+      // Refresh token errors mean the user is truly logged out
       if (error.message?.includes('Refresh Token') || error.code === 'refresh_token_not_found') {
         console.log('Middleware: Invalid refresh token detected, clearing session');
         // Don't log the full error to avoid cluttering logs
         await supabase.auth.signOut();
 
-        // Explicitly clear all auth-related cookies
-        const response = NextResponse.redirect(new URL('/login', req.url));
-        response.cookies.delete('sb-access-token');
-        response.cookies.delete('sb-refresh-token');
-        response.cookies.delete('sb-auth-token');
-        response.cookies.delete('csrf_token');
-        // Add header to clear all site cookies (browser support varies)
-        response.headers.set('Clear-Site-Data', '"cookies"');
-        return response;
+        // Only redirect to login if we're not already on a public page
+        const publicPathsForError = ['/login', '/signup', '/', '/pricing', '/blog', '/partners'];
+        const isOnPublicPage = publicPathsForError.some(
+          (path) => pathname === path || pathname.startsWith(path + '/')
+        );
+
+        if (!isOnPublicPage) {
+          // Explicitly clear all auth-related cookies
+          const response = NextResponse.redirect(new URL('/login', req.url));
+          response.cookies.delete('sb-access-token');
+          response.cookies.delete('sb-refresh-token');
+          response.cookies.delete('sb-auth-token');
+          response.cookies.delete('csrf_token');
+          // Add header to clear all site cookies (browser support varies)
+          response.headers.set('Clear-Site-Data', '"cookies"');
+          return response;
+        }
       } else {
-        console.error('Middleware: Error getting session:', error);
+        // For other errors, just log them but don't redirect
+        // This could be a temporary network issue
+        console.error('Middleware: Non-critical session error:', error.message);
+        // Try to get the user from the existing cookies
+        // The session might still be valid
       }
-    } else {
-      session = data?.session;
-      user = session?.user || null;
     }
+
+    // Always try to get session data, even if there was a non-critical error
+    session = data?.session || null;
+    user = session?.user || null;
   } catch (err) {
     console.error('Middleware: Unexpected error getting session:', err);
   }
 
-  console.log('Middleware: Session check', {
+  console.log(`[${requestId}] Middleware: Session check`, {
     pathname: req.nextUrl.pathname,
     hasSession: !!session,
     hasUser: !!user,
+    userId: user?.id?.substring(0, 8) || 'none',
   });
 
   // =====================================================
