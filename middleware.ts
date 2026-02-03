@@ -378,14 +378,27 @@ export async function middleware(req: NextRequest) {
         // For other errors, just log them but don't redirect
         // This could be a temporary network issue
         console.error('Middleware: Non-critical session error:', error.message);
-        // Try to get the user from the existing cookies
-        // The session might still be valid
+
+        // Try alternative method to get user for non-critical errors
+        try {
+          const { data: userData } = await supabase.auth.getUser();
+          if (userData?.user) {
+            user = userData.user;
+            // Create a minimal session object for compatibility
+            session = { user } as any;
+            console.log('Middleware: Retrieved user via getUser() fallback');
+          }
+        } catch (fallbackError) {
+          console.error('Middleware: Fallback getUser() also failed:', fallbackError);
+        }
       }
     }
 
-    // Always try to get session data, even if there was a non-critical error
-    session = data?.session || null;
-    user = session?.user || null;
+    // Only update session if we successfully got data
+    if (data?.session) {
+      session = data.session;
+      user = session.user;
+    }
   } catch (err) {
     console.error('Middleware: Unexpected error getting session:', err);
   }
@@ -395,6 +408,7 @@ export async function middleware(req: NextRequest) {
     hasSession: !!session,
     hasUser: !!user,
     userId: user?.id?.substring(0, 8) || 'none',
+    userEmail: user?.email || 'none',
   });
 
   // =====================================================

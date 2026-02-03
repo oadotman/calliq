@@ -1,24 +1,36 @@
-'use client'
+'use client';
 
-import { useAuth } from '@/lib/AuthContext'
-import { Sidebar } from './Sidebar'
-import { Footer } from './Footer'
-import { CookieConsent } from './CookieConsent'
-import { usePathname, useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useAuth } from '@/lib/AuthContext';
+import { Sidebar } from './Sidebar';
+import { Footer } from './Footer';
+import { CookieConsent } from './CookieConsent';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export function AuthLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth()
-  const pathname = usePathname()
-  const router = useRouter()
+  const { user, loading } = useAuth();
+  const pathname = usePathname();
+  const router = useRouter();
 
   // Pages that don't require authentication and don't show sidebar
-  const publicPages = ['/login', '/signup', '/forgot-password', '/reset-password']
-  const isPublicPage = pathname === '/' || publicPages.some(page => pathname?.startsWith(page))
+  const publicPages = ['/login', '/signup', '/forgot-password', '/reset-password'];
+  const isPublicPage = pathname === '/' || publicPages.some((page) => pathname?.startsWith(page));
 
   // Pages that show sidebar (all authenticated pages)
-  const protectedPages = ['/dashboard', '/calls', '/analytics', '/templates', '/settings', '/help', '/invite']
-  const isProtectedPage = protectedPages.some(page => pathname?.startsWith(page))
+  const protectedPages = [
+    '/dashboard',
+    '/calls',
+    '/analytics',
+    '/templates',
+    '/settings',
+    '/help',
+    '/invite',
+    '/referrals',
+    '/upgrade',
+    '/team',
+    '/admin',
+  ];
+  const isProtectedPage = protectedPages.some((page) => pathname?.startsWith(page));
 
   // Log for debugging with more detail
   useEffect(() => {
@@ -29,25 +41,33 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
       pathname,
       isPublicPage,
       isProtectedPage,
-      timestamp: new Date().toISOString()
-    })
-  }, [loading, user, pathname, isPublicPage, isProtectedPage])
+      timestamp: new Date().toISOString(),
+    });
+  }, [loading, user, pathname, isPublicPage, isProtectedPage]);
 
   // Handle authentication and redirects
   useEffect(() => {
+    console.log('🔄 AuthLayout redirect check:', {
+      pathname,
+      loading,
+      hasUser: !!user,
+      isProtectedPage,
+      isPublicPage,
+    });
+
     if (!loading) {
       // If on a protected page without user, redirect to login
       if (isProtectedPage && !user) {
-        console.log('AuthLayout: No user on protected page, redirecting to /login')
-        router.replace('/login')
+        console.log('AuthLayout: No user on protected page, redirecting to /login');
+        router.replace('/login');
       }
       // If user is logged in and on login/signup pages, redirect to dashboard
       else if (user && (pathname === '/login' || pathname === '/signup')) {
-        console.log('AuthLayout: User logged in on auth page, redirecting to /dashboard')
-        router.replace('/dashboard')
+        console.log('AuthLayout: User logged in on auth page, redirecting to /dashboard');
+        router.replace('/dashboard');
       }
     }
-  }, [user, loading, isProtectedPage, router, pathname])
+  }, [user, loading, isProtectedPage, router, pathname]);
 
   // For public pages, render without sidebar
   if (isPublicPage) {
@@ -60,7 +80,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
         </div>
         <CookieConsent />
       </>
-    )
+    );
   }
 
   // For protected pages, show loading while auth is being checked
@@ -72,47 +92,43 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
           <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
-    )
+    );
   }
 
   // For protected pages with authenticated user, ALWAYS show sidebar
   if (user && isProtectedPage) {
-    console.log('🎯 Rendering protected page with sidebar for user:', user.id)
+    console.log('🎯 Rendering protected page with sidebar for user:', user.id);
     return (
       <>
         <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
           <Sidebar />
           <div className="flex-1 lg:ml-56 transition-all duration-300 ease-out flex flex-col">
-            <main className="flex-1">
-              {children}
-            </main>
+            <main className="flex-1">{children}</main>
           </div>
         </div>
         <CookieConsent />
       </>
-    )
+    );
   }
 
   // For authenticated users on any other page (fallback to show sidebar)
   if (user && !isPublicPage) {
-    console.log('🔄 Fallback: Rendering with sidebar for authenticated user on:', pathname)
+    console.log('🔄 Fallback: Rendering with sidebar for authenticated user on:', pathname);
     return (
       <>
         <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
           <Sidebar />
           <div className="flex-1 lg:ml-56 transition-all duration-300 ease-out flex flex-col">
-            <main className="flex-1">
-              {children}
-            </main>
+            <main className="flex-1">{children}</main>
           </div>
         </div>
         <CookieConsent />
       </>
-    )
+    );
   }
 
   // For unauthenticated users or edge cases
-  console.log('⚠️ Rendering without sidebar - user:', !!user, 'pathname:', pathname)
+  console.log('⚠️ Rendering without sidebar - user:', !!user, 'pathname:', pathname);
   return (
     <>
       <div className="flex flex-col min-h-screen">
@@ -120,5 +136,5 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
       </div>
       <CookieConsent />
     </>
-  )
+  );
 }

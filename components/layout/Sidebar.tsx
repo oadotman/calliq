@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   Phone,
@@ -18,27 +18,27 @@ import {
   Sparkles,
   Gift,
   Sun,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useState } from "react";
-import styles from "./Sidebar.module.css";
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useState } from 'react';
+import styles from './Sidebar.module.css';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useAuth } from "@/lib/AuthContext";
-import { ThemeToggle } from "@/components/theme/ThemeToggle";
+} from '@/components/ui/dropdown-menu';
+import { useAuth } from '@/lib/AuthContext';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 
 const navItems = [
-  { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
-  { icon: Phone, label: "Calls", href: "/calls" },
-  { icon: FileText, label: "Templates", href: "/templates" },
-  { icon: BarChart3, label: "Analytics", href: "/analytics" },
-  { icon: Gift, label: "Referrals", href: "/referrals" },
-  { icon: Users, label: "Team", href: "/settings/team" },
-  { icon: Settings, label: "Settings", href: "/settings" },
+  { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
+  { icon: Phone, label: 'Calls', href: '/calls' },
+  { icon: FileText, label: 'Templates', href: '/templates' },
+  { icon: BarChart3, label: 'Analytics', href: '/analytics' },
+  { icon: Gift, label: 'Referrals', href: '/referrals' },
+  { icon: Users, label: 'Team', href: '/settings/team' },
+  { icon: Settings, label: 'Settings', href: '/settings' },
 ];
 
 export function Sidebar() {
@@ -78,19 +78,15 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              onClick={() => setIsMobileOpen(false)}
-              className={cn(
-                styles.navLink,
-                isActive && styles.navLinkActive
-              )}
+              onClick={(e) => {
+                console.log(`📍 Navigating to: ${item.href}`);
+                setIsMobileOpen(false);
+              }}
+              className={cn(styles.navLink, isActive && styles.navLinkActive)}
             >
-              <Icon
-                className={styles.navIcon}
-              />
+              <Icon className={styles.navIcon} />
               <span className={styles.navLabel}>{item.label}</span>
-              {isActive && (
-                <div className={styles.navIndicator} />
-              )}
+              {isActive && <div className={styles.navIndicator} />}
             </Link>
           );
         })}
@@ -105,7 +101,7 @@ export function Sidebar() {
             onClick={() => setIsMobileOpen(false)}
             className={cn(
               styles.bottomLink,
-              "bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 mb-2"
+              'bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 mb-2'
             )}
             style={{ color: 'white' }}
           >
@@ -126,14 +122,9 @@ export function Sidebar() {
         <Link
           href="/help"
           onClick={() => setIsMobileOpen(false)}
-          className={cn(
-            styles.bottomLink,
-            pathname === "/help" && styles.bottomLinkActive
-          )}
+          className={cn(styles.bottomLink, pathname === '/help' && styles.bottomLinkActive)}
         >
-          <HelpCircle
-            className={styles.navIcon}
-          />
+          <HelpCircle className={styles.navIcon} />
           <span>Help Center</span>
         </Link>
 
@@ -151,7 +142,10 @@ export function Sidebar() {
                 <ChevronDown className="w-4 h-4 text-slate-400 ml-auto flex-shrink-0" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 rounded-xl dark:bg-slate-800 dark:border-slate-700">
+            <DropdownMenuContent
+              align="end"
+              className="w-56 rounded-xl dark:bg-slate-800 dark:border-slate-700"
+            >
               <DropdownMenuItem
                 className="rounded-lg cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:text-red-400 dark:focus:text-red-400 dark:focus:bg-red-950/50"
                 onClick={handleLogout}
@@ -202,9 +196,7 @@ export function Sidebar() {
       )}
 
       {/* Desktop sidebar */}
-      <aside
-        className="hidden lg:flex fixed left-0 top-0 bottom-0 w-56 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800 flex-col shadow-xl z-40"
-      >
+      <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-56 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800 flex-col shadow-xl z-40">
         <SidebarContent />
       </aside>
     </>
