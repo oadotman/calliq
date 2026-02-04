@@ -4,6 +4,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { Sidebar } from './Sidebar';
 import { Footer } from './Footer';
 import { CookieConsent } from './CookieConsent';
+import { FloatingFeedback } from './FloatingFeedback';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
@@ -106,6 +107,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
             <main className="flex-1">{children}</main>
           </div>
         </div>
+        <FloatingFeedback />
         <CookieConsent />
       </>
     );
@@ -122,6 +124,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
             <main className="flex-1">{children}</main>
           </div>
         </div>
+        <FloatingFeedback />
         <CookieConsent />
       </>
     );
