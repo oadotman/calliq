@@ -6,12 +6,16 @@ import { Footer } from './Footer';
 import { CookieConsent } from './CookieConsent';
 import { FloatingFeedback } from './FloatingFeedback';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 export function AuthLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
+
+  // Track if initial auth check is complete to prevent redirect loops
+  const initialAuthCheckComplete = useRef(false);
+  const lastPathname = useRef(pathname);
 
   // Pages that don't require authentication and don't show sidebar
   const publicPages = ['/login', '/signup', '/forgot-password', '/reset-password'];
@@ -48,15 +52,47 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
 
   // Handle authentication and redirects
   useEffect(() => {
+    const isNavigatingBetweenProtectedPages =
+      lastPathname.current &&
+      protectedPages.some((page) => lastPathname.current?.startsWith(page)) &&
+      isProtectedPage;
+
     console.log('🔄 AuthLayout redirect check:', {
       pathname,
       loading,
       hasUser: !!user,
       isProtectedPage,
       isPublicPage,
+      isNavigatingBetweenProtectedPages,
+      initialAuthCheckComplete: initialAuthCheckComplete.current,
     });
 
-    if (!loading) {
+    // Update last pathname for next comparison
+    lastPathname.current = pathname;
+
+    // CRITICAL FIX: Only make redirect decisions after auth has fully loaded
+    // This prevents race conditions when navigating between protected routes
+    if (loading && !initialAuthCheckComplete.current) {
+      console.log('⏳ Auth still loading, skipping redirect logic');
+      return;
+    }
+
+    // Mark initial auth check as complete once loading is false
+    if (!loading && !initialAuthCheckComplete.current) {
+      initialAuthCheckComplete.current = true;
+      console.log('✅ Initial auth check complete');
+    }
+
+    // Skip redirect logic when navigating between protected pages if user is already authenticated
+    if (isNavigatingBetweenProtectedPages && user) {
+      console.log(
+        '✅ Navigating between protected pages with authenticated user, no redirect needed'
+      );
+      return;
+    }
+
+    // Only redirect if auth state is definitively resolved
+    if (!loading || initialAuthCheckComplete.current) {
       // If on a protected page without user, redirect to login
       if (isProtectedPage && !user) {
         console.log('AuthLayout: No user on protected page, redirecting to /login');
@@ -68,7 +104,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
         router.replace('/dashboard');
       }
     }
-  }, [user, loading, isProtectedPage, router, pathname]);
+  }, [user, loading, isProtectedPage, router, pathname, protectedPages]);
 
   // For public pages, render without sidebar
   if (isPublicPage) {
@@ -84,8 +120,9 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // For protected pages, show loading while auth is being checked
-  if (loading) {
+  // For protected pages, show loading only during initial auth check
+  // If user exists and we're on a protected page, show the page immediately
+  if (loading && !initialAuthCheckComplete.current && !user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
         <div className="text-center">
