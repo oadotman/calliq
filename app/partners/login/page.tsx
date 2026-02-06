@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -23,12 +23,12 @@ import {
   Lock,
   Users,
   DollarSign,
-  Award
+  Award,
 } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { PartnerNavigation } from '@/components/partners/PartnerNavigation';
 
-export default function PartnerLoginPage() {
+function PartnerLoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/partners/dashboard';
@@ -116,88 +116,84 @@ export default function PartnerLoginPage() {
         <PartnerNavigation />
         <div className="flex items-center justify-center px-6 py-12 pt-28">
           <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">SynQall Partners</h1>
-            <p className="text-gray-600 mt-2">Reset your password</p>
-          </div>
+            <div className="text-center mb-8">
+              <h1 className="text-3xl font-bold text-gray-900">SynQall Partners</h1>
+              <p className="text-gray-600 mt-2">Reset your password</p>
+            </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Forgot Password</CardTitle>
-              <CardDescription>
-                Enter your email address and we'll send you instructions to reset your password.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {!resetSent ? (
-                <form onSubmit={handleForgotPassword} className="space-y-4">
-                  <div>
-                    <Label htmlFor="reset-email">Email Address</Label>
-                    <Input
-                      id="reset-email"
-                      type="email"
-                      value={resetEmail}
-                      onChange={(e) => setResetEmail(e.target.value)}
-                      placeholder="partner@example.com"
-                      required
-                    />
-                  </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Forgot Password</CardTitle>
+                <CardDescription>
+                  Enter your email address and we'll send you instructions to reset your password.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {!resetSent ? (
+                  <form onSubmit={handleForgotPassword} className="space-y-4">
+                    <div>
+                      <Label htmlFor="reset-email">Email Address</Label>
+                      <Input
+                        id="reset-email"
+                        type="email"
+                        value={resetEmail}
+                        onChange={(e) => setResetEmail(e.target.value)}
+                        placeholder="partner@example.com"
+                        required
+                      />
+                    </div>
 
-                  {error && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                  )}
+                    {error && (
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>{error}</AlertDescription>
+                      </Alert>
+                    )}
 
-                  <div className="flex gap-3">
+                    <div className="flex gap-3">
+                      <Button type="submit" className="flex-1" disabled={isLoading}>
+                        {isLoading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Sending...
+                          </>
+                        ) : (
+                          'Send Reset Email'
+                        )}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setShowForgotPassword(false);
+                          setError('');
+                          setResetEmail('');
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-green-600 mb-4">
+                      Password reset instructions have been sent to {resetEmail}
+                    </p>
                     <Button
-                      type="submit"
-                      className="flex-1"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Sending...
-                        </>
-                      ) : (
-                        'Send Reset Email'
-                      )}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
                       onClick={() => {
                         setShowForgotPassword(false);
-                        setError('');
+                        setResetSent(false);
                         setResetEmail('');
                       }}
                     >
-                      Cancel
+                      Back to Login
                     </Button>
                   </div>
-                </form>
-              ) : (
-                <div className="text-center py-4">
-                  <p className="text-green-600 mb-4">
-                    Password reset instructions have been sent to {resetEmail}
-                  </p>
-                  <Button
-                    onClick={() => {
-                      setShowForgotPassword(false);
-                      setResetSent(false);
-                      setResetEmail('');
-                    }}
-                  >
-                    Back to Login
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
       </div>
     );
   }
@@ -226,9 +222,7 @@ export default function PartnerLoginPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Sign In</CardTitle>
-                <CardDescription>
-                  Enter your partner account credentials
-                </CardDescription>
+                <CardDescription>Enter your partner account credentials</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleLogin} className="space-y-4">
@@ -271,10 +265,7 @@ export default function PartnerLoginPage() {
                         checked={rememberMe}
                         onCheckedChange={(checked) => setRememberMe(checked as boolean)}
                       />
-                      <Label
-                        htmlFor="remember"
-                        className="text-sm font-normal cursor-pointer"
-                      >
+                      <Label htmlFor="remember" className="text-sm font-normal cursor-pointer">
                         Remember me
                       </Label>
                     </div>
@@ -294,11 +285,7 @@ export default function PartnerLoginPage() {
                     </Alert>
                   )}
 
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={isLoading}
-                  >
+                  <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -313,9 +300,7 @@ export default function PartnerLoginPage() {
                 <Separator className="my-6" />
 
                 <div className="text-center">
-                  <p className="text-sm text-gray-600 mb-2">
-                    Not a partner yet?
-                  </p>
+                  <p className="text-sm text-gray-600 mb-2">Not a partner yet?</p>
                   <Link href="/partners/apply">
                     <Button variant="outline" className="w-full">
                       Apply to Become a Partner
@@ -328,10 +313,7 @@ export default function PartnerLoginPage() {
             <div className="mt-8 text-center">
               <p className="text-sm text-gray-600">
                 Need help? Contact{' '}
-                <a
-                  href="mailto:partners@synqall.com"
-                  className="text-blue-600 hover:underline"
-                >
+                <a href="mailto:partners@synqall.com" className="text-blue-600 hover:underline">
                   partners@synqall.com
                 </a>
               </p>
@@ -344,7 +326,8 @@ export default function PartnerLoginPage() {
           <div className="max-w-md">
             <h2 className="text-3xl font-bold mb-6">Welcome Back, Partner!</h2>
             <p className="text-lg mb-8 text-blue-100">
-              Access your dashboard to track referrals, monitor earnings, and get marketing resources.
+              Access your dashboard to track referrals, monitor earnings, and get marketing
+              resources.
             </p>
 
             <div className="space-y-6">
@@ -390,5 +373,19 @@ export default function PartnerLoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PartnerLoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin" />
+        </div>
+      }
+    >
+      <PartnerLoginContent />
+    </Suspense>
   );
 }

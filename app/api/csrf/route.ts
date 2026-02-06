@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { setCSRFToken } from '@/lib/security/csrf-simple';
 
+// Force this route to be dynamic (not statically generated)
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/csrf
  *
