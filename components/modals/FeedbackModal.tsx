@@ -23,6 +23,7 @@ import {
 import { useToast } from '@/components/ui/use-toast';
 import { MessageSquarePlus, Bug, Lightbulb, Heart, Send, Loader2 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
+import { fetchWithCSRF } from '@/lib/client/csrf';
 
 interface FeedbackModalProps {
   trigger?: React.ReactNode;
@@ -65,7 +66,7 @@ export function FeedbackModal({ trigger }: FeedbackModalProps) {
     setSubmitting(true);
 
     try {
-      const response = await fetch('/api/feedback', {
+      const response = await fetchWithCSRF('/api/feedback', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

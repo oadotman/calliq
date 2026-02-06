@@ -79,10 +79,19 @@ export async function middleware(req: NextRequest) {
     '/',
     '/pricing', // Pricing page should be public
     '/blog', // Blog should be public
+    '/about', // About page
+    '/contact', // Contact page
+    '/features', // Features page
+    '/terms', // Terms of service
+    '/privacy', // Privacy policy
+    '/security', // Security page
+    '/gdpr', // GDPR information
+    '/cookies', // Cookie policy
     '/partners', // Partner pages are public
     '/api/auth/signup',
     '/api/auth/callback',
     '/api/health',
+    '/api/csrf', // CSRF token endpoint
     '/api/partners/apply', // Public partner application API
     '/api/partners/auth/login', // Public partner login API
     '/api/partners/tracking', // Public partner tracking API
@@ -179,16 +188,16 @@ export async function middleware(req: NextRequest) {
       ];
       // These paths need special handling or are called by external services
       const csrfExemptPaths = [
-        '/api/upload/', // File upload endpoints
+        '/api/upload/', // File upload endpoints (special handling)
         '/api/calls/import-url', // URL import (external fetch)
-        '/api/teams/invite', // Team invitations (may come from email links)
-        '/api/teams/accept-invitation', // Accept team invitation
-        '/api/referrals/activate', // Referral activation
-        '/api/referrals/send-invitation', // Send referral invitations
-        '/api/referrals/generate', // Generate referral code
-        '/api/invitations/verify', // Verify invitations
-        '/api/partners/auth/reset-password', // Partner password reset
-        '/api/partners/admin/applications/', // Partner application reviews
+        '/api/teams/accept-invitation', // Accept team invitation (triggered from email links)
+        '/api/referrals/activate', // Referral activation (triggered from email links)
+        '/api/invitations/verify', // Verify invitations (triggered from email links)
+        '/api/partners/auth/reset-password', // Partner password reset (triggered from email links)
+        // REMOVED: '/api/teams/invite' - sending invitations should require CSRF
+        // REMOVED: '/api/referrals/send-invitation' - authenticated operation should require CSRF
+        // REMOVED: '/api/referrals/generate' - authenticated operation should require CSRF
+        // REMOVED: '/api/partners/admin/applications/' - admin operations should require CSRF
       ];
 
       const isWebhook = webhookPaths.some((path) => req.nextUrl.pathname.startsWith(path));
@@ -250,22 +259,23 @@ export async function middleware(req: NextRequest) {
 
   // Check if this is an endpoint that should skip CSRF token validation
   const csrfTokenExemptPaths = [
-    // Public endpoints
+    // Public endpoints (no authentication required)
     '/api/partners/apply', // Public partner application
     '/api/auth/signup', // Public signup
     '/api/auth/callback', // Auth callback
-    // Email and invitation endpoints (authenticated but need CSRF exemption)
-    '/api/teams/invite', // Team invitations
-    '/api/teams/accept-invitation', // Accept team invitation
-    '/api/referrals/send-invitation', // Send referral invitations
-    '/api/referrals/activate', // Referral activation
-    '/api/referrals/generate', // Generate referral code
-    '/api/invitations/verify', // Verify invitations
-    '/api/partners/auth/reset-password', // Partner password reset
-    '/api/partners/admin/applications/', // Partner application reviews
-    // File operations
+    // Email-triggered endpoints (cannot send CSRF tokens from email links)
+    '/api/teams/accept-invitation', // Accept team invitation from email
+    '/api/referrals/activate', // Referral activation from email link
+    '/api/invitations/verify', // Verify invitations from email
+    '/api/partners/auth/reset-password', // Partner password reset from email
+    // File operations (special CSRF handling required)
     '/api/upload/', // File uploads
     '/api/calls/import-url', // URL imports
+    // REMOVED: '/api/teams/invite' - sending invitations should require CSRF
+    // REMOVED: '/api/referrals/send-invitation' - authenticated operation should require CSRF
+    // REMOVED: '/api/referrals/generate' - authenticated operation should require CSRF
+    // REMOVED: '/api/partners/admin/applications/' - admin operations should require CSRF
+    // REMOVED: '/api/feedback' - authenticated user operation should require CSRF
   ];
   const isCsrfTokenExempt = csrfTokenExemptPaths.some((path) =>
     req.nextUrl.pathname.startsWith(path)
@@ -524,9 +534,18 @@ export async function middleware(req: NextRequest) {
     '/reset-password',
     '/pricing', // Pricing page should be public
     '/blog', // Blog should be public
+    '/about', // About page
+    '/contact', // Contact page
+    '/features', // Features page
+    '/terms', // Terms of service
+    '/privacy', // Privacy policy
+    '/security', // Security page
+    '/gdpr', // GDPR information
+    '/cookies', // Cookie policy
     '/api/auth/signup',
     '/api/auth/callback',
     '/api/health',
+    '/api/csrf', // CSRF token endpoint
     '/api/partners/apply', // Public partner application API
     '/api/partners/auth/login', // Public partner login API
     '/api/partners/tracking', // Public partner tracking API

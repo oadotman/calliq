@@ -18,7 +18,25 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
   const lastPathname = useRef(pathname);
 
   // Pages that don't require authentication and don't show sidebar
-  const publicPages = ['/login', '/signup', '/forgot-password', '/reset-password'];
+  const publicPages = [
+    '/login',
+    '/signup',
+    '/forgot-password',
+    '/reset-password',
+    '/invite',
+    '/invite-signup',
+    '/pricing',
+    '/blog',
+    '/about',
+    '/contact',
+    '/features',
+    '/terms',
+    '/privacy',
+    '/security',
+    '/gdpr',
+    '/cookies',
+    '/partners', // Partner landing and public pages
+  ];
   const isPublicPage = pathname === '/' || publicPages.some((page) => pathname?.startsWith(page));
 
   // Pages that show sidebar (all authenticated pages)
@@ -29,11 +47,11 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
     '/templates',
     '/settings',
     '/help',
-    '/invite',
     '/referrals',
     '/upgrade',
     '/team',
     '/admin',
+    '/overage', // Overage purchase page
   ];
   const isProtectedPage = protectedPages.some((page) => pathname?.startsWith(page));
 
