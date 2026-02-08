@@ -9,7 +9,6 @@ import {
   FileText,
   CreditCard,
   Wrench,
-  Mail,
   HelpCircle,
   MessageSquarePlus,
 } from 'lucide-react';
@@ -209,29 +208,6 @@ export function HelpContent() {
                 <kbd className="px-1.5 py-0.5 text-xs bg-muted rounded">F</kbd> from anywhere to
                 send feedback
               </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Contact Support Section */}
-      <Card className="mt-8 bg-primary/5 border-primary/20">
-        <CardContent className="pt-6">
-          <div className="flex items-start gap-4">
-            <Mail className="h-5 w-5 text-primary mt-0.5" />
-            <div className="space-y-2 flex-1">
-              <h3 className="font-semibold">Still need help?</h3>
-              <p className="text-sm text-muted-foreground">
-                Our support team is here to help you with any questions.
-              </p>
-              <div className="flex gap-3">
-                <Button asChild>
-                  <Link href="/contact">Contact Support</Link>
-                </Button>
-                <Button variant="outline" asChild>
-                  <a href="mailto:support@synqall.com">Email Us</a>
-                </Button>
-              </div>
             </div>
           </div>
         </CardContent>

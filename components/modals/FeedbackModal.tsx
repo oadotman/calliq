@@ -234,12 +234,6 @@ export function FeedbackModal({ trigger }: FeedbackModalProps) {
             </div>
           )}
 
-          {user?.email && (
-            <div className="text-sm text-gray-500">
-              Response will be sent to: <span className="font-medium">{user.email}</span>
-            </div>
-          )}
-
           <div className="flex justify-end gap-3">
             <Button
               type="button"
