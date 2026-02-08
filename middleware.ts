@@ -12,6 +12,7 @@ import { partnerAuthMiddleware } from './middleware/partner-auth';
 import { csrfMiddleware, injectCSRFToken, setCSRFToken } from './lib/security/csrf-simple';
 import { bodySizeLimit, getBodySizeLimit } from './middleware/body-size-limit';
 import { getRequestId, addTracingHeaders } from './lib/middleware/request-tracing';
+import { rateLimit } from './lib/security/rate-limit';
 
 export async function middleware(req: NextRequest) {
   // Generate or extract request ID for tracing
@@ -39,6 +40,17 @@ export async function middleware(req: NextRequest) {
   if (isSearchBot) {
     console.log('Middleware: Search bot detected, skipping cookie operations', userAgent);
     return NextResponse.next();
+  }
+
+  // =====================================================
+  // RATE LIMITING CHECK
+  // Apply rate limiting to API endpoints
+  // =====================================================
+  if (req.nextUrl.pathname.startsWith('/api/')) {
+    const rateLimitResponse = await rateLimit(req);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
   }
 
   // =====================================================

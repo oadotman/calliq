@@ -1,0 +1,325 @@
+{
+  "timestamp": "2026-02-08T14:09:10.876Z",
+  "url": "http://localhost:3000",
+  "summary": {
+    "total": 52,
+    "passed": 45,
+    "failed": 6,
+    "skipped": 1,
+    "passRate": "86.5%"
+  },
+  "tests": [
+    {
+      "category": "Public Pages",
+      "test": "Landing page",
+      "status": "pass",
+      "message": "Status: 200"
+    },
+    {
+      "category": "Public Pages",
+      "test": "Login page",
+      "status": "pass",
+      "message": "Status: 200"
+    },
+    {
+      "category": "Public Pages",
+      "test": "Signup page",
+      "status": "pass",
+      "message": "Status: 200"
+    },
+    {
+      "category": "Public Pages",
+      "test": "Pricing page",
+      "status": "pass",
+      "message": "Status: 200"
+    },
+    {
+      "category": "Public Pages",
+      "test": "About page",
+      "status": "pass",
+      "message": "Status: 200"
+    },
+    {
+      "category": "Public Pages",
+      "test": "Contact page",
+      "status": "pass",
+      "message": "Status: 200"
+    },
+    {
+      "category": "Public Pages",
+      "test": "Features page",
+      "status": "pass",
+      "message": "Status: 200"
+    },
+    {
+      "category": "Public Pages",
+      "test": "Blog page",
+      "status": "pass",
+      "message": "Status: 200"
+    },
+    {
+      "category": "Public Pages",
+      "test": "Partners page",
+      "status": "pass",
+      "message": "Status: 200"
+    },
+    {
+      "category": "Public Pages",
+      "test": "Privacy policy",
+      "status": "pass",
+      "message": "Status: 200"
+    },
+    {
+      "category": "Public Pages",
+      "test": "Terms of service",
+      "status": "pass",
+      "message": "Status: 200"
+    },
+    {
+      "category": "Public Pages",
+      "test": "Security page",
+      "status": "pass",
+      "message": "Status: 200"
+    },
+    {
+      "category": "Public Pages",
+      "test": "GDPR page",
+      "status": "pass",
+      "message": "Status: 200"
+    },
+    {
+      "category": "Public Pages",
+      "test": "Cookie policy",
+      "status": "pass",
+      "message": "Status: 200"
+    },
+    {
+      "category": "Protected Pages",
+      "test": "Dashboard",
+      "status": "pass",
+      "message": "Redirects to login"
+    },
+    {
+      "category": "Protected Pages",
+      "test": "Calls page",
+      "status": "pass",
+      "message": "Redirects to login"
+    },
+    {
+      "category": "Protected Pages",
+      "test": "Analytics",
+      "status": "pass",
+      "message": "Redirects to login"
+    },
+    {
+      "category": "Protected Pages",
+      "test": "Templates",
+      "status": "pass",
+      "message": "Redirects to login"
+    },
+    {
+      "category": "Protected Pages",
+      "test": "Settings",
+      "status": "pass",
+      "message": "Redirects to login"
+    },
+    {
+      "category": "Protected Pages",
+      "test": "Team management",
+      "status": "pass",
+      "message": "Redirects to login"
+    },
+    {
+      "category": "Protected Pages",
+      "test": "Upgrade page",
+      "status": "pass",
+      "message": "Redirects to login"
+    },
+    {
+      "category": "Protected Pages",
+      "test": "Referrals",
+      "status": "pass",
+      "message": "Redirects to login"
+    },
+    {
+      "category": "Protected Pages",
+      "test": "Help center",
+      "status": "pass",
+      "message": "Redirects to login"
+    },
+    {
+      "category": "Authentication",
+      "test": "Invalid email rejection",
+      "status": "pass",
+      "message": "Status: 400"
+    },
+    {
+      "category": "Authentication",
+      "test": "Weak password rejection",
+      "status": "pass",
+      "message": "Status: 400"
+    },
+    {
+      "category": "Authentication",
+      "test": "Invalid credentials rejection",
+      "status": "fail",
+      "message": "Status: 403"
+    },
+    {
+      "category": "API Endpoints",
+      "test": "CSRF token endpoint",
+      "status": "pass",
+      "message": "Status: 200"
+    },
+    {
+      "category": "API Endpoints",
+      "test": "Health check endpoint",
+      "status": "pass",
+      "message": "Status: 200"
+    },
+    {
+      "category": "API Endpoints",
+      "test": "Preferences requires auth",
+      "status": "fail",
+      "message": "Status: 200"
+    },
+    {
+      "category": "API Endpoints",
+      "test": "Feedback requires CSRF",
+      "status": "pass",
+      "message": "Status: 403"
+    },
+    {
+      "category": "Partner Portal",
+      "test": "Partner landing page",
+      "status": "pass",
+      "message": "Status: 200"
+    },
+    {
+      "category": "Partner Portal",
+      "test": "Partner login page",
+      "status": "pass",
+      "message": "Status: 200"
+    },
+    {
+      "category": "Partner Portal",
+      "test": "Partner dashboard requires auth",
+      "status": "fail",
+      "message": "Status: 200"
+    },
+    {
+      "category": "Partner Portal",
+      "test": "Partner application API",
+      "status": "pass",
+      "message": "Status: 400"
+    },
+    {
+      "category": "Referral System",
+      "test": "Referral activation endpoint",
+      "status": "pass",
+      "message": "Status: 200"
+    },
+    {
+      "category": "Referral System",
+      "test": "Referrals page requires auth",
+      "status": "pass",
+      "message": "Status: 307"
+    },
+    {
+      "category": "Invitation Flow",
+      "test": "Invitation page is public",
+      "status": "pass",
+      "message": "Status: 200"
+    },
+    {
+      "category": "Invitation Flow",
+      "test": "Invitation signup is public",
+      "status": "pass",
+      "message": "Status: 200"
+    },
+    {
+      "category": "Invitation Flow",
+      "test": "Invitation verification API",
+      "status": "pass",
+      "message": "Status: 200"
+    },
+    {
+      "category": "Invitation Flow",
+      "test": "Accept invitation API",
+      "status": "pass",
+      "message": "Status: 200"
+    },
+    {
+      "category": "Security",
+      "test": "x-frame-options header",
+      "status": "pass",
+      "message": "SAMEORIGIN"
+    },
+    {
+      "category": "Security",
+      "test": "x-content-type-options header",
+      "status": "pass",
+      "message": "nosniff"
+    },
+    {
+      "category": "Security",
+      "test": "strict-transport-security header",
+      "status": "pass",
+      "message": "max-age=31536000; includeSubDomains; preload"
+    },
+    {
+      "category": "Security",
+      "test": "x-xss-protection header",
+      "status": "pass",
+      "message": "1; mode=block"
+    },
+    {
+      "category": "Error Handling",
+      "test": "404 page handling",
+      "status": "fail",
+      "message": "Status: 200"
+    },
+    {
+      "category": "Error Handling",
+      "test": "Malformed JSON handling",
+      "status": "fail",
+      "message": "Status: 403"
+    },
+    {
+      "category": "Error Handling",
+      "test": "SQL injection prevention",
+      "status": "fail",
+      "message": "Status: 403"
+    },
+    {
+      "category": "Rate Limiting",
+      "test": "Rate limiting active",
+      "status": "skip",
+      "message": "No rate limiting detected"
+    },
+    {
+      "category": "Mobile",
+      "test": "Mobile user agent support",
+      "status": "pass",
+      "message": "Status: 200"
+    },
+    {
+      "category": "Performance",
+      "test": "Landing page load time",
+      "status": "pass",
+      "message": "2345ms"
+    },
+    {
+      "category": "Performance",
+      "test": "Login page load time",
+      "status": "pass",
+      "message": "663ms"
+    },
+    {
+      "category": "Performance",
+      "test": "Pricing page load time",
+      "status": "pass",
+      "message": "1654ms"
+    }
+  ]
+}

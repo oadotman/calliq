@@ -108,7 +108,9 @@
       "Bash(git fetch:*)",
       "Bash(python -m json.tool:*)",
       "Bash(/dev/null)",
-      "Bash(del test-partner-api.js 2)"
+      "Bash(del test-partner-api.js 2)",
+      "Bash(del /s /q .next 2)",
+      "Bash(git rev-list:*)"
     ],
     "deny": [],
     "ask": []
