@@ -92,10 +92,7 @@ export default function TeamSettingsPage() {
     }
 
     // Return all plans higher than current
-    return planOrder
-      .slice(currentIndex + 1)
-      .map((planId) => PLANS[planId])
-      .filter((plan) => plan.maxMembers > 1); // Only show team plans for upgrades
+    return planOrder.slice(currentIndex + 1).map((planId) => PLANS[planId]);
   };
 
   // Invitation form state
@@ -478,9 +475,9 @@ export default function TeamSettingsPage() {
               </ul>
             </div>
 
-            {/* Pricing Cards - Show team plans */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[PLANS.starter, PLANS.professional, PLANS.enterprise].map((plan) => (
+            {/* Pricing Cards - Show all upgrade plans including Solo */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {[PLANS.solo, PLANS.starter, PLANS.professional, PLANS.enterprise].map((plan) => (
                 <div
                   key={plan.id}
                   className={`p-4 ${
