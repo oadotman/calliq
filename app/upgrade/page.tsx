@@ -1,18 +1,25 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useAuth } from "@/lib/AuthContext";
-import { PLANS, type PlanType } from "@/lib/pricing";
-import { initializePaddle, getPaddlePlanId, debugPaddleConfig } from "@/lib/paddle";
-import { handlePlanChange, getPlanChangeMessage } from "@/lib/subscription-manager";
-import { Check, Sparkles, Loader2, CreditCard, Calendar } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { useToast } from "@/components/ui/use-toast";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuth } from '@/lib/AuthContext';
+import { PLANS, type PlanType } from '@/lib/pricing';
+import { initializePaddle, getPaddlePlanId, debugPaddleConfig } from '@/lib/paddle';
+import { handlePlanChange } from '@/lib/subscription-manager';
+import { Check, Sparkles, Loader2, CreditCard, Calendar } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { useToast } from '@/components/ui/use-toast';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 export default function UpgradePage() {
   const router = useRouter();
@@ -27,12 +34,10 @@ export default function UpgradePage() {
   // Initialize Paddle when component mounts
   useEffect(() => {
     // Debug current configuration
-    console.log('🔍 Debugging Paddle configuration on upgrade page load:');
     debugPaddleConfig();
 
     initializePaddle(() => {
       setPaddleLoaded(true);
-      console.log('✅ Paddle initialized successfully');
     });
   }, []);
 
@@ -59,9 +64,7 @@ export default function UpgradePage() {
     const currentIndex = planHierarchy.indexOf(currentPlan as PlanType);
 
     // Show only plans higher than current
-    return planHierarchy
-      .slice(currentIndex + 1)
-      .filter(plan => plan !== 'custom'); // Don't show custom plan
+    return planHierarchy.slice(currentIndex + 1);
   };
 
   const availablePlans = getAvailablePlans();
@@ -69,17 +72,17 @@ export default function UpgradePage() {
   const handleUpgrade = async (planId: PlanType) => {
     if (!paddleLoaded) {
       toast({
-        title: "Loading...",
-        description: "Payment system is loading. Please try again in a moment.",
+        title: 'Loading...',
+        description: 'Payment system is loading. Please try again in a moment.',
       });
       return;
     }
 
     if (!user?.email) {
       toast({
-        title: "Email Required",
+        title: 'Email Required',
         description: "Please ensure you're logged in with a valid email.",
-        variant: "destructive",
+        variant: 'destructive',
       });
       return;
     }
@@ -90,15 +93,15 @@ export default function UpgradePage() {
     try {
       const priceId = getPaddlePlanId(planId, billingPeriod);
 
-      console.log(`Attempting to open checkout for ${planId} (${billingPeriod}):`, priceId);
+      // Attempting to open checkout for plan
 
       if (!priceId || priceId === '') {
         console.error(`Price ID not configured for ${planId}_${billingPeriod}`);
         console.error('Make sure NEXT_PUBLIC_PADDLE_PRICE_ID_* environment variables are set');
         toast({
-          title: "Configuration Error",
+          title: 'Configuration Error',
           description: `Price ID not configured for this plan. Please contact support.`,
-          variant: "destructive",
+          variant: 'destructive',
         });
         setLoading(false);
         setSelectedPlan(null);
@@ -118,8 +121,10 @@ export default function UpgradePage() {
         onSuccess: () => {
           const isUpgrade = currentPlan !== 'free';
           toast({
-            title: "Success!",
-            description: isUpgrade ? "Your plan has been changed successfully!" : "Your subscription has been activated.",
+            title: 'Success!',
+            description: isUpgrade
+              ? 'Your plan has been changed successfully!'
+              : 'Your subscription has been activated.',
           });
 
           // Redirect to dashboard after successful payment
@@ -130,32 +135,49 @@ export default function UpgradePage() {
         onClose: () => {
           setLoading(false);
           setSelectedPlan(null);
-        }
+        },
       });
-
     } catch (error) {
       console.error('Upgrade error:', error);
       toast({
-        title: "Error",
-        description: "Failed to initiate checkout. Please try again.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to initiate checkout. Please try again.',
+        variant: 'destructive',
       });
       setLoading(false);
       setSelectedPlan(null);
     }
   };
 
+  // Handle enterprise plan users - they're at the highest tier
   if (currentPlan === 'enterprise') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white p-8">
         <div className="max-w-4xl mx-auto">
           <div className="text-center py-16">
             <Sparkles className="w-16 h-16 text-violet-600 mx-auto mb-4" />
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
-              You're on the Enterprise Plan
-            </h1>
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">You're on the Enterprise Plan</h1>
             <p className="text-xl text-gray-600 mb-8">
-              You already have access to all features and unlimited usage.
+              You already have our highest tier plan with maximum features and usage limits.
+            </p>
+            <Button onClick={() => router.push('/dashboard')} size="lg">
+              Back to Dashboard
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Edge case: Handle when no upgrade plans are available
+  if (availablePlans.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white p-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center py-16">
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">No Upgrade Plans Available</h1>
+            <p className="text-lg text-gray-600 mb-8">
+              You're already on our highest available plan.
             </p>
             <Button onClick={() => router.push('/dashboard')} size="lg">
               Back to Dashboard
@@ -174,9 +196,7 @@ export default function UpgradePage() {
           <Badge className="mb-4" variant="secondary">
             Current Plan: {PLANS[currentPlan as PlanType].name}
           </Badge>
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Upgrade Your Plan
-          </h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Upgrade Your Plan</h1>
           <p className="text-xl text-gray-600 mb-8">
             Choose the perfect plan to scale your sales operations
           </p>
@@ -220,15 +240,13 @@ export default function UpgradePage() {
                 key={planId}
                 id={`plan-${planId}`}
                 className={cn(
-                  "relative transition-all duration-200",
-                  isPopular && "border-violet-600 shadow-xl scale-105"
+                  'relative transition-all duration-200',
+                  isPopular && 'border-violet-600 shadow-xl scale-105'
                 )}
               >
                 {isPopular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <Badge className="bg-violet-600 text-white">
-                      Most Popular
-                    </Badge>
+                    <Badge className="bg-violet-600 text-white">Most Popular</Badge>
                   </div>
                 )}
 
@@ -236,7 +254,8 @@ export default function UpgradePage() {
                   <CardTitle className="text-2xl mb-2">{plan.name}</CardTitle>
                   <div className="space-y-2">
                     <div className="text-4xl font-bold">
-                      ${billingPeriod === 'monthly' ? plan.price : Math.round(plan.priceAnnual / 12)}
+                      $
+                      {billingPeriod === 'monthly' ? plan.price : Math.round(plan.priceAnnual / 12)}
                       <span className="text-base font-normal text-gray-600">/month</span>
                     </div>
                     <CardDescription>
@@ -246,7 +265,7 @@ export default function UpgradePage() {
                     </CardDescription>
                     {billingPeriod === 'annual' && plan.price > 0 && (
                       <Badge variant="secondary" className="bg-green-100 text-green-800">
-                        Save ${(plan.price * 12) - plan.priceAnnual} per year
+                        Save ${plan.price * 12 - plan.priceAnnual} per year
                       </Badge>
                     )}
                   </div>
@@ -268,10 +287,10 @@ export default function UpgradePage() {
                     onClick={() => handleUpgrade(planId)}
                     disabled={loading}
                     className={cn(
-                      "w-full text-white font-semibold",
+                      'w-full text-white font-semibold',
                       isPopular
-                        ? "bg-violet-600 hover:bg-violet-700"
-                        : "bg-blue-600 hover:bg-blue-700"
+                        ? 'bg-violet-600 hover:bg-violet-700'
+                        : 'bg-blue-600 hover:bg-blue-700'
                     )}
                     size="lg"
                   >
@@ -292,11 +311,12 @@ export default function UpgradePage() {
 
         {/* Additional Info */}
         <div className="text-center text-gray-600">
-          <p className="mb-2">
-            All plans include a 14-day money-back guarantee
-          </p>
+          <p className="mb-2">All plans include a 14-day money-back guarantee</p>
           <p className="text-sm">
-            Need help choosing? <a href="/help" className="text-violet-600 hover:underline">Contact our sales team</a>
+            Need help choosing?{' '}
+            <a href="/help" className="text-violet-600 hover:underline">
+              Contact our sales team
+            </a>
           </p>
         </div>
       </div>

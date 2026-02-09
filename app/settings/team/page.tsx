@@ -12,11 +12,30 @@ import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
-import { UserPlus, Mail, Shield, Trash2, Copy, CheckCircle, Loader2, Users, Crown, ShieldCheck, FileText } from 'lucide-react';
+import {
+  UserPlus,
+  Mail,
+  Shield,
+  Trash2,
+  Copy,
+  CheckCircle,
+  Loader2,
+  Users,
+  Crown,
+  ShieldCheck,
+  FileText,
+} from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { PLANS, PlanType, PlanDetails } from '@/lib/pricing';
 
 interface Organization {
   id: string;
@@ -62,6 +81,23 @@ export default function TeamSettingsPage() {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [userRole, setUserRole] = useState<string>('');
 
+  // Get plans that are higher tier than current plan
+  const getUpgradePlans = (currentPlan: string): PlanDetails[] => {
+    const planOrder: PlanType[] = ['free', 'solo', 'starter', 'professional', 'enterprise'];
+    const currentIndex = planOrder.indexOf(currentPlan as PlanType);
+
+    // If current plan not found or is enterprise/custom, return empty
+    if (currentIndex === -1 || currentIndex >= planOrder.length - 1) {
+      return [];
+    }
+
+    // Return all plans higher than current
+    return planOrder
+      .slice(currentIndex + 1)
+      .map((planId) => PLANS[planId])
+      .filter((plan) => plan.maxMembers > 1); // Only show team plans for upgrades
+  };
+
   // Invitation form state
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'admin' | 'member'>('member');
@@ -87,7 +123,6 @@ export default function TeamSettingsPage() {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, mounted]); // Only re-fetch when user ID changes
 
   async function fetchTeamData() {
@@ -117,7 +152,7 @@ export default function TeamSettingsPage() {
 
       // Handle case where membership query returns null (no organization)
       if (!membership || !membership.organization_id) {
-        console.log('No organization membership found for user');
+        // No organization membership found for user
         setOrganization(null); // Explicitly set organization to null
         setLoading(false); // Ensure loading is set to false before return
         setFetchingData(false);
@@ -143,7 +178,7 @@ export default function TeamSettingsPage() {
       }
 
       if (!org) {
-        console.warn('Organization not found for membership');
+        console.error('Organization not found for membership');
         setOrganization(null);
         setLoading(false);
         setFetchingData(false);
@@ -162,18 +197,20 @@ export default function TeamSettingsPage() {
         console.error('Error fetching team members:', membersError);
       } else if (teamMembers) {
         // Fetch user emails via API since we can't access auth.users directly from client
-        const response = await fetch(`/api/teams/members?organizationId=${membership.organization_id}`);
+        const response = await fetch(
+          `/api/teams/members?organizationId=${membership.organization_id}`
+        );
         if (response.ok) {
           const data = await response.json();
           setMembers(data.members || []);
         } else {
           // Fallback: show members without email details
-          const membersWithPlaceholders = teamMembers.map(member => ({
+          const membersWithPlaceholders = teamMembers.map((member) => ({
             ...member,
             user: {
               email: 'Loading...',
-              user_metadata: {}
-            }
+              user_metadata: {},
+            },
           }));
           setMembers(membersWithPlaceholders as TeamMember[]);
         }
@@ -255,17 +292,17 @@ export default function TeamSettingsPage() {
 
       // Add the new invitation to the list without refetching everything
       if (data.invitation) {
-        setInvitations(prev => [...prev, data.invitation]);
+        setInvitations((prev) => [...prev, data.invitation]);
       } else {
         // Only fetch if we don't have the invitation data
         // Wait a bit before refreshing to ensure the database is updated
         setTimeout(() => {
-          if (!fetchingData) { // Only fetch if not already fetching
+          if (!fetchingData) {
+            // Only fetch if not already fetching
             fetchTeamData();
           }
         }, 1000);
       }
-
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -308,7 +345,6 @@ export default function TeamSettingsPage() {
       });
 
       fetchTeamData(); // Refresh
-
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -326,10 +362,7 @@ export default function TeamSettingsPage() {
     try {
       const supabase = createClient();
 
-      const { error } = await supabase
-        .from('user_organizations')
-        .delete()
-        .eq('id', memberId);
+      const { error } = await supabase.from('user_organizations').delete().eq('id', memberId);
 
       if (error) {
         throw error;
@@ -341,7 +374,6 @@ export default function TeamSettingsPage() {
       });
 
       fetchTeamData(); // Refresh
-
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -406,7 +438,8 @@ export default function TeamSettingsPage() {
               Unlock Team Collaboration
             </CardTitle>
             <CardDescription className="text-purple-700 text-base">
-              Add team members, assign roles, and collaborate on CRM automation with your sales team.
+              Add team members, assign roles, and collaborate on CRM automation with your sales
+              team.
             </CardDescription>
           </CardHeader>
 
@@ -417,46 +450,75 @@ export default function TeamSettingsPage() {
               <ul className="space-y-2 text-sm text-gray-700">
                 <li className="flex items-start gap-2">
                   <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                  <span><strong>Add team members</strong> - Collaborate with sales reps, managers, and admins</span>
+                  <span>
+                    <strong>Add team members</strong> - Collaborate with sales reps, managers, and
+                    admins
+                  </span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                  <span><strong>More transcription minutes</strong> - Process 50-1,200x more calls per month</span>
+                  <span>
+                    <strong>More transcription minutes</strong> - Process 50-1,200x more calls per
+                    month
+                  </span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                  <span><strong>Team invitations</strong> - Invite colleagues via email with role-based permissions</span>
+                  <span>
+                    <strong>Team invitations</strong> - Invite colleagues via email with role-based
+                    permissions
+                  </span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                  <span><strong>Shared templates</strong> - Create organization-wide CRM templates</span>
+                  <span>
+                    <strong>Shared templates</strong> - Create organization-wide CRM templates
+                  </span>
                 </li>
               </ul>
             </div>
 
-            {/* Pricing Cards */}
+            {/* Pricing Cards - Show team plans */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 bg-white rounded-lg border border-purple-200 hover:border-purple-400 transition-all hover:shadow-md">
-                <p className="text-sm font-semibold text-gray-700 mb-1">Solo</p>
-                <p className="text-3xl font-bold text-purple-600">$49<span className="text-sm text-gray-500">/mo</span></p>
-                <p className="text-xs text-gray-600 mt-2 mb-3">1 user • 1,500 min/mo</p>
-                <p className="text-xs text-gray-500">Perfect for individual sales reps</p>
-              </div>
-
-              <div className="p-4 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg shadow-xl transform hover:scale-105 transition-all relative">
-                <Badge className="mb-2 bg-yellow-400 text-yellow-900 hover:bg-yellow-400">⭐ Most Popular</Badge>
-                <p className="text-sm font-semibold text-white mb-1">Team 5</p>
-                <p className="text-3xl font-bold text-white">$149<span className="text-sm text-purple-200">/mo</span></p>
-                <p className="text-xs text-purple-100 mt-2 mb-3">5 users • 6,000 min/mo</p>
-                <p className="text-xs text-purple-100">Great for small sales teams</p>
-              </div>
-
-              <div className="p-4 bg-white rounded-lg border border-purple-200 hover:border-purple-400 transition-all hover:shadow-md">
-                <p className="text-sm font-semibold text-gray-700 mb-1">Team 10</p>
-                <p className="text-3xl font-bold text-purple-600">$299<span className="text-sm text-gray-500">/mo</span></p>
-                <p className="text-xs text-gray-600 mt-2 mb-3">10 users • 15,000 min/mo</p>
-                <p className="text-xs text-gray-500">Best for growing teams</p>
-              </div>
+              {[PLANS.starter, PLANS.professional, PLANS.enterprise].map((plan) => (
+                <div
+                  key={plan.id}
+                  className={`p-4 ${
+                    plan.isPopular
+                      ? 'bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg shadow-xl transform hover:scale-105 transition-all relative'
+                      : 'bg-white rounded-lg border border-purple-200 hover:border-purple-400 transition-all hover:shadow-md'
+                  }`}
+                >
+                  {plan.isPopular && (
+                    <Badge className="mb-2 bg-yellow-400 text-yellow-900 hover:bg-yellow-400">
+                      ⭐ Most Popular
+                    </Badge>
+                  )}
+                  <p
+                    className={`text-sm font-semibold mb-1 ${plan.isPopular ? 'text-white' : 'text-gray-700'}`}
+                  >
+                    {plan.name}
+                  </p>
+                  <p
+                    className={`text-3xl font-bold ${plan.isPopular ? 'text-white' : 'text-purple-600'}`}
+                  >
+                    ${plan.price}
+                    <span
+                      className={`text-sm ${plan.isPopular ? 'text-purple-200' : 'text-gray-500'}`}
+                    >
+                      /mo
+                    </span>
+                  </p>
+                  <p
+                    className={`text-xs mt-2 mb-3 ${plan.isPopular ? 'text-purple-100' : 'text-gray-600'}`}
+                  >
+                    {plan.maxMembers} users • {plan.maxMinutes.toLocaleString()} min/mo
+                  </p>
+                  <p className={`text-xs ${plan.isPopular ? 'text-purple-100' : 'text-gray-500'}`}>
+                    {plan.features[0]}
+                  </p>
+                </div>
+              ))}
             </div>
 
             {/* CTA Button */}
@@ -504,7 +566,8 @@ export default function TeamSettingsPage() {
                   <h3 className="font-semibold text-gray-900">Role-Based Access</h3>
                 </div>
                 <p className="text-sm text-gray-600">
-                  Owner, Admin, and Member roles with different permission levels for your organization.
+                  Owner, Admin, and Member roles with different permission levels for your
+                  organization.
                 </p>
               </div>
 
@@ -572,98 +635,147 @@ export default function TeamSettingsPage() {
             </div>
             <div className="md:col-span-3">
               <Label className="text-sm text-gray-500">Monthly Minutes</Label>
-              <p className="text-lg font-semibold mt-1">{organization.max_minutes_monthly} minutes</p>
+              <p className="text-lg font-semibold mt-1">
+                {organization.max_minutes_monthly} minutes
+              </p>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Upgrade Prompt for Free & Solo Plans */}
-      {(organization.plan_type === 'free' || organization.plan_type === 'solo') && canManageTeam && (
-        <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50 via-blue-50 to-purple-50 overflow-hidden relative">
-          {/* Decorative background */}
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-purple-600 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-600 rounded-full blur-3xl"></div>
-          </div>
+      {(organization.plan_type === 'free' || organization.plan_type === 'solo') &&
+        canManageTeam &&
+        (() => {
+          const upgradePlans = getUpgradePlans(organization.plan_type);
 
-          <CardHeader className="relative z-10">
-            <CardTitle className="flex items-center gap-2 text-purple-900 text-2xl">
-              <Crown className="w-6 h-6 text-purple-600" />
-              Unlock Team Collaboration
-            </CardTitle>
-            <CardDescription className="text-purple-700 text-base">
-              {organization.plan_type === 'free'
-                ? "You're on the Free plan (1 user, 30 min/month). Upgrade to work with your team and scale your CRM automation."
-                : "You're on the Solo plan (1 user, 1,500 min/month). Upgrade to a Team plan to collaborate with colleagues."}
-            </CardDescription>
-          </CardHeader>
+          // If no upgrade plans available (shouldn't happen but handle gracefully)
+          if (upgradePlans.length === 0) return null;
 
-          <CardContent className="space-y-6 relative z-10">
-            {/* Benefits Section */}
-            <div className="bg-white/60 backdrop-blur rounded-lg p-4 border border-purple-200">
-              <h3 className="font-semibold text-gray-900 mb-3">What you'll get with Team plans:</h3>
-              <ul className="space-y-2 text-sm text-gray-700">
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                  <span><strong>Add team members</strong> - Collaborate with sales reps, managers, and admins</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                  <span><strong>More transcription minutes</strong> - Process 50-1,200x more calls per month</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                  <span><strong>Team invitations</strong> - Invite colleagues via email with role-based permissions</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                  <span><strong>Shared templates</strong> - Create organization-wide CRM templates</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Pricing Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 bg-white rounded-lg border border-purple-200 hover:border-purple-400 transition-all hover:shadow-md">
-                <p className="text-sm font-semibold text-gray-700 mb-1">Solo</p>
-                <p className="text-3xl font-bold text-purple-600">$49<span className="text-sm text-gray-500">/mo</span></p>
-                <p className="text-xs text-gray-600 mt-2 mb-3">1 user • 1,500 min/mo</p>
-                <p className="text-xs text-gray-500">Perfect for individual sales reps</p>
+          return (
+            <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50 via-blue-50 to-purple-50 overflow-hidden relative">
+              {/* Decorative background */}
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-purple-600 rounded-full blur-3xl"></div>
+                <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-600 rounded-full blur-3xl"></div>
               </div>
 
-              <div className="p-4 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg shadow-xl transform hover:scale-105 transition-all relative">
-                <Badge className="mb-2 bg-yellow-400 text-yellow-900 hover:bg-yellow-400">⭐ Most Popular</Badge>
-                <p className="text-sm font-semibold text-white mb-1">Team 5</p>
-                <p className="text-3xl font-bold text-white">$149<span className="text-sm text-purple-200">/mo</span></p>
-                <p className="text-xs text-purple-100 mt-2 mb-3">5 users • 6,000 min/mo</p>
-                <p className="text-xs text-purple-100">Great for small sales teams</p>
-              </div>
+              <CardHeader className="relative z-10">
+                <CardTitle className="flex items-center gap-2 text-purple-900 text-2xl">
+                  <Crown className="w-6 h-6 text-purple-600" />
+                  Unlock Team Collaboration
+                </CardTitle>
+                <CardDescription className="text-purple-700 text-base">
+                  {organization.plan_type === 'free'
+                    ? `You're on the ${PLANS[organization.plan_type].name} plan (${PLANS[organization.plan_type].maxMembers} user, ${PLANS[organization.plan_type].maxMinutes} min/month). Upgrade to work with your team and scale your CRM automation.`
+                    : `You're on the ${PLANS[organization.plan_type].name} plan (${PLANS[organization.plan_type].maxMembers} user, ${PLANS[organization.plan_type].maxMinutes.toLocaleString()} min/month). Upgrade to a Team plan to collaborate with colleagues.`}
+                </CardDescription>
+              </CardHeader>
 
-              <div className="p-4 bg-white rounded-lg border border-purple-200 hover:border-purple-400 transition-all hover:shadow-md">
-                <p className="text-sm font-semibold text-gray-700 mb-1">Team 10</p>
-                <p className="text-3xl font-bold text-purple-600">$299<span className="text-sm text-gray-500">/mo</span></p>
-                <p className="text-xs text-gray-600 mt-2 mb-3">10 users • 15,000 min/mo</p>
-                <p className="text-xs text-gray-500">Best for growing teams</p>
-              </div>
-            </div>
+              <CardContent className="space-y-6 relative z-10">
+                {/* Benefits Section */}
+                <div className="bg-white/60 backdrop-blur rounded-lg p-4 border border-purple-200">
+                  <h3 className="font-semibold text-gray-900 mb-3">
+                    What you'll get with Team plans:
+                  </h3>
+                  <ul className="space-y-2 text-sm text-gray-700">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                      <span>
+                        <strong>Add team members</strong> - Collaborate with sales reps, managers,
+                        and admins
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                      <span>
+                        <strong>More transcription minutes</strong> - Process up to{' '}
+                        {Math.round(
+                          PLANS.enterprise.maxMinutes / PLANS[organization.plan_type].maxMinutes
+                        )}
+                        x more calls per month
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                      <span>
+                        <strong>Team invitations</strong> - Invite colleagues via email with
+                        role-based permissions
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                      <span>
+                        <strong>Shared templates</strong> - Create organization-wide CRM templates
+                      </span>
+                    </li>
+                  </ul>
+                </div>
 
-            {/* CTA Button */}
-            <div className="space-y-2">
-              <Button
-                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-6 text-lg shadow-lg"
-                onClick={() => router.push('/settings?tab=billing')}
-              >
-                <Crown className="w-5 h-5 mr-2" />
-                Upgrade Your Plan
-              </Button>
-              <p className="text-xs text-center text-gray-500">
-                🎉 Start your 14-day free trial • Cancel anytime
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                {/* Pricing Cards - Show only higher tier plans */}
+                <div
+                  className={`grid grid-cols-1 ${upgradePlans.length <= 3 ? 'md:grid-cols-3' : 'md:grid-cols-2 lg:grid-cols-4'} gap-4`}
+                >
+                  {upgradePlans.slice(0, 3).map((plan) => (
+                    <div
+                      key={plan.id}
+                      className={`p-4 ${
+                        plan.isPopular
+                          ? 'bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg shadow-xl transform hover:scale-105 transition-all relative'
+                          : 'bg-white rounded-lg border border-purple-200 hover:border-purple-400 transition-all hover:shadow-md'
+                      }`}
+                    >
+                      {plan.isPopular && (
+                        <Badge className="mb-2 bg-yellow-400 text-yellow-900 hover:bg-yellow-400">
+                          ⭐ Most Popular
+                        </Badge>
+                      )}
+                      <p
+                        className={`text-sm font-semibold mb-1 ${plan.isPopular ? 'text-white' : 'text-gray-700'}`}
+                      >
+                        {plan.name}
+                      </p>
+                      <p
+                        className={`text-3xl font-bold ${plan.isPopular ? 'text-white' : 'text-purple-600'}`}
+                      >
+                        ${plan.price}
+                        <span
+                          className={`text-sm ${plan.isPopular ? 'text-purple-200' : 'text-gray-500'}`}
+                        >
+                          /mo
+                        </span>
+                      </p>
+                      <p
+                        className={`text-xs mt-2 mb-3 ${plan.isPopular ? 'text-purple-100' : 'text-gray-600'}`}
+                      >
+                        {plan.maxMembers} users • {plan.maxMinutes.toLocaleString()} min/mo
+                      </p>
+                      <p
+                        className={`text-xs ${plan.isPopular ? 'text-purple-100' : 'text-gray-500'}`}
+                      >
+                        {plan.features[2] || plan.features[0]}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* CTA Button */}
+                <div className="space-y-2">
+                  <Button
+                    className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-6 text-lg shadow-lg"
+                    onClick={() => router.push('/upgrade')}
+                  >
+                    <Crown className="w-5 h-5 mr-2" />
+                    Upgrade Your Plan
+                  </Button>
+                  <p className="text-xs text-center text-gray-500">
+                    🎉 Start your 14-day free trial • Cancel anytime
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })()}
 
       {/* Invite Member */}
       {canManageTeam && members.length < organization.max_members && (
@@ -674,7 +786,8 @@ export default function TeamSettingsPage() {
               Invite Team Member
             </CardTitle>
             <CardDescription>
-              Send an invitation to join your team ({organization.max_members - members.length} spots remaining)
+              Send an invitation to join your team ({organization.max_members - members.length}{' '}
+              spots remaining)
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -799,7 +912,8 @@ export default function TeamSettingsPage() {
                 >
                   <div className="flex items-center gap-3 flex-1">
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold">
-                      {(member.user.user_metadata?.full_name || member.user.email)?.[0]?.toUpperCase()}
+                      {(member.user.user_metadata?.full_name ||
+                        member.user.email)?.[0]?.toUpperCase()}
                     </div>
                     <div>
                       <p className="font-medium">
@@ -811,7 +925,9 @@ export default function TeamSettingsPage() {
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <Badge className={`flex items-center gap-1 capitalize ${getRoleBadgeColor(member.role)}`}>
+                    <Badge
+                      className={`flex items-center gap-1 capitalize ${getRoleBadgeColor(member.role)}`}
+                    >
                       {getRoleIcon(member.role)}
                       {member.role}
                     </Badge>

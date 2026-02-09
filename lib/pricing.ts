@@ -3,20 +3,20 @@
 // Must stay in sync with database/008_team_management.sql
 // =====================================================
 
-export type PlanType = 'free' | 'solo' | 'starter' | 'professional' | 'enterprise' | 'custom';
+export type PlanType = 'free' | 'solo' | 'starter' | 'professional' | 'enterprise';
 
 export interface PlanDetails {
   id: PlanType;
   name: string;
-  price: number;           // Monthly price in dollars
-  priceAnnual: number;     // Annual price in dollars (with 17% discount)
-  priceDisplay: string;    // Display string like "$49/mo"
+  price: number; // Monthly price in dollars
+  priceAnnual: number; // Annual price in dollars (with 17% discount)
+  priceDisplay: string; // Display string like "$49/mo"
   maxMembers: number;
   maxMinutes: number;
-  perUserCost: number;     // Cost per user in dollars
+  perUserCost: number; // Cost per user in dollars
   features: string[];
   isPopular?: boolean;
-  cta: string;            // Call to action button text
+  cta: string; // Call to action button text
 }
 
 // Overage pricing
@@ -122,32 +122,16 @@ export const PLANS: Record<PlanType, PlanDetails> = {
     ],
     cta: 'Get Started',
   },
-  custom: {
-    id: 'custom',
-    name: 'Custom',
-    price: 0, // Custom pricing
-    priceAnnual: 0,
-    priceDisplay: 'Custom',
-    maxMembers: 999,
-    maxMinutes: 999999,
-    perUserCost: 0,
-    features: [
-      'Unlimited minutes',
-      'Unlimited users',
-      'Custom contracts',
-      'SLA guarantees',
-      'Dedicated infrastructure',
-      'Custom integrations',
-      'White-label',
-      '24/7 phone support',
-    ],
-    cta: 'Contact Sales',
-  },
 };
 
 // Helper to get plan details
-export function getPlanDetails(planType: PlanType): PlanDetails {
-  return PLANS[planType];
+export function getPlanDetails(planType: PlanType | string): PlanDetails {
+  // Default to free plan if invalid plan type is somehow provided
+  if (!planType || !(planType in PLANS)) {
+    console.error(`Invalid plan type: ${planType}, defaulting to free`);
+    return PLANS.free;
+  }
+  return PLANS[planType as PlanType];
 }
 
 // Helper to format price
@@ -204,10 +188,7 @@ export function canUpgradeToPlan(
 }
 
 // Get recommended plan based on usage
-export function getRecommendedPlan(
-  minutesUsed: number,
-  teamSize: number
-): PlanType {
+export function getRecommendedPlan(minutesUsed: number, teamSize: number): PlanType {
   // If solo user
   if (teamSize === 1) {
     if (minutesUsed <= 30) return 'free';
@@ -227,27 +208,18 @@ export function getRecommendedPlan(
     return 'enterprise';
   }
 
-  if (teamSize <= 20) {
-    return 'enterprise';
-  }
-
-  return 'custom';
+  // For teams larger than 10 or high usage, recommend enterprise
+  return 'enterprise';
 }
 
 // Get all available plans for pricing page
 export function getPublicPlans(): PlanDetails[] {
-  return [
-    PLANS.free,
-    PLANS.solo,
-    PLANS.starter,
-    PLANS.professional,
-    PLANS.enterprise,
-  ];
+  return [PLANS.free, PLANS.solo, PLANS.starter, PLANS.professional, PLANS.enterprise];
 }
 
 // Usage alert thresholds
 export const USAGE_ALERTS = {
-  WARNING: 0.8,  // 80% of quota
+  WARNING: 0.8, // 80% of quota
   CRITICAL: 0.95, // 95% of quota
 };
 
