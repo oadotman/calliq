@@ -11,12 +11,11 @@ import type { PlanType } from './pricing';
  */
 export function getProrationMode(currentPlan: PlanType, newPlan: PlanType): string {
   const planHierarchy: Record<PlanType, number> = {
-    'free': 0,
-    'solo': 1,
-    'starter': 2,
-    'professional': 3,
-    'enterprise': 4,
-    'custom': 5,
+    free: 0,
+    solo: 1,
+    starter: 2,
+    professional: 3,
+    enterprise: 4,
   };
 
   const currentLevel = planHierarchy[currentPlan] || 0;
@@ -92,12 +91,11 @@ export function handlePlanChange(params: {
  */
 export function isPlanUpgrade(currentPlan: PlanType | string, newPlan: PlanType | string): boolean {
   const planHierarchy: Record<string, number> = {
-    'free': 0,
-    'solo': 1,
-    'starter': 2,
-    'professional': 3,
-    'enterprise': 4,
-    'custom': 5,
+    free: 0,
+    solo: 1,
+    starter: 2,
+    professional: 3,
+    enterprise: 4,
   };
 
   const currentLevel = planHierarchy[currentPlan] || 0;
@@ -109,14 +107,16 @@ export function isPlanUpgrade(currentPlan: PlanType | string, newPlan: PlanType 
 /**
  * Check if a plan change is a downgrade
  */
-export function isPlanDowngrade(currentPlan: PlanType | string, newPlan: PlanType | string): boolean {
+export function isPlanDowngrade(
+  currentPlan: PlanType | string,
+  newPlan: PlanType | string
+): boolean {
   const planHierarchy: Record<string, number> = {
-    'free': 0,
-    'solo': 1,
-    'starter': 2,
-    'professional': 3,
-    'enterprise': 4,
-    'custom': 5,
+    free: 0,
+    solo: 1,
+    starter: 2,
+    professional: 3,
+    enterprise: 4,
   };
 
   const currentLevel = planHierarchy[currentPlan] || 0;
@@ -134,22 +134,21 @@ export function getAvailablePlans(currentPlan: PlanType): {
 } {
   const allPlans: PlanType[] = ['free', 'solo', 'starter', 'professional', 'enterprise'];
   const planHierarchy: Record<PlanType, number> = {
-    'free': 0,
-    'solo': 1,
-    'starter': 2,
-    'professional': 3,
-    'enterprise': 4,
-    'custom': 5,
+    free: 0,
+    solo: 1,
+    starter: 2,
+    professional: 3,
+    enterprise: 4,
   };
 
   const currentLevel = planHierarchy[currentPlan] || 0;
 
-  const upgrades = allPlans.filter(plan => {
+  const upgrades = allPlans.filter((plan) => {
     const level = planHierarchy[plan];
     return level > currentLevel;
   });
 
-  const downgrades = allPlans.filter(plan => {
+  const downgrades = allPlans.filter((plan) => {
     const level = planHierarchy[plan];
     return level < currentLevel && plan !== 'free'; // Don't show free as downgrade option
   });
