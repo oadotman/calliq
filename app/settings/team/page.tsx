@@ -640,8 +640,8 @@ export default function TeamSettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Upgrade Prompt for Free & Solo Plans */}
-      {(organization.plan_type === 'free' || organization.plan_type === 'solo') &&
+      {/* Upgrade Prompt - Show for all plans except Enterprise */}
+      {organization.plan_type !== 'enterprise' &&
         canManageTeam &&
         (() => {
           const upgradePlans = getUpgradePlans(organization.plan_type);
@@ -713,7 +713,7 @@ export default function TeamSettingsPage() {
                 <div
                   className={`grid grid-cols-1 ${upgradePlans.length <= 3 ? 'md:grid-cols-3' : 'md:grid-cols-2 lg:grid-cols-4'} gap-4`}
                 >
-                  {upgradePlans.slice(0, 3).map((plan) => (
+                  {upgradePlans.map((plan) => (
                     <div
                       key={plan.id}
                       className={`p-4 ${
