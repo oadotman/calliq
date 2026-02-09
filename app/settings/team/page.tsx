@@ -664,8 +664,8 @@ export default function TeamSettingsPage() {
                 </CardTitle>
                 <CardDescription className="text-purple-700 text-base">
                   {organization.plan_type === 'free'
-                    ? `You're on the ${PLANS[organization.plan_type].name} plan (${PLANS[organization.plan_type].maxMembers} user, ${PLANS[organization.plan_type].maxMinutes} min/month). Upgrade to work with your team and scale your CRM automation.`
-                    : `You're on the ${PLANS[organization.plan_type].name} plan (${PLANS[organization.plan_type].maxMembers} user, ${PLANS[organization.plan_type].maxMinutes.toLocaleString()} min/month). Upgrade to a Team plan to collaborate with colleagues.`}
+                    ? `You're on the ${PLANS[organization.plan_type as PlanType].name} plan (${PLANS[organization.plan_type as PlanType].maxMembers} user, ${PLANS[organization.plan_type as PlanType].maxMinutes} min/month). Upgrade to work with your team and scale your CRM automation.`
+                    : `You're on the ${PLANS[organization.plan_type as PlanType].name} plan (${PLANS[organization.plan_type as PlanType].maxMembers} user, ${PLANS[organization.plan_type as PlanType].maxMinutes.toLocaleString()} min/month). Upgrade to a Team plan to collaborate with colleagues.`}
                 </CardDescription>
               </CardHeader>
 
