@@ -688,7 +688,8 @@ export default function TeamSettingsPage() {
                       <span>
                         <strong>More transcription minutes</strong> - Process up to{' '}
                         {Math.round(
-                          PLANS.enterprise.maxMinutes / PLANS[organization.plan_type].maxMinutes
+                          PLANS.enterprise.maxMinutes /
+                            PLANS[organization.plan_type as PlanType].maxMinutes
                         )}
                         x more calls per month
                       </span>
