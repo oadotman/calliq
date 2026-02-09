@@ -1,105 +1,114 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { createClient } from '@/lib/supabase/client'
-import { Phone, Loader2, CheckCircle2 } from 'lucide-react'
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { createClient } from '@/lib/supabase/client';
+import { Phone, Loader2, CheckCircle2 } from 'lucide-react';
 
 export function LoginForm() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
-  const router = useRouter()
-  const searchParams = useSearchParams()
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Get message, returnTo, and invite token from URL params
-  const message = searchParams?.get('message')
-  const returnTo = searchParams?.get('returnTo')
-  const inviteToken = searchParams?.get('invite')
+  const message = searchParams?.get('message');
+  const returnTo = searchParams?.get('returnTo');
+  const inviteToken = searchParams?.get('invite');
 
   useEffect(() => {
     if (message) {
-      setSuccessMessage(message)
+      setSuccessMessage(message);
     }
-  }, [message])
+  }, [message]);
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
 
     try {
-      console.log('Starting login attempt...')
-      const supabase = createClient()
+      console.log('Starting login attempt...');
+      const supabase = createClient();
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
-      })
+      });
 
-      console.log('Login response:', { data, error })
+      console.log('Login response:', { data, error });
 
       if (error) {
-        console.error('Login error:', error)
-        setError(error.message)
-        setLoading(false)
-        return
+        console.error('Login error:', error);
+        setError(error.message);
+        setLoading(false);
+        return;
       }
 
       if (data?.session) {
-        console.log('Login successful, session:', data.session)
+        console.log('Login successful, session:', data.session);
 
         // Check if this is after invitation acceptance during signup
-        const searchParams = new URLSearchParams(window.location.search)
-        const inviteAccepted = searchParams.get('inviteAccepted') === 'true'
+        const searchParams = new URLSearchParams(window.location.search);
+        const inviteAccepted = searchParams.get('inviteAccepted') === 'true';
 
         // Determine redirect path
-        let redirectPath = '/dashboard'
+        let redirectPath = '/dashboard';
 
         if (inviteToken) {
           // If there's an invitation token, redirect to invitation acceptance page
-          redirectPath = `/invite/${inviteToken}`
+          redirectPath = `/invite/${inviteToken}`;
         } else if (inviteAccepted) {
           // If invitation was already accepted, go straight to dashboard
-          redirectPath = '/dashboard'
+          redirectPath = '/dashboard';
         } else if (returnTo) {
           // Otherwise use the returnTo parameter
-          redirectPath = returnTo
+          redirectPath = returnTo;
         }
 
-        console.log('Redirecting to:', redirectPath)
+        console.log('Redirecting to:', redirectPath);
 
         // Increased delay to ensure auth state is properly propagated
         // This gives AuthContext time to update with the new session
         setTimeout(() => {
-          console.log('🚀 Executing redirect to:', redirectPath)
-          router.push(redirectPath)
+          console.log('🚀 Executing redirect to:', redirectPath);
+          router.push(redirectPath);
           // Removed router.refresh() as it can cause state reset issues
-        }, 500)
+        }, 500);
       }
     } catch (err) {
-      console.error('Unexpected error during login:', err)
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred')
-      setLoading(false)
+      console.error('Unexpected error during login:', err);
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-4">
       <Card className="w-full max-w-md dark:bg-slate-900 dark:border-slate-800">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
+            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
               <Phone className="h-6 w-6 text-white" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold text-slate-900 dark:text-slate-100">Welcome back</CardTitle>
+          <CardTitle className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+            Welcome back
+          </CardTitle>
           <CardDescription className="text-slate-600 dark:text-slate-400">
             Sign in to your SynQall account
           </CardDescription>
@@ -118,7 +127,9 @@ export function LoginForm() {
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-slate-700 dark:text-slate-300">Email</Label>
+              <Label htmlFor="email" className="text-slate-700 dark:text-slate-300">
+                Email
+              </Label>
               <Input
                 id="email"
                 type="email"
@@ -132,7 +143,9 @@ export function LoginForm() {
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-slate-700 dark:text-slate-300">Password</Label>
+                <Label htmlFor="password" className="text-slate-700 dark:text-slate-300">
+                  Password
+                </Label>
                 <Link
                   href="/forgot-password"
                   className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline"
@@ -153,11 +166,7 @@ export function LoginForm() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={loading}
-            >
+            <Button type="submit" className="w-full" disabled={loading}>
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -170,7 +179,7 @@ export function LoginForm() {
             <p className="text-sm text-center text-slate-600 dark:text-slate-400">
               Don&apos;t have an account?{' '}
               <Link
-                href={inviteToken ? `/invite-signup/${inviteToken}` : "/signup"}
+                href={inviteToken ? `/invite-signup/${inviteToken}` : '/signup'}
                 className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium hover:underline"
               >
                 Sign up
@@ -180,5 +189,5 @@ export function LoginForm() {
         </form>
       </Card>
     </div>
-  )
+  );
 }

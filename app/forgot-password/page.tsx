@@ -1,38 +1,45 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { createClient } from '@/lib/supabase/client'
-import { Phone, Loader2, CheckCircle2, ArrowLeft } from 'lucide-react'
+import { useState } from 'react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { createClient } from '@/lib/supabase/client';
+import { Phone, Loader2, CheckCircle2, ArrowLeft } from 'lucide-react';
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   const handleResetPassword = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
 
-    const supabase = createClient()
+    const supabase = createClient();
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
-    })
+    });
 
     if (error) {
-      setError(error.message)
-      setLoading(false)
+      setError(error.message);
+      setLoading(false);
     } else {
-      setSuccess(true)
-      setLoading(false)
+      setSuccess(true);
+      setLoading(false);
     }
-  }
+  };
 
   if (success) {
     return (
@@ -44,9 +51,13 @@ export default function ForgotPasswordPage() {
                 <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />
               </div>
             </div>
-            <CardTitle className="text-2xl font-bold text-slate-900 dark:text-slate-100">Check your email</CardTitle>
+            <CardTitle className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+              Check your email
+            </CardTitle>
             <CardDescription className="text-slate-600 dark:text-slate-400">
-              We&apos;ve sent you a password reset link to <strong className="text-slate-900 dark:text-slate-100">{email}</strong>. Please check your inbox and follow the instructions.
+              We&apos;ve sent you a password reset link to{' '}
+              <strong className="text-slate-900 dark:text-slate-100">{email}</strong>. Please check
+              your inbox and follow the instructions.
             </CardDescription>
           </CardHeader>
           <CardFooter className="flex justify-center">
@@ -59,7 +70,7 @@ export default function ForgotPasswordPage() {
           </CardFooter>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -67,11 +78,13 @@ export default function ForgotPasswordPage() {
       <Card className="w-full max-w-md dark:bg-slate-900 dark:border-slate-800">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
+            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
               <Phone className="h-6 w-6 text-white" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold text-slate-900 dark:text-slate-100">Reset your password</CardTitle>
+          <CardTitle className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+            Reset your password
+          </CardTitle>
           <CardDescription className="text-slate-600 dark:text-slate-400">
             Enter your email address and we&apos;ll send you a link to reset your password
           </CardDescription>
@@ -84,7 +97,9 @@ export default function ForgotPasswordPage() {
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-slate-700 dark:text-slate-300">Email</Label>
+              <Label htmlFor="email" className="text-slate-700 dark:text-slate-300">
+                Email
+              </Label>
               <Input
                 id="email"
                 type="email"
@@ -98,11 +113,7 @@ export default function ForgotPasswordPage() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={loading}
-            >
+            <Button type="submit" className="w-full" disabled={loading}>
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -122,5 +133,5 @@ export default function ForgotPasswordPage() {
         </form>
       </Card>
     </div>
-  )
+  );
 }

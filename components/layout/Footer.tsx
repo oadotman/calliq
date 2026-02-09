@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { Phone } from "lucide-react";
-import { useState } from "react";
+import Link from 'next/link';
+import { Phone } from 'lucide-react';
+import { useState } from 'react';
 
 export function Footer() {
   const [showCookieSettings, setShowCookieSettings] = useState(false);
@@ -24,13 +24,14 @@ export function Footer() {
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
                 <Phone className="w-5 h-5 text-white" />
               </div>
               <span className="font-bold text-gray-900 text-lg">SynQall</span>
             </div>
             <p className="text-sm text-gray-600 leading-relaxed">
-              AI-powered CRM automation from sales call recordings. Transcribe, extract, and sync data effortlessly.
+              AI-powered CRM automation from sales call recordings. Transcribe, extract, and sync
+              data effortlessly.
             </p>
           </div>
 
@@ -59,7 +60,10 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/settings?tab=billing" className="text-gray-600 hover:text-blue-600 transition">
+                <Link
+                  href="/settings?tab=billing"
+                  className="text-gray-600 hover:text-blue-600 transition"
+                >
                   Pricing
                 </Link>
               </li>
@@ -76,7 +80,10 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <a href="mailto:support@synqall.com" className="text-gray-600 hover:text-blue-600 transition">
+                <a
+                  href="mailto:support@synqall.com"
+                  className="text-gray-600 hover:text-blue-600 transition"
+                >
                   Contact Support
                 </a>
               </li>
@@ -86,12 +93,18 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/settings/team" className="text-gray-600 hover:text-blue-600 transition">
+                <Link
+                  href="/settings/team"
+                  className="text-gray-600 hover:text-blue-600 transition"
+                >
                   Team Management
                 </Link>
               </li>
               <li>
-                <Link href="/partners" className="text-gray-600 hover:text-blue-600 transition font-medium">
+                <Link
+                  href="/partners"
+                  className="text-gray-600 hover:text-blue-600 transition font-medium"
+                >
                   Partners
                 </Link>
               </li>

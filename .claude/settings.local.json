@@ -110,7 +110,10 @@
       "Bash(/dev/null)",
       "Bash(del test-partner-api.js 2)",
       "Bash(del /s /q .next 2)",
-      "Bash(git rev-list:*)"
+      "Bash(git rev-list:*)",
+      "Bash(find:*)",
+      "Bash(powershell -ExecutionPolicy Bypass -File update-colors.ps1)",
+      "Bash(del update-colors.ps1 update-colors.js 2)"
     ],
     "deny": [],
     "ask": []

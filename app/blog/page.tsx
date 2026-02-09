@@ -1,53 +1,58 @@
-import { Metadata } from 'next'
-import Link from 'next/link'
-import { format } from 'date-fns'
-import { getAllPosts, getAllCategories } from '@/lib/blog'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { CalendarIcon, ClockIcon, UserIcon, ArrowRightIcon } from 'lucide-react'
+import { Metadata } from 'next';
+import Link from 'next/link';
+import { format } from 'date-fns';
+import { getAllPosts, getAllCategories } from '@/lib/blog';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CalendarIcon, ClockIcon, UserIcon, ArrowRightIcon } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Blog - SynQall | AI-Powered Call Analytics Insights',
-  description: 'Learn about call analytics, AI transcription, sales optimization, and best practices for managing customer conversations with SynQall.',
+  description:
+    'Learn about call analytics, AI transcription, sales optimization, and best practices for managing customer conversations with SynQall.',
   alternates: {
     canonical: 'https://synqall.com/blog',
   },
   openGraph: {
     title: 'SynQall Blog - Insights on Call Analytics & AI',
-    description: 'Expert insights on call recording, transcription, and analytics to help you optimize your sales and customer service operations.',
+    description:
+      'Expert insights on call recording, transcription, and analytics to help you optimize your sales and customer service operations.',
     type: 'website',
     url: 'https://synqall.com/blog',
-    images: [{
-      url: 'https://synqall.com/og-blog.png',
-      width: 1200,
-      height: 630,
-      alt: 'SynQall Blog'
-    }]
+    images: [
+      {
+        url: 'https://synqall.com/og-blog.png',
+        width: 1200,
+        height: 630,
+        alt: 'SynQall Blog',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'SynQall Blog - Call Analytics Insights',
     description: 'Expert insights on call recording, transcription, and analytics.',
-    images: ['https://synqall.com/og-blog.png']
-  }
-}
+    images: ['https://synqall.com/og-blog.png'],
+  },
+};
 
 export default function BlogPage() {
-  const posts = getAllPosts()
-  const categories = getAllCategories()
+  const posts = getAllPosts();
+  const categories = getAllCategories();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-black">
       {/* Hero Section */}
       <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-purple-600/10 to-pink-600/10" />
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-purple-700/10 to-pink-600/10" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
-            <h1 className="text-5xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 mb-6">
+            <h1 className="text-5xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-700 mb-6">
               SynQall Blog
             </h1>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-8">
-              Insights, tutorials, and best practices for leveraging AI-powered call analytics to transform your business conversations
+              Insights, tutorials, and best practices for leveraging AI-powered call analytics to
+              transform your business conversations
             </p>
 
             {/* Categories */}
@@ -58,7 +63,10 @@ export default function BlogPage() {
                     key={category}
                     href={`/blog/category/${category.toLowerCase().replace(/ /g, '-')}`}
                   >
-                    <Badge variant="secondary" className="cursor-pointer hover:bg-primary hover:text-white transition-colors">
+                    <Badge
+                      variant="secondary"
+                      className="cursor-pointer hover:bg-primary hover:text-white transition-colors"
+                    >
                       {category}
                     </Badge>
                   </Link>
@@ -142,13 +150,12 @@ export default function BlogPage() {
       </div>
 
       {/* Newsletter CTA */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 py-16">
+      <div className="bg-gradient-to-r from-blue-600 to-purple-700 py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">
-            Stay Updated with SynQall Insights
-          </h2>
+          <h2 className="text-3xl font-bold text-white mb-4">Stay Updated with SynQall Insights</h2>
           <p className="text-xl text-blue-100 mb-8">
-            Get the latest tips on call analytics and AI-powered transcription delivered to your inbox
+            Get the latest tips on call analytics and AI-powered transcription delivered to your
+            inbox
           </p>
           <form className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
             <input
@@ -166,5 +173,5 @@ export default function BlogPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

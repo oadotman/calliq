@@ -1,12 +1,22 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Users, TrendingUp, Award, Clock, Activity, UserCheck } from "lucide-react";
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Users, TrendingUp, Award, Clock, Activity, UserCheck } from 'lucide-react';
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
 
 interface TeamMember {
   id: string;
@@ -60,18 +70,18 @@ interface TeamData {
 
 export function TeamAnalytics() {
   const [teamData, setTeamData] = useState<TeamData | null>(null);
-  const [period, setPeriod] = useState("30d");
+  const [period, setPeriod] = useState('30d');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchTeamData() {
       try {
         const response = await fetch(`/api/analytics/team?period=${period}`);
-        if (!response.ok) throw new Error("Failed to fetch team data");
+        if (!response.ok) throw new Error('Failed to fetch team data');
         const data = await response.json();
         setTeamData(data);
       } catch (error) {
-        console.error("Error fetching team data:", error);
+        console.error('Error fetching team data:', error);
       } finally {
         setLoading(false);
       }
@@ -128,10 +138,7 @@ export function TeamAnalytics() {
             </div>
             {teamData.seatUtilization && (
               <div className="mt-2">
-                <Progress
-                  value={teamData.seatUtilization.percentage}
-                  className="h-2"
-                />
+                <Progress value={teamData.seatUtilization.percentage} className="h-2" />
                 <p className="text-xs text-slate-600 mt-1">
                   {teamData.seatUtilization.available} seats available
                 </p>
@@ -153,12 +160,12 @@ export function TeamAnalytics() {
                 {teamData.metrics.activeMembers}
               </span>
               <span className="text-sm text-slate-600">
-                ({Math.round((teamData.metrics.activeMembers / teamData.metrics.totalMembers) * 100)}%)
+                (
+                {Math.round((teamData.metrics.activeMembers / teamData.metrics.totalMembers) * 100)}
+                %)
               </span>
             </div>
-            <p className="text-xs text-slate-600 mt-1">
-              Active in the last 7 days
-            </p>
+            <p className="text-xs text-slate-600 mt-1">Active in the last 7 days</p>
           </CardContent>
         </Card>
 
@@ -190,21 +197,21 @@ export function TeamAnalytics() {
             <span>Team Activity Trends</span>
             <div className="flex gap-2">
               <button
-                onClick={() => setPeriod("7d")}
+                onClick={() => setPeriod('7d')}
                 className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                  period === "7d"
-                    ? "bg-violet-600 text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  period === '7d'
+                    ? 'bg-purple-700 text-white'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
                 7 Days
               </button>
               <button
-                onClick={() => setPeriod("30d")}
+                onClick={() => setPeriod('30d')}
                 className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                  period === "30d"
-                    ? "bg-violet-600 text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  period === '30d'
+                    ? 'bg-purple-700 text-white'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
                 30 Days
@@ -220,19 +227,13 @@ export function TeamAnalytics() {
               <YAxis stroke="#64748B" />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "#1E293B",
-                  border: "none",
-                  borderRadius: "8px",
-                  color: "#fff",
+                  backgroundColor: '#1E293B',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: '#fff',
                 }}
               />
-              <Line
-                type="monotone"
-                dataKey="calls"
-                stroke="#8B5CF6"
-                strokeWidth={2}
-                name="Calls"
-              />
+              <Line type="monotone" dataKey="calls" stroke="#8B5CF6" strokeWidth={2} name="Calls" />
               <Line
                 type="monotone"
                 dataKey="activeUsers"
@@ -256,18 +257,28 @@ export function TeamAnalytics() {
         <CardContent>
           <div className="space-y-4">
             {teamData.metrics.topPerformers.map((performer, index) => (
-              <div key={performer.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
+              <div
+                key={performer.id}
+                className="flex items-center justify-between p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+              >
                 <div className="flex items-center gap-4">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-                    index === 0 ? 'bg-yellow-500 text-white' :
-                    index === 1 ? 'bg-gray-400 text-white' :
-                    index === 2 ? 'bg-orange-600 text-white' :
-                    'bg-slate-300 text-slate-700'
-                  }`}>
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
+                      index === 0
+                        ? 'bg-yellow-500 text-white'
+                        : index === 1
+                          ? 'bg-gray-400 text-white'
+                          : index === 2
+                            ? 'bg-orange-600 text-white'
+                            : 'bg-slate-300 text-slate-700'
+                    }`}
+                  >
                     {index + 1}
                   </div>
                   <div>
-                    <p className="font-semibold text-slate-900">{performer.fullName || performer.email}</p>
+                    <p className="font-semibold text-slate-900">
+                      {performer.fullName || performer.email}
+                    </p>
                     <p className="text-sm text-slate-600">{performer.email}</p>
                   </div>
                 </div>
@@ -289,12 +300,17 @@ export function TeamAnalytics() {
         <CardContent>
           <div className="space-y-4">
             {teamData.members.slice(0, 10).map((member) => (
-              <div key={member.id} className="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:border-violet-200 hover:bg-violet-50/30 transition-all">
+              <div
+                key={member.id}
+                className="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:border-purple-300 hover:bg-purple-100/30 transition-all"
+              >
                 <div className="flex items-center gap-4">
                   <Avatar>
                     <AvatarImage src={member.avatarUrl || undefined} />
                     <AvatarFallback>
-                      {member.fullName ? member.fullName[0].toUpperCase() : member.email[0].toUpperCase()}
+                      {member.fullName
+                        ? member.fullName[0].toUpperCase()
+                        : member.email[0].toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div>
@@ -305,12 +321,12 @@ export function TeamAnalytics() {
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <Badge className={getStatusColor(member.status)}>
-                    {member.status}
-                  </Badge>
+                  <Badge className={getStatusColor(member.status)}>{member.status}</Badge>
                   <div className="text-right">
                     <p className="font-semibold text-slate-900">{member.stats.totalCalls} calls</p>
-                    <p className="text-sm text-slate-600">{formatDuration(member.stats.totalDuration)}</p>
+                    <p className="text-sm text-slate-600">
+                      {formatDuration(member.stats.totalDuration)}
+                    </p>
                   </div>
                 </div>
               </div>

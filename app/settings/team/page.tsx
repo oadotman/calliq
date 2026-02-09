@@ -425,13 +425,13 @@ export default function TeamSettingsPage() {
         <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50 via-blue-50 to-purple-50 overflow-hidden relative">
           {/* Decorative background */}
           <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-purple-600 rounded-full blur-3xl"></div>
+            <div className="absolute top-0 right-0 w-64 h-64 bg-purple-700 rounded-full blur-3xl"></div>
             <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-600 rounded-full blur-3xl"></div>
           </div>
 
           <CardHeader className="relative z-10">
             <CardTitle className="flex items-center gap-2 text-purple-900 text-2xl">
-              <Crown className="w-6 h-6 text-purple-600" />
+              <Crown className="w-6 h-6 text-purple-700" />
               Unlock Team Collaboration
             </CardTitle>
             <CardDescription className="text-purple-700 text-base">
@@ -482,7 +482,7 @@ export default function TeamSettingsPage() {
                   key={plan.id}
                   className={`p-4 ${
                     plan.isPopular
-                      ? 'bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg shadow-xl transform hover:scale-105 transition-all relative'
+                      ? 'bg-gradient-to-br from-purple-700 to-blue-600 rounded-lg shadow-xl transform hover:scale-105 transition-all relative'
                       : 'bg-white rounded-lg border border-purple-200 hover:border-purple-400 transition-all hover:shadow-md'
                   }`}
                 >
@@ -497,7 +497,7 @@ export default function TeamSettingsPage() {
                     {plan.name}
                   </p>
                   <p
-                    className={`text-3xl font-bold ${plan.isPopular ? 'text-white' : 'text-purple-600'}`}
+                    className={`text-3xl font-bold ${plan.isPopular ? 'text-white' : 'text-purple-700'}`}
                   >
                     ${plan.price}
                     <span
@@ -521,7 +521,7 @@ export default function TeamSettingsPage() {
             {/* CTA Button */}
             <div className="space-y-2">
               <Button
-                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-6 text-lg shadow-lg"
+                className="w-full bg-gradient-to-r from-purple-700 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-6 text-lg shadow-lg"
                 onClick={() => router.push('/upgrade')}
               >
                 <Crown className="w-5 h-5 mr-2" />
@@ -570,7 +570,7 @@ export default function TeamSettingsPage() {
 
               <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <div className="flex items-center gap-2 mb-2">
-                  <Mail className="w-5 h-5 text-purple-600" />
+                  <Mail className="w-5 h-5 text-purple-700" />
                   <h3 className="font-semibold text-gray-900">Manage Invitations</h3>
                 </div>
                 <p className="text-sm text-gray-600">
@@ -653,13 +653,13 @@ export default function TeamSettingsPage() {
             <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50 via-blue-50 to-purple-50 overflow-hidden relative">
               {/* Decorative background */}
               <div className="absolute inset-0 opacity-10">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-purple-600 rounded-full blur-3xl"></div>
+                <div className="absolute top-0 right-0 w-64 h-64 bg-purple-700 rounded-full blur-3xl"></div>
                 <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-600 rounded-full blur-3xl"></div>
               </div>
 
               <CardHeader className="relative z-10">
                 <CardTitle className="flex items-center gap-2 text-purple-900 text-2xl">
-                  <Crown className="w-6 h-6 text-purple-600" />
+                  <Crown className="w-6 h-6 text-purple-700" />
                   Unlock Team Collaboration
                 </CardTitle>
                 <CardDescription className="text-purple-700 text-base">
@@ -719,7 +719,7 @@ export default function TeamSettingsPage() {
                       key={plan.id}
                       className={`p-4 ${
                         plan.isPopular
-                          ? 'bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg shadow-xl transform hover:scale-105 transition-all relative'
+                          ? 'bg-gradient-to-br from-purple-700 to-blue-600 rounded-lg shadow-xl transform hover:scale-105 transition-all relative'
                           : 'bg-white rounded-lg border border-purple-200 hover:border-purple-400 transition-all hover:shadow-md'
                       }`}
                     >
@@ -734,7 +734,7 @@ export default function TeamSettingsPage() {
                         {plan.name}
                       </p>
                       <p
-                        className={`text-3xl font-bold ${plan.isPopular ? 'text-white' : 'text-purple-600'}`}
+                        className={`text-3xl font-bold ${plan.isPopular ? 'text-white' : 'text-purple-700'}`}
                       >
                         ${plan.price}
                         <span
@@ -760,7 +760,7 @@ export default function TeamSettingsPage() {
                 {/* CTA Button */}
                 <div className="space-y-2">
                   <Button
-                    className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-6 text-lg shadow-lg"
+                    className="w-full bg-gradient-to-r from-purple-700 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-6 text-lg shadow-lg"
                     onClick={() => router.push('/upgrade')}
                   >
                     <Crown className="w-5 h-5 mr-2" />
@@ -909,7 +909,7 @@ export default function TeamSettingsPage() {
                   className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition"
                 >
                   <div className="flex items-center gap-3 flex-1">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-700 flex items-center justify-center text-white font-semibold">
                       {(member.user.user_metadata?.full_name ||
                         member.user.email)?.[0]?.toUpperCase()}
                     </div>

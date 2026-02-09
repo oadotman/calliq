@@ -147,13 +147,13 @@ export function SettingsClient({ user, billing, organizationId, userId }: Settin
       case 'solo':
         return 'bg-blue-100 text-blue-700 border-blue-200';
       case 'starter':
-        return 'bg-violet-100 text-violet-700 border-violet-200';
+        return 'bg-purple-100 text-purple-800 border-purple-200';
       case 'professional':
         return 'bg-purple-100 text-purple-700 border-purple-200';
       case 'enterprise':
         return 'bg-indigo-100 text-indigo-700 border-indigo-200';
       case 'custom':
-        return 'bg-gradient-to-r from-violet-100 to-purple-100 text-violet-700 border-violet-200';
+        return 'bg-gradient-to-r from-purple-100 to-purple-100 text-purple-800 border-purple-200';
       default:
         return 'bg-slate-100 text-slate-700 border-slate-200';
     }
@@ -188,21 +188,21 @@ export function SettingsClient({ user, billing, organizationId, userId }: Settin
             <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl border border-slate-200/60 dark:border-slate-700/60 p-2 rounded-2xl shadow-lg">
               <TabsTrigger
                 value="account"
-                className="data-[state=active]:bg-gradient-to-br data-[state=active]:from-violet-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-violet-500/30 rounded-xl font-semibold transition-all duration-300"
+                className="data-[state=active]:bg-gradient-to-br data-[state=active]:from-purple-700 data-[state=active]:to-purple-700 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-purple-700/30 rounded-xl font-semibold transition-all duration-300"
               >
                 <User className="w-4 h-4 mr-2" />
                 Account
               </TabsTrigger>
               <TabsTrigger
                 value="billing"
-                className="data-[state=active]:bg-gradient-to-br data-[state=active]:from-violet-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-violet-500/30 rounded-xl font-semibold transition-all duration-300"
+                className="data-[state=active]:bg-gradient-to-br data-[state=active]:from-purple-700 data-[state=active]:to-purple-700 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-purple-700/30 rounded-xl font-semibold transition-all duration-300"
               >
                 <CreditCard className="w-4 h-4 mr-2" />
                 Billing
               </TabsTrigger>
               <TabsTrigger
                 value="notifications"
-                className="data-[state=active]:bg-gradient-to-br data-[state=active]:from-violet-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-violet-500/30 rounded-xl font-semibold transition-all duration-300"
+                className="data-[state=active]:bg-gradient-to-br data-[state=active]:from-purple-700 data-[state=active]:to-purple-700 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-purple-700/30 rounded-xl font-semibold transition-all duration-300"
               >
                 <Mic className="w-4 h-4 mr-2" />
                 Processing
@@ -245,7 +245,7 @@ export function SettingsClient({ user, billing, organizationId, userId }: Settin
                       </label>
                       <Input
                         defaultValue={user.name}
-                        className="border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-xl py-3 focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 transition-all"
+                        className="border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-xl py-3 focus:outline-none focus:ring-2 focus:ring-purple-700/50 focus:border-purple-700 transition-all"
                       />
                     </div>
                   </div>
@@ -256,7 +256,7 @@ export function SettingsClient({ user, billing, organizationId, userId }: Settin
                       </label>
                       <Input
                         defaultValue={user.company}
-                        className="border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-xl py-3 focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 transition-all"
+                        className="border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-xl py-3 focus:outline-none focus:ring-2 focus:ring-purple-700/50 focus:border-purple-700 transition-all"
                       />
                     </div>
                     <div>
@@ -265,7 +265,7 @@ export function SettingsClient({ user, billing, organizationId, userId }: Settin
                       </label>
                       <Input
                         defaultValue={Intl.DateTimeFormat().resolvedOptions().timeZone}
-                        className="border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-xl py-3 focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 transition-all"
+                        className="border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-xl py-3 focus:outline-none focus:ring-2 focus:ring-purple-700/50 focus:border-purple-700 transition-all"
                       />
                     </div>
                   </div>
@@ -273,7 +273,7 @@ export function SettingsClient({ user, billing, organizationId, userId }: Settin
                     <Button
                       onClick={handleUpdateProfile}
                       disabled={isUpdating}
-                      className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white shadow-lg shadow-violet-500/30 hover:shadow-xl hover:shadow-violet-500/50 transition-all duration-300 rounded-xl border-0 font-semibold px-6 py-2"
+                      className="bg-gradient-to-r from-purple-700 to-purple-700 hover:from-purple-800 hover:to-purple-700 text-white shadow-lg shadow-purple-700/30 hover:shadow-xl hover:shadow-purple-700/50 transition-all duration-300 rounded-xl border-0 font-semibold px-6 py-2"
                     >
                       {isUpdating ? 'Updating...' : 'Update Profile'}
                     </Button>
@@ -316,7 +316,7 @@ export function SettingsClient({ user, billing, organizationId, userId }: Settin
                     <Button
                       onClick={() => router.push('/dashboard')}
                       variant="link"
-                      className="text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 p-0 h-auto font-medium"
+                      className="text-purple-700 dark:text-purple-700 hover:text-purple-800 dark:hover:text-purple-300 p-0 h-auto font-medium"
                     >
                       View usage in Dashboard →
                     </Button>
@@ -325,7 +325,7 @@ export function SettingsClient({ user, billing, organizationId, userId }: Settin
                     <div className="flex gap-3 pt-4">
                       <Button
                         onClick={() => router.push('/upgrade')}
-                        className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white shadow-lg shadow-violet-500/30 hover:shadow-xl hover:shadow-violet-500/50 transition-all duration-300 rounded-xl border-0 font-semibold"
+                        className="bg-gradient-to-r from-purple-700 to-purple-700 hover:from-purple-800 hover:to-purple-700 text-white shadow-lg shadow-purple-700/30 hover:shadow-xl hover:shadow-purple-700/50 transition-all duration-300 rounded-xl border-0 font-semibold"
                       >
                         Upgrade Plan
                       </Button>
@@ -361,7 +361,7 @@ export function SettingsClient({ user, billing, organizationId, userId }: Settin
                           {billing.billingHistory.map((transaction) => (
                             <tr
                               key={transaction.id}
-                              className="hover:bg-violet-50/30 dark:hover:bg-violet-900/10 transition-colors duration-200"
+                              className="hover:bg-purple-100/30 dark:hover:bg-purple-950/10 transition-colors duration-200"
                             >
                               <td className="py-4 px-4 text-sm font-medium text-slate-900 dark:text-slate-100">
                                 {new Date(transaction.created_at).toLocaleDateString('en-US', {
@@ -392,9 +392,9 @@ export function SettingsClient({ user, billing, organizationId, userId }: Settin
             <TabsContent value="notifications" className="space-y-6">
               {/* Processing Preferences */}
               <Card className="border-0 shadow-xl rounded-2xl overflow-hidden">
-                <CardHeader className="bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-950 dark:to-purple-950 border-b border-violet-100 dark:border-violet-900">
+                <CardHeader className="bg-gradient-to-r from-purple-50 to-purple-50 dark:from-purple-950 dark:to-purple-950 border-b border-purple-100 dark:border-purple-950">
                   <div className="flex items-center gap-2">
-                    <Mic className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+                    <Mic className="w-5 h-5 text-purple-700 dark:text-purple-700" />
                     <CardTitle className="text-xl font-bold text-slate-900 dark:text-slate-100">
                       Processing Preferences
                     </CardTitle>
@@ -406,7 +406,7 @@ export function SettingsClient({ user, billing, organizationId, userId }: Settin
                 <CardContent className="p-6 space-y-6 bg-white dark:bg-slate-800">
                   {isLoadingPreferences ? (
                     <div className="flex items-center justify-center py-8">
-                      <Loader2 className="w-6 h-6 animate-spin text-violet-600" />
+                      <Loader2 className="w-6 h-6 animate-spin text-purple-700" />
                     </div>
                   ) : (
                     <div className="flex items-center justify-between py-4 border-b border-slate-100 dark:border-slate-700">

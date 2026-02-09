@@ -188,7 +188,7 @@ export function HelpContent() {
       <Card className="mt-8 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border-purple-200 dark:border-purple-800">
         <CardContent className="pt-6">
           <div className="flex items-start gap-4">
-            <MessageSquarePlus className="h-5 w-5 text-purple-600 dark:text-purple-400 mt-0.5" />
+            <MessageSquarePlus className="h-5 w-5 text-purple-700 dark:text-purple-400 mt-0.5" />
             <div className="space-y-3 flex-1">
               <h3 className="font-semibold text-lg">Share Your Feedback</h3>
               <p className="text-sm text-muted-foreground">
@@ -196,7 +196,7 @@ export function HelpContent() {
               </p>
               <FeedbackModal
                 trigger={
-                  <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white">
+                  <Button className="bg-gradient-to-r from-purple-700 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white">
                     <MessageSquarePlus className="w-4 h-4 mr-2" />
                     Send Feedback
                   </Button>

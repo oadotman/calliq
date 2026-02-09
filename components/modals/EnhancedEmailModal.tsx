@@ -3,9 +3,9 @@
 // 10/10 Email functionality with templates & suggestions
 // =====================================================
 
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -13,15 +13,15 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Loader2,
   Mail,
@@ -38,16 +38,16 @@ import {
   Star,
   Zap,
   Target,
-  Info
-} from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+  Info,
+} from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 import {
   emailTemplates,
   getSmartTemplateSuggestions,
   generateSubjectLine,
-  type EmailTemplate
-} from "@/lib/email-templates";
-import { cn } from "@/lib/utils";
+  type EmailTemplate,
+} from '@/lib/email-templates';
+import { cn } from '@/lib/utils';
 
 interface EnhancedEmailModalProps {
   isOpen: boolean;
@@ -79,26 +79,26 @@ export function EnhancedEmailModal({
 }: EnhancedEmailModalProps) {
   // State
   const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
-  const [customPrompt, setCustomPrompt] = useState("");
+  const [customPrompt, setCustomPrompt] = useState('');
   const [generatedEmails, setGeneratedEmails] = useState<GeneratedEmail[]>([]);
   const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [emailHistory, setEmailHistory] = useState<GeneratedEmail[]>([]);
   const [showHistory, setShowHistory] = useState(false);
-  const [editedSubject, setEditedSubject] = useState("");
-  const [editedBody, setEditedBody] = useState("");
+  const [editedSubject, setEditedSubject] = useState('');
+  const [editedBody, setEditedBody] = useState('');
   const { toast } = useToast();
 
   // Get smart suggestions based on call data
   const smartSuggestions = getSmartTemplateSuggestions({
     sentiment: callData?.sentiment,
     outcome: callData?.outcome,
-    hasObjections: callData?.insights?.some(i => i.insight_type === 'objection'),
-    hasBudgetDiscussion: callData?.fields?.some(f => f.field_name === 'budget'),
-    hasNextSteps: callData?.fields?.some(f => f.field_name === 'next_steps'),
-    hasCompetitors: callData?.insights?.some(i => i.insight_type === 'competitor'),
+    hasObjections: callData?.insights?.some((i) => i.insight_type === 'objection'),
+    hasBudgetDiscussion: callData?.fields?.some((f) => f.field_name === 'budget'),
+    hasNextSteps: callData?.fields?.some((f) => f.field_name === 'next_steps'),
+    hasCompetitors: callData?.insights?.some((i) => i.insight_type === 'competitor'),
     isFirstCall: true, // You might determine this from call history
-    dealStage: callData?.fields?.find(f => f.field_name === 'deal_stage')?.field_value,
+    dealStage: callData?.fields?.find((f) => f.field_name === 'deal_stage')?.field_value,
   });
 
   // Load email history from localStorage
@@ -124,8 +124,8 @@ export function EnhancedEmailModal({
 
     if (!prompt.trim()) {
       toast({
-        title: "Please select a template or provide instructions",
-        variant: "destructive",
+        title: 'Please select a template or provide instructions',
+        variant: 'destructive',
       });
       return;
     }
@@ -134,47 +134,49 @@ export function EnhancedEmailModal({
 
     try {
       // Generate multiple variations
-      const emailPromises = Array(variations).fill(null).map(async (_, index) => {
-        const toneMap = ['professional', 'friendly', 'formal'];
-        const tone = toneMap[index] || 'professional';
+      const emailPromises = Array(variations)
+        .fill(null)
+        .map(async (_, index) => {
+          const toneMap = ['professional', 'friendly', 'formal'];
+          const tone = toneMap[index] || 'professional';
 
-        const response = await fetch(`/api/calls/${callId}/generate-email`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            prompt: `${prompt}\n\nTone: ${tone}`,
-            templateId: selectedTemplate?.id,
-          }),
-        });
+          const response = await fetch(`/api/calls/${callId}/generate-email`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              prompt: `${prompt}\n\nTone: ${tone}`,
+              templateId: selectedTemplate?.id,
+            }),
+          });
 
-        if (!response.ok) {
-          if (response.status === 429) {
-            const data = await response.json();
-            throw new Error(`Rate limit: ${data.message}`);
+          if (!response.ok) {
+            if (response.status === 429) {
+              const data = await response.json();
+              throw new Error(`Rate limit: ${data.message}`);
+            }
+            throw new Error('Failed to generate email');
           }
-          throw new Error("Failed to generate email");
-        }
 
-        const data = await response.json();
+          const data = await response.json();
 
-        // Generate subject line
-        const subject = selectedTemplate
-          ? generateSubjectLine(selectedTemplate, {
-              customerName: customerName ?? undefined,
-              companyName: callData?.fields?.find(f => f.field_name === 'company')?.field_value,
-              date: new Date().toLocaleDateString(),
-              mainTopic: callData?.fields?.find(f => f.field_name === 'summary')?.field_value,
-            })
-          : `Follow-up: Our conversation on ${new Date().toLocaleDateString()}`;
+          // Generate subject line
+          const subject = selectedTemplate
+            ? generateSubjectLine(selectedTemplate, {
+                customerName: customerName ?? undefined,
+                companyName: callData?.fields?.find((f) => f.field_name === 'company')?.field_value,
+                date: new Date().toLocaleDateString(),
+                mainTopic: callData?.fields?.find((f) => f.field_name === 'summary')?.field_value,
+              })
+            : `Follow-up: Our conversation on ${new Date().toLocaleDateString()}`;
 
-        return {
-          id: `email_${Date.now()}_${index}`,
-          subject,
-          body: data.email,
-          tone: tone as 'professional' | 'friendly' | 'formal',
-          timestamp: new Date(),
-        };
-      });
+          return {
+            id: `email_${Date.now()}_${index}`,
+            subject,
+            body: data.email,
+            tone: tone as 'professional' | 'friendly' | 'formal',
+            timestamp: new Date(),
+          };
+        });
 
       const emails = await Promise.all(emailPromises);
       setGeneratedEmails(emails);
@@ -190,15 +192,15 @@ export function EnhancedEmailModal({
       }
 
       toast({
-        title: "Emails generated successfully",
+        title: 'Emails generated successfully',
         description: `Generated ${emails.length} variation${emails.length > 1 ? 's' : ''}`,
       });
     } catch (error) {
-      console.error("Email generation error:", error);
+      console.error('Email generation error:', error);
       toast({
-        title: "Failed to generate email",
-        description: error instanceof Error ? error.message : "Please try again",
-        variant: "destructive",
+        title: 'Failed to generate email',
+        description: error instanceof Error ? error.message : 'Please try again',
+        variant: 'destructive',
       });
     } finally {
       setIsGenerating(false);
@@ -207,20 +209,18 @@ export function EnhancedEmailModal({
 
   // Copy email to clipboard
   const handleCopy = async (includeSubject: boolean = true) => {
-    const textToCopy = includeSubject
-      ? `Subject: ${editedSubject}\n\n${editedBody}`
-      : editedBody;
+    const textToCopy = includeSubject ? `Subject: ${editedSubject}\n\n${editedBody}` : editedBody;
 
     try {
       await navigator.clipboard.writeText(textToCopy);
       toast({
-        title: "Copied to clipboard",
-        description: includeSubject ? "Subject and body copied" : "Email body copied",
+        title: 'Copied to clipboard',
+        description: includeSubject ? 'Subject and body copied' : 'Email body copied',
       });
     } catch (error) {
       toast({
-        title: "Failed to copy",
-        variant: "destructive",
+        title: 'Failed to copy',
+        variant: 'destructive',
       });
     }
   };
@@ -235,13 +235,20 @@ export function EnhancedEmailModal({
   // Category icons
   const getCategoryIcon = (category: string) => {
     switch (category) {
-      case 'follow-up': return '📬';
-      case 'proposal': return '📄';
-      case 'meeting': return '📅';
-      case 'clarification': return '❓';
-      case 'thank-you': return '🙏';
-      case 'next-steps': return '🚀';
-      default: return '📧';
+      case 'follow-up':
+        return '📬';
+      case 'proposal':
+        return '📄';
+      case 'meeting':
+        return '📅';
+      case 'clarification':
+        return '❓';
+      case 'thank-you':
+        return '🙏';
+      case 'next-steps':
+        return '🚀';
+      default:
+        return '📧';
     }
   };
 
@@ -250,7 +257,7 @@ export function EnhancedEmailModal({
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Mail className="w-5 h-5 text-violet-600" />
+            <Mail className="w-5 h-5 text-purple-700" />
             Enhanced Email Generator
             <Badge variant="secondary">10/10 Experience</Badge>
           </DialogTitle>
@@ -293,8 +300,8 @@ export function EnhancedEmailModal({
                     <Card
                       key={template.id}
                       className={cn(
-                        "cursor-pointer transition-all hover:shadow-md",
-                        selectedTemplate?.id === template.id && "ring-2 ring-violet-600"
+                        'cursor-pointer transition-all hover:shadow-md',
+                        selectedTemplate?.id === template.id && 'ring-2 ring-purple-700'
                       )}
                       onClick={() => setSelectedTemplate(template)}
                     >
@@ -324,7 +331,14 @@ export function EnhancedEmailModal({
               <Label>All Email Templates</Label>
               <ScrollArea className="h-[300px] border rounded-lg p-4">
                 <div className="space-y-4">
-                  {['follow-up', 'proposal', 'meeting', 'clarification', 'thank-you', 'next-steps'].map(category => (
+                  {[
+                    'follow-up',
+                    'proposal',
+                    'meeting',
+                    'clarification',
+                    'thank-you',
+                    'next-steps',
+                  ].map((category) => (
                     <div key={category}>
                       <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
                         {getCategoryIcon(category)}
@@ -332,11 +346,11 @@ export function EnhancedEmailModal({
                       </h4>
                       <div className="grid grid-cols-2 gap-2 ml-6">
                         {emailTemplates
-                          .filter(t => t.category === category)
+                          .filter((t) => t.category === category)
                           .map((template) => (
                             <Button
                               key={template.id}
-                              variant={selectedTemplate?.id === template.id ? "default" : "outline"}
+                              variant={selectedTemplate?.id === template.id ? 'default' : 'outline'}
                               size="sm"
                               className="justify-start"
                               onClick={() => setSelectedTemplate(template)}
@@ -354,7 +368,7 @@ export function EnhancedEmailModal({
 
             {/* Selected Template Info */}
             {selectedTemplate && (
-              <Card className="bg-violet-50 border-violet-200">
+              <Card className="bg-purple-50 border-purple-200">
                 <CardContent className="p-3">
                   <div className="flex items-start justify-between">
                     <div>
@@ -363,11 +377,7 @@ export function EnhancedEmailModal({
                         {selectedTemplate.whenToUse}
                       </p>
                     </div>
-                    <Button
-                      size="sm"
-                      onClick={() => setSelectedTemplate(null)}
-                      variant="ghost"
-                    >
+                    <Button size="sm" onClick={() => setSelectedTemplate(null)} variant="ghost">
                       Clear
                     </Button>
                   </div>
@@ -380,9 +390,7 @@ export function EnhancedEmailModal({
           <TabsContent value="generate" className="space-y-4">
             {/* Custom Instructions */}
             <div>
-              <Label htmlFor="custom-prompt">
-                Additional Instructions (Optional)
-              </Label>
+              <Label htmlFor="custom-prompt">Additional Instructions (Optional)</Label>
               <Textarea
                 id="custom-prompt"
                 value={customPrompt}
@@ -394,7 +402,7 @@ export function EnhancedEmailModal({
               <p className="text-xs text-muted-foreground mt-2">
                 {selectedTemplate
                   ? `Using template: ${selectedTemplate.name}. Add any specific customization here.`
-                  : "Select a template or provide custom instructions for your email."}
+                  : 'Select a template or provide custom instructions for your email.'}
               </p>
             </div>
 
@@ -454,7 +462,7 @@ export function EnhancedEmailModal({
                     {generatedEmails.map((email, index) => (
                       <Button
                         key={email.id}
-                        variant={selectedEmailId === email.id ? "default" : "outline"}
+                        variant={selectedEmailId === email.id ? 'default' : 'outline'}
                         size="sm"
                         onClick={() => selectEmail(email)}
                       >
@@ -497,10 +505,7 @@ export function EnhancedEmailModal({
                     <Copy className="w-4 h-4 mr-2" />
                     Copy Body Only
                   </Button>
-                  <Button
-                    onClick={() => handleGenerate(1)}
-                    variant="outline"
-                  >
+                  <Button onClick={() => handleGenerate(1)} variant="outline">
                     <RotateCw className="w-4 h-4" />
                   </Button>
                 </div>
@@ -521,8 +526,8 @@ export function EnhancedEmailModal({
                         setEditedSubject(email.subject);
                         setEditedBody(email.body);
                         toast({
-                          title: "Email loaded from history",
-                          description: "You can now edit and copy it",
+                          title: 'Email loaded from history',
+                          description: 'You can now edit and copy it',
                         });
                       }}
                     >

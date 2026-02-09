@@ -155,7 +155,7 @@ export default function UpgradePage() {
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white p-8">
         <div className="max-w-4xl mx-auto">
           <div className="text-center py-16">
-            <Sparkles className="w-16 h-16 text-violet-600 mx-auto mb-4" />
+            <Sparkles className="w-16 h-16 text-purple-700 mx-auto mb-4" />
             <h1 className="text-4xl font-bold text-gray-900 mb-4">You're on the Enterprise Plan</h1>
             <p className="text-xl text-gray-600 mb-8">
               You already have our highest tier plan with maximum features and usage limits.
@@ -240,13 +240,16 @@ export default function UpgradePage() {
                 key={planId}
                 id={`plan-${planId}`}
                 className={cn(
-                  'relative transition-all duration-200',
-                  isPopular && 'border-violet-600 shadow-xl scale-105'
+                  'relative transition-all duration-200 hover:shadow-2xl',
+                  isPopular &&
+                    'border-purple-700 shadow-2xl scale-105 bg-gradient-to-br from-purple-50/50 to-white'
                 )}
               >
                 {isPopular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <Badge className="bg-violet-600 text-white">Most Popular</Badge>
+                    <Badge className="bg-gradient-to-r from-purple-700 to-purple-700 text-white border-0 shadow-lg px-4 py-1">
+                      Most Popular
+                    </Badge>
                   </div>
                 )}
 
@@ -287,10 +290,10 @@ export default function UpgradePage() {
                     onClick={() => handleUpgrade(planId)}
                     disabled={loading}
                     className={cn(
-                      'w-full text-white font-semibold',
+                      'w-full text-white font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200',
                       isPopular
-                        ? 'bg-violet-600 hover:bg-violet-700'
-                        : 'bg-blue-600 hover:bg-blue-700'
+                        ? 'bg-gradient-to-r from-purple-700 to-purple-700 hover:from-purple-800 hover:to-purple-700'
+                        : 'bg-purple-700 hover:bg-purple-700'
                     )}
                     size="lg"
                   >
@@ -314,7 +317,10 @@ export default function UpgradePage() {
           <p className="mb-2">All plans include a 14-day money-back guarantee</p>
           <p className="text-sm">
             Need help choosing?{' '}
-            <a href="/help" className="text-violet-600 hover:underline">
+            <a
+              href="/help"
+              className="text-purple-700 hover:text-purple-800 font-medium hover:underline transition-colors"
+            >
               Contact our sales team
             </a>
           </p>

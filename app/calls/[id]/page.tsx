@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ModernProgress } from "@/components/ui/modern-progress";
-import { motion } from "framer-motion";
+import { useState, useEffect, useRef } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { ModernProgress } from '@/components/ui/modern-progress';
+import { motion } from 'framer-motion';
 // Removed Tabs import - using dropdown instead
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils';
 import {
   ArrowLeft,
   Play,
@@ -38,17 +38,17 @@ import {
   ChevronDown,
   ChevronUp,
   StickyNote,
-} from "lucide-react";
-import Link from "next/link";
-import { useToast } from "@/components/ui/use-toast";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useAuth } from "@/lib/AuthContext";
-import { createClient } from "@/lib/supabase/client";
-import { format } from "date-fns";
-import { AudioTrimModal } from "@/components/modals/AudioTrimModal";
-import { EnhancedEmailModal } from "@/components/modals/EnhancedEmailModal";
-import { generateCallPDF, downloadPDF } from "@/lib/pdf-export";
-import { formatCRMOutput } from "@/lib/output-formatters";
+} from 'lucide-react';
+import Link from 'next/link';
+import { useToast } from '@/components/ui/use-toast';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useAuth } from '@/lib/AuthContext';
+import { createClient } from '@/lib/supabase/client';
+import { format } from 'date-fns';
+import { AudioTrimModal } from '@/components/modals/AudioTrimModal';
+import { EnhancedEmailModal } from '@/components/modals/EnhancedEmailModal';
+import { generateCallPDF, downloadPDF } from '@/lib/pdf-export';
+import { formatCRMOutput } from '@/lib/output-formatters';
 
 // =====================================================
 // TYPESCRIPT INTERFACES
@@ -59,7 +59,7 @@ interface Participant {
   name: string;
   email: string;
   company: string;
-  role: "customer" | "sales_rep" | "other";
+  role: 'customer' | 'sales_rep' | 'other';
 }
 
 interface CallRecord {
@@ -147,7 +147,7 @@ export default function CallDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [activeTab, setActiveTab] = useState("plain");
+  const [activeTab, setActiveTab] = useState('plain');
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0); // Start with 0, will be set from audio metadata
@@ -260,12 +260,14 @@ export default function CallDetailPage() {
         // Construct call detail object
         const detail: CallDetail = {
           call: callData,
-          transcript: transcriptData ? {
-            ...transcriptData,
-            utterances: utterancesData
-          } : null,
+          transcript: transcriptData
+            ? {
+                ...transcriptData,
+                utterances: utterancesData,
+              }
+            : null,
           insights: insightsData || [],
-          fields: fieldsData || []
+          fields: fieldsData || [],
         };
 
         if (isMounted) {
@@ -291,16 +293,17 @@ export default function CallDetailPage() {
 
         if (!templatesError && templatesData && isMounted) {
           // Transform fields to match frontend format
-          const formattedTemplates = templatesData.map(template => ({
+          const formattedTemplates = templatesData.map((template) => ({
             ...template,
-            fields: template.template_fields?.map((f: any) => ({
-              id: f.id,
-              fieldName: f.field_name,
-              fieldType: f.field_type,
-              description: f.description,
-              picklistValues: f.picklist_values,
-              required: f.is_required
-            })) || []
+            fields:
+              template.template_fields?.map((f: any) => ({
+                id: f.id,
+                fieldName: f.field_name,
+                fieldType: f.field_type,
+                description: f.description,
+                picklistValues: f.picklist_values,
+                required: f.is_required,
+              })) || [],
           }));
           setCustomTemplates(formattedTemplates);
         }
@@ -333,7 +336,7 @@ export default function CallDetailPage() {
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   // Poll for status updates while processing
@@ -359,9 +362,9 @@ export default function CallDetailPage() {
         console.error('Polling timeout - stopping after', pollCount, 'attempts');
         clearInterval(pollInterval);
         toast({
-          title: "Processing timeout",
-          description: "Call processing is taking longer than expected. Please refresh the page.",
-          variant: "destructive",
+          title: 'Processing timeout',
+          description: 'Call processing is taking longer than expected. Please refresh the page.',
+          variant: 'destructive',
         });
         return;
       }
@@ -380,9 +383,9 @@ export default function CallDetailPage() {
             console.error('Too many consecutive errors - stopping polling');
             clearInterval(pollInterval);
             toast({
-              title: "Connection error",
-              description: "Unable to check call status. Please refresh the page.",
-              variant: "destructive",
+              title: 'Connection error',
+              description: 'Unable to check call status. Please refresh the page.',
+              variant: 'destructive',
             });
           }
           return;
@@ -400,7 +403,7 @@ export default function CallDetailPage() {
           lastKnownStatus = updatedCall.status;
 
           // Always update the call data
-          setCallDetail(prev => prev ? { ...prev, call: updatedCall } : null);
+          setCallDetail((prev) => (prev ? { ...prev, call: updatedCall } : null));
 
           // If completed or failed, stop polling and fetch all related data
           if (updatedCall.status === 'completed' || updatedCall.status === 'failed') {
@@ -444,7 +447,7 @@ export default function CallDetailPage() {
               call: updatedCall,
               transcript: transcriptData ? { ...transcriptData, utterances: utterancesData } : null,
               insights: insightsData || [],
-              fields: fieldsData || []
+              fields: fieldsData || [],
             });
 
             // Show toast on completion
@@ -459,9 +462,10 @@ export default function CallDetailPage() {
               });
 
               toast({
-                title: updatedCall.status === 'completed' ? "Processing complete!" : "Processing failed",
-                description: updatedCall.processing_message || "Call processing has finished.",
-                variant: updatedCall.status === 'completed' ? "default" : "destructive",
+                title:
+                  updatedCall.status === 'completed' ? 'Processing complete!' : 'Processing failed',
+                description: updatedCall.processing_message || 'Call processing has finished.',
+                variant: updatedCall.status === 'completed' ? 'default' : 'destructive',
               });
             }
           }
@@ -479,9 +483,9 @@ export default function CallDetailPage() {
           console.error('Too many consecutive errors - stopping polling');
           clearInterval(pollInterval);
           toast({
-            title: "Connection error",
-            description: "Unable to check call status. Please refresh the page.",
-            variant: "destructive",
+            title: 'Connection error',
+            description: 'Unable to check call status. Please refresh the page.',
+            variant: 'destructive',
           });
         }
       }
@@ -495,15 +499,15 @@ export default function CallDetailPage() {
     try {
       await navigator.clipboard.writeText(text);
       toast({
-        title: "✓ Copied to clipboard!",
+        title: '✓ Copied to clipboard!',
         description: `${label} has been copied.`,
         duration: 3000,
       });
     } catch (err) {
       toast({
-        title: "Failed to copy",
-        description: "Please try again.",
-        variant: "destructive",
+        title: 'Failed to copy',
+        description: 'Please try again.',
+        variant: 'destructive',
         duration: 3000,
       });
     }
@@ -516,13 +520,13 @@ export default function CallDetailPage() {
       setCopiedInsight(index);
       setTimeout(() => setCopiedInsight(null), 2000);
       toast({
-        title: "✓ Insight copied!",
+        title: '✓ Insight copied!',
         duration: 2000,
       });
     } catch (err) {
       toast({
-        title: "Failed to copy",
-        variant: "destructive",
+        title: 'Failed to copy',
+        variant: 'destructive',
         duration: 2000,
       });
     }
@@ -549,21 +553,25 @@ export default function CallDetailPage() {
       }
 
       // Update local state
-      setCallDetail(prev => prev ? {
-        ...prev,
-        call: { ...prev.call, status: 'processing' },
-      } : null);
+      setCallDetail((prev) =>
+        prev
+          ? {
+              ...prev,
+              call: { ...prev.call, status: 'processing' },
+            }
+          : null
+      );
 
       toast({
-        title: "Transcription started",
-        description: "This usually takes 3-6 minutes.",
+        title: 'Transcription started',
+        description: 'This usually takes 3-6 minutes.',
       });
     } catch (error) {
       console.error('Start transcription error:', error);
       toast({
-        title: "Failed to start transcription",
-        description: error instanceof Error ? error.message : "Please try again",
-        variant: "destructive",
+        title: 'Failed to start transcription',
+        description: error instanceof Error ? error.message : 'Please try again',
+        variant: 'destructive',
       });
     } finally {
       setIsStartingTranscription(false);
@@ -573,10 +581,14 @@ export default function CallDetailPage() {
   const handleTrimComplete = () => {
     // Refresh call detail after trim to get updated status
     if (callDetail) {
-      setCallDetail(prev => prev ? {
-        ...prev,
-        call: { ...prev.call, status: 'processing' },
-      } : null);
+      setCallDetail((prev) =>
+        prev
+          ? {
+              ...prev,
+              call: { ...prev.call, status: 'processing' },
+            }
+          : null
+      );
     }
   };
 
@@ -594,34 +606,34 @@ export default function CallDetailPage() {
       }
 
       switch (e.key.toLowerCase()) {
-        case " ": // Space bar - play/pause
+        case ' ': // Space bar - play/pause
           e.preventDefault();
           setIsPlaying((prev) => !prev);
           break;
-        case "arrowleft": // Rewind 5 seconds
+        case 'arrowleft': // Rewind 5 seconds
           e.preventDefault();
           setCurrentTime((prev) => Math.max(0, prev - 5));
           break;
-        case "arrowright": // Forward 5 seconds
+        case 'arrowright': // Forward 5 seconds
           e.preventDefault();
           setCurrentTime((prev) => Math.min(duration, prev + 5));
           break;
-        case "c": // Copy CRM output
+        case 'c': // Copy CRM output
           e.preventDefault();
           handleCopy(
             generateCRMOutput(activeTab),
             activeTab.charAt(0).toUpperCase() + activeTab.slice(1)
           );
           break;
-        case "escape": // Go back to calls list
+        case 'escape': // Go back to calls list
           e.preventDefault();
-          router.push("/calls");
+          router.push('/calls');
           break;
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [activeTab, callDetail, duration, router]);
 
   // =====================================================
@@ -657,9 +669,9 @@ export default function CallDetailPage() {
     const handleError = (e: Event) => {
       console.error('Audio playback error:', e);
       toast({
-        title: "Playback Error",
-        description: "Failed to load or play audio file",
-        variant: "destructive",
+        title: 'Playback Error',
+        description: 'Failed to load or play audio file',
+        variant: 'destructive',
       });
       setIsPlaying(false);
     };
@@ -683,7 +695,7 @@ export default function CallDetailPage() {
     if (!audio) return;
 
     if (isPlaying) {
-      audio.play().catch(error => {
+      audio.play().catch((error) => {
         console.error('Play failed:', error);
         setIsPlaying(false);
       });
@@ -743,9 +755,9 @@ export default function CallDetailPage() {
     } catch (error) {
       console.error('Error saving notes:', error);
       toast({
-        title: "Error saving notes",
-        description: "Failed to save your notes. Please try again.",
-        variant: "destructive"
+        title: 'Error saving notes',
+        description: 'Failed to save your notes. Please try again.',
+        variant: 'destructive',
       });
     } finally {
       setNotesSaving(false);
@@ -776,8 +788,8 @@ export default function CallDetailPage() {
     const output = generateCRMOutput(activeTab);
     navigator.clipboard.writeText(output);
     toast({
-      title: "Copied to clipboard",
-      description: "The output has been copied to your clipboard.",
+      title: 'Copied to clipboard',
+      description: 'The output has been copied to your clipboard.',
     });
   };
 
@@ -788,9 +800,14 @@ export default function CallDetailPage() {
     const { call, fields } = callDetail;
 
     // Extract customer name and sales rep from fields
-    const customerName = fields.find(f => f.field_name.toLowerCase() === 'customer name')?.field_value || 'Unknown Customer';
-    const salesRep = fields.find(f => f.field_name.toLowerCase() === 'sales representative')?.field_value || 'Unknown';
-    const sentiment = fields.find(f => f.field_name.toLowerCase() === 'sentiment')?.field_value || 'neutral';
+    const customerName =
+      fields.find((f) => f.field_name.toLowerCase() === 'customer name')?.field_value ||
+      'Unknown Customer';
+    const salesRep =
+      fields.find((f) => f.field_name.toLowerCase() === 'sales representative')?.field_value ||
+      'Unknown';
+    const sentiment =
+      fields.find((f) => f.field_name.toLowerCase() === 'sentiment')?.field_value || 'neutral';
 
     // Generate PDF
     const pdfBlob = generateCallPDF({
@@ -801,7 +818,7 @@ export default function CallDetailPage() {
       duration: call.duration ? Math.round(call.duration / 60) : 0, // Convert to minutes
       sentiment,
       content: output,
-      format: activeTab
+      format: activeTab,
     });
 
     // Download the PDF
@@ -809,8 +826,8 @@ export default function CallDetailPage() {
     downloadPDF(pdfBlob, filename);
 
     toast({
-      title: "PDF Downloaded",
-      description: "The call summary has been downloaded as a PDF.",
+      title: 'PDF Downloaded',
+      description: 'The call summary has been downloaded as a PDF.',
     });
   };
 
@@ -823,7 +840,7 @@ export default function CallDetailPage() {
   // =====================================================
 
   const generateCRMOutput = (format: string): string => {
-    if (!callDetail) return "";
+    if (!callDetail) return '';
 
     const { call, fields, insights } = callDetail;
 
@@ -833,8 +850,8 @@ export default function CallDetailPage() {
 
     // Prepare data in the format expected by formatCRMOutput
     // Extract customer_company and next_steps from fields since they're not in CallRecord
-    const customerCompanyField = fields.find(f => f.field_name === 'customer_company');
-    const nextStepsField = fields.find(f => f.field_name === 'next_steps');
+    const customerCompanyField = fields.find((f) => f.field_name === 'customer_company');
+    const nextStepsField = fields.find((f) => f.field_name === 'next_steps');
 
     const callData = {
       call: {
@@ -845,11 +862,11 @@ export default function CallDetailPage() {
         duration: call.duration,
         sentiment_type: call.sentiment_type,
         next_steps: nextStepsField?.field_value || null,
-        metadata: call.metadata
+        metadata: call.metadata,
       },
       fields,
       insights,
-      participantAnalytics
+      participantAnalytics,
     };
 
     // For custom templates that aren't supported by the library yet,
@@ -857,14 +874,14 @@ export default function CallDetailPage() {
     if (format.startsWith('template_') && format !== 'template_plain') {
       // Extract common fields
       const getField = (name: string) => {
-        const field = fields.find(f => f.field_name.toLowerCase() === name.toLowerCase());
-        return field?.field_value || "N/A";
+        const field = fields.find((f) => f.field_name.toLowerCase() === name.toLowerCase());
+        return field?.field_value || 'N/A';
       };
 
       const templateId = format.replace('template_', '');
-      const template = customTemplates.find(t => t.id === templateId);
+      const template = customTemplates.find((t) => t.id === templateId);
 
-      if (!template) return "Template not found";
+      if (!template) return 'Template not found';
 
       let output = `📋 ${template.name}\n`;
       output += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
@@ -887,17 +904,22 @@ export default function CallDetailPage() {
       output += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
       // Get template-specific fields (those with template_id)
-      const templateSpecificFields = fields.filter(f => f.template_id === templateId);
+      const templateSpecificFields = fields.filter((f) => f.template_id === templateId);
 
       if (templateSpecificFields.length > 0) {
         templateSpecificFields.forEach((field: any) => {
           const icon =
-            field.field_type === 'email' ? '📧' :
-            field.field_type === 'date' ? '📅' :
-            field.field_type === 'number' ? '🔢' :
-            field.field_type === 'boolean' ? '✅' :
-            field.field_type === 'url' ? '🔗' :
-            '📋';
+            field.field_type === 'email'
+              ? '📧'
+              : field.field_type === 'date'
+                ? '📅'
+                : field.field_type === 'number'
+                  ? '🔢'
+                  : field.field_type === 'boolean'
+                    ? '✅'
+                    : field.field_type === 'url'
+                      ? '🔗'
+                      : '📋';
 
           output += `${icon} ${field.field_name}: ${field.field_value || 'N/A'}\n`;
           if (field.confidence_score) {
@@ -915,11 +937,19 @@ export default function CallDetailPage() {
       output += `\n📋 CORE FIELDS (Always Extracted)\n`;
       output += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
-      const coreFields = fields.filter(f => !f.template_id);
-      const importantCoreFields = ['summary', 'key_points', 'next_steps', 'pain_points', 'budget', 'timeline', 'call_outcome'];
+      const coreFields = fields.filter((f) => !f.template_id);
+      const importantCoreFields = [
+        'summary',
+        'key_points',
+        'next_steps',
+        'pain_points',
+        'budget',
+        'timeline',
+        'call_outcome',
+      ];
 
-      importantCoreFields.forEach(fieldName => {
-        const field = coreFields.find(f => f.field_name === fieldName);
+      importantCoreFields.forEach((fieldName) => {
+        const field = coreFields.find((f) => f.field_name === fieldName);
         if (field) {
           let value = field.field_value;
           try {
@@ -934,7 +964,7 @@ export default function CallDetailPage() {
             }
           } catch {}
 
-          const label = fieldName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+          const label = fieldName.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
           output += `📍 ${label}: ${value || 'N/A'}\n`;
         }
       });
@@ -944,11 +974,15 @@ export default function CallDetailPage() {
       output += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
       if (insights.length > 0) {
-        insights.forEach(insight => {
+        insights.forEach((insight) => {
           const icon =
-            insight.insight_type === 'pain_point' ? '⚠️' :
-            insight.insight_type === 'action_item' ? '🎯' :
-            insight.insight_type === 'competitor' ? '🏢' : '📝';
+            insight.insight_type === 'pain_point'
+              ? '⚠️'
+              : insight.insight_type === 'action_item'
+                ? '🎯'
+                : insight.insight_type === 'competitor'
+                  ? '🏢'
+                  : '📝';
 
           output += `${icon} ${insight.insight_text}\n`;
         });
@@ -972,7 +1006,7 @@ export default function CallDetailPage() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
         <div className="flex items-center justify-center p-8 lg:p-16">
           <div className="text-center">
-            <Loader2 className="w-12 h-12 animate-spin text-violet-600 mx-auto mb-4" />
+            <Loader2 className="w-12 h-12 animate-spin text-purple-700 mx-auto mb-4" />
             <p className="text-slate-600 font-medium">Loading call details...</p>
           </div>
         </div>
@@ -990,10 +1024,14 @@ export default function CallDetailPage() {
         <div className="flex items-center justify-center p-8 lg:p-16">
           <div className="text-center">
             <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Call Not Found</h2>
-            <p className="text-gray-600 mb-6">{error || "This call does not exist or you do not have access to it."}</p>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+              Call Not Found
+            </h2>
+            <p className="text-gray-600 mb-6">
+              {error || 'This call does not exist or you do not have access to it.'}
+            </p>
             <Link href="/calls">
-              <Button className="bg-purple-600 hover:bg-purple-700">
+              <Button className="bg-purple-700 hover:bg-purple-700">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Calls
               </Button>
@@ -1018,8 +1056,8 @@ export default function CallDetailPage() {
     const mapping: Record<string, string> = {};
 
     // First, try to map by role
-    const salesReps = participants.filter(p => p.role === "sales_rep");
-    const customers = participants.filter(p => p.role === "customer");
+    const salesReps = participants.filter((p) => p.role === 'sales_rep');
+    const customers = participants.filter((p) => p.role === 'customer');
 
     // Common speaker labels from AssemblyAI
     const speakerLabels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
@@ -1035,14 +1073,19 @@ export default function CallDetailPage() {
     for (let i = 1; i < speakerLabels.length && customerIndex < customers.length; i++) {
       const label = speakerLabels[i];
       mapping[label] = customers[customerIndex].name || `Customer ${customerIndex + 1}`;
-      mapping[`Speaker ${label}`] = customers[customerIndex].name || `Customer ${customerIndex + 1}`;
+      mapping[`Speaker ${label}`] =
+        customers[customerIndex].name || `Customer ${customerIndex + 1}`;
       customerIndex++;
     }
 
     // Map any remaining participants
     let otherIndex = 0;
-    const others = participants.filter(p => p.role === "other");
-    for (let i = customers.length + 1; i < speakerLabels.length && otherIndex < others.length; i++) {
+    const others = participants.filter((p) => p.role === 'other');
+    for (
+      let i = customers.length + 1;
+      i < speakerLabels.length && otherIndex < others.length;
+      i++
+    ) {
       const label = speakerLabels[i];
       mapping[label] = others[otherIndex].name || `Participant ${i}`;
       mapping[`Speaker ${label}`] = others[otherIndex].name || `Participant ${i}`;
@@ -1060,15 +1103,18 @@ export default function CallDetailPage() {
       return [];
     }
 
-    const analytics: Record<string, {
-      name: string;
-      talkTime: number;
-      wordCount: number;
-      utteranceCount: number;
-      sentiment: { positive: number; neutral: number; negative: number };
-    }> = {};
+    const analytics: Record<
+      string,
+      {
+        name: string;
+        talkTime: number;
+        wordCount: number;
+        utteranceCount: number;
+        sentiment: { positive: number; neutral: number; negative: number };
+      }
+    > = {};
 
-    transcript.utterances.forEach(utterance => {
+    transcript.utterances.forEach((utterance) => {
       const speakerName = speakerMapping[utterance.speaker] || utterance.speaker;
 
       if (!analytics[speakerName]) {
@@ -1077,12 +1123,12 @@ export default function CallDetailPage() {
           talkTime: 0,
           wordCount: 0,
           utteranceCount: 0,
-          sentiment: { positive: 0, neutral: 0, negative: 0 }
+          sentiment: { positive: 0, neutral: 0, negative: 0 },
         };
       }
 
       // Calculate talk time
-      const duration = (utterance.end_time - utterance.start_time);
+      const duration = utterance.end_time - utterance.start_time;
       analytics[speakerName].talkTime += duration;
 
       // Count words
@@ -1101,30 +1147,36 @@ export default function CallDetailPage() {
     // Convert to array and calculate percentages
     const totalTalkTime = Object.values(analytics).reduce((sum, a) => sum + a.talkTime, 0);
 
-    return Object.values(analytics).map(participant => ({
+    return Object.values(analytics).map((participant) => ({
       ...participant,
       talkTimePercentage: totalTalkTime > 0 ? (participant.talkTime / totalTalkTime) * 100 : 0,
-      avgWordsPerUtterance: participant.utteranceCount > 0 ?
-        Math.round(participant.wordCount / participant.utteranceCount) : 0
+      avgWordsPerUtterance:
+        participant.utteranceCount > 0
+          ? Math.round(participant.wordCount / participant.utteranceCount)
+          : 0,
     }));
   };
 
   const participantAnalytics = calculateParticipantAnalytics();
 
   const sentimentConfig = {
-    positive: { emoji: "😊", bg: "bg-green-100", text: "text-green-600" },
-    neutral: { emoji: "😐", bg: "bg-gray-100", text: "text-gray-600" },
-    negative: { emoji: "😟", bg: "bg-red-100", text: "text-red-600" },
+    positive: { emoji: '😊', bg: 'bg-green-100', text: 'text-green-600' },
+    neutral: { emoji: '😐', bg: 'bg-gray-100', text: 'text-gray-600' },
+    negative: { emoji: '😟', bg: 'bg-red-100', text: 'text-red-600' },
   };
 
   // Extract insights by type
-  const painPoints = insights.filter((i) => i.insight_type === "pain_point");
-  const actionItems = insights.filter((i) => i.insight_type === "action_item");
-  const competitors = insights.filter((i) => i.insight_type === "competitor");
+  const painPoints = insights.filter((i) => i.insight_type === 'pain_point');
+  const actionItems = insights.filter((i) => i.insight_type === 'action_item');
+  const competitors = insights.filter((i) => i.insight_type === 'competitor');
 
   // Get budget and timeline from fields
-  const budgetField = callDetail.fields.find(f => f.field_name.toLowerCase().includes('budget'));
-  const timelineField = callDetail.fields.find(f => f.field_name.toLowerCase().includes('timeline') || f.field_name.toLowerCase().includes('close date'));
+  const budgetField = callDetail.fields.find((f) => f.field_name.toLowerCase().includes('budget'));
+  const timelineField = callDetail.fields.find(
+    (f) =>
+      f.field_name.toLowerCase().includes('timeline') ||
+      f.field_name.toLowerCase().includes('close date')
+  );
 
   // =====================================================
   // RENDER UI
@@ -1157,7 +1209,7 @@ export default function CallDetailPage() {
         <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
           <Link
             href="/calls"
-            className="inline-flex items-center text-sm font-medium text-purple-600 hover:text-purple-700 mb-4 transition-colors group"
+            className="inline-flex items-center text-sm font-medium text-purple-700 hover:text-purple-700 mb-4 transition-colors group"
           >
             <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
             Back to Calls
@@ -1166,7 +1218,7 @@ export default function CallDetailPage() {
           <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                Call with {call.customer_name || "Unknown Customer"}
+                Call with {call.customer_name || 'Unknown Customer'}
               </h1>
               <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
                 <span className="flex items-center gap-1.5">
@@ -1174,79 +1226,94 @@ export default function CallDetailPage() {
                   {new Date(call.call_date).toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
-                    year: 'numeric'
+                    year: 'numeric',
                   })}
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Clock className="w-4 h-4" />
-                  {call.duration_minutes || (call.duration ? Math.ceil(call.duration / 60) : 0)} minutes
+                  {call.duration_minutes ||
+                    (call.duration ? Math.ceil(call.duration / 60) : 0)}{' '}
+                  minutes
                 </span>
                 <span className="flex items-center gap-1.5">
                   <User className="w-4 h-4" />
-                  {call.sales_rep || "Unknown Rep"}
+                  {call.sales_rep || 'Unknown Rep'}
                 </span>
                 <Badge
                   className={cn(
-                    "ml-2",
-                    call.sentiment_type === "positive"
-                      ? "bg-green-100 text-green-800"
-                      : call.sentiment_type === "neutral"
-                      ? "bg-gray-100 text-gray-800"
-                      : "bg-red-100 text-red-800"
+                    'ml-2',
+                    call.sentiment_type === 'positive'
+                      ? 'bg-green-100 text-green-800'
+                      : call.sentiment_type === 'neutral'
+                        ? 'bg-gray-100 text-gray-800'
+                        : 'bg-red-100 text-red-800'
                   )}
                 >
-                  {call.sentiment_type === "positive" ? "😊 Positive" :
-                   call.sentiment_type === "neutral" ? "😐 Neutral" :
-                   call.sentiment_type === "negative" ? "😟 Negative" : "😐 Unknown"}
+                  {call.sentiment_type === 'positive'
+                    ? '😊 Positive'
+                    : call.sentiment_type === 'neutral'
+                      ? '😐 Neutral'
+                      : call.sentiment_type === 'negative'
+                        ? '😟 Negative'
+                        : '😐 Unknown'}
                 </Badge>
 
                 {/* Status Badge */}
                 <Badge
                   className={cn(
-                    "ml-2",
-                    call.status === "completed"
-                      ? "bg-green-100 text-green-800"
-                      : call.status === "failed"
-                      ? "bg-red-100 text-red-800"
-                      : "bg-violet-100 text-violet-800"
+                    'ml-2',
+                    call.status === 'completed'
+                      ? 'bg-green-100 text-green-800'
+                      : call.status === 'failed'
+                        ? 'bg-red-100 text-red-800'
+                        : 'bg-purple-100 text-purple-900'
                   )}
                 >
-                  {call.status === "completed" ? "✓ Completed" :
-                   call.status === "failed" ? "✗ Failed" :
-                   call.status === "transcribing" && call.processing_progress !== null
-                     ? `Transcribing ${call.processing_progress}%`
-                     : call.status === "extracting"
-                     ? "Extracting Data"
-                     : "Processing"}
+                  {call.status === 'completed'
+                    ? '✓ Completed'
+                    : call.status === 'failed'
+                      ? '✗ Failed'
+                      : call.status === 'transcribing' && call.processing_progress !== null
+                        ? `Transcribing ${call.processing_progress}%`
+                        : call.status === 'extracting'
+                          ? 'Extracting Data'
+                          : 'Processing'}
                 </Badge>
               </div>
             </div>
 
             {/* Modern Animated Progress Indicator */}
-            {(call.status === "processing" || call.status === "transcribing" || call.status === "extracting") && (
-              <div className="bg-gradient-to-br from-violet-50 via-purple-50 to-indigo-50 border border-violet-200 rounded-lg p-6 mt-4 shadow-lg">
+            {(call.status === 'processing' ||
+              call.status === 'transcribing' ||
+              call.status === 'extracting') && (
+              <div className="bg-gradient-to-br from-purple-50 via-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-6 mt-4 shadow-lg">
                 <ModernProgress
                   progress={call.processing_progress || 0}
-                  message={call.processing_message || (
-                    call.status === "transcribing" ? "Transcribing audio..." :
-                    call.status === "extracting" ? "Extracting insights..." :
-                    "Starting processing..."
-                  )}
+                  message={
+                    call.processing_message ||
+                    (call.status === 'transcribing'
+                      ? 'Transcribing audio...'
+                      : call.status === 'extracting'
+                        ? 'Extracting insights...'
+                        : 'Starting processing...')
+                  }
                   status={
-                    call.status === "transcribing" || call.status === "extracting" ? "processing" :
-                    call.status === "processing" ? "processing" :
-                    "queued"
+                    call.status === 'transcribing' || call.status === 'extracting'
+                      ? 'processing'
+                      : call.status === 'processing'
+                        ? 'processing'
+                        : 'queued'
                   }
                 />
 
                 {/* Additional Info */}
                 <div className="mt-4 flex items-center justify-between">
-                  <p className="text-xs text-violet-600">
-                    {call.status === "transcribing"
-                      ? "This usually takes 3-6 minutes depending on call length"
-                      : call.status === "extracting"
-                      ? "Analyzing conversation and extracting insights..."
-                      : "Initializing transcription service..."}
+                  <p className="text-xs text-purple-700">
+                    {call.status === 'transcribing'
+                      ? 'This usually takes 3-6 minutes depending on call length'
+                      : call.status === 'extracting'
+                        ? 'Analyzing conversation and extracting insights...'
+                        : 'Initializing transcription service...'}
                   </p>
 
                   {/* Live Status Dots */}
@@ -1259,7 +1326,7 @@ export default function CallDetailPage() {
                         transition={{
                           duration: 1.5,
                           repeat: Infinity,
-                          delay: i * 0.2
+                          delay: i * 0.2,
                         }}
                       />
                     ))}
@@ -1269,12 +1336,12 @@ export default function CallDetailPage() {
             )}
 
             {/* Action Buttons */}
-            {(call.status === "uploaded" || call.status === "failed") && call.file_url && (
+            {(call.status === 'uploaded' || call.status === 'failed') && call.file_url && (
               <div className="flex items-center gap-3">
                 <Button
                   onClick={() => setShowTrimModal(true)}
                   variant="outline"
-                  className="border-violet-600 text-violet-600 hover:bg-violet-50"
+                  className="border-purple-700 text-purple-700 hover:bg-purple-100"
                 >
                   <Scissors className="w-4 h-4 mr-2" />
                   Trim Audio
@@ -1282,7 +1349,7 @@ export default function CallDetailPage() {
                 <Button
                   onClick={handleStartTranscription}
                   disabled={isStartingTranscription}
-                  className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
+                  className="bg-gradient-to-r from-purple-700 to-purple-700 hover:from-purple-800 hover:to-purple-700"
                 >
                   {isStartingTranscription ? (
                     <>
@@ -1304,15 +1371,16 @@ export default function CallDetailPage() {
         {/* Participants Section - Only show if participants exist */}
         {participants.length > 0 && (
           <Card className="border border-gray-200 shadow-sm">
-            <CardHeader className="bg-gradient-to-r from-violet-50 to-purple-50 border-b border-gray-200">
+            <CardHeader className="bg-gradient-to-r from-purple-50 to-purple-50 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-xl font-bold text-gray-900 dark:text-gray-100">
-                  <Users className="w-5 h-5 text-violet-600" />
+                  <Users className="w-5 h-5 text-purple-700" />
                   Call Participants ({participants.length})
                 </CardTitle>
                 {participantAnalytics.length > 0 && (
-                  <Badge className="bg-violet-100 text-violet-700">
-                    {Math.round(participantAnalytics.reduce((sum, p) => sum + p.talkTime, 0) / 60)} min total talk time
+                  <Badge className="bg-purple-100 text-purple-800">
+                    {Math.round(participantAnalytics.reduce((sum, p) => sum + p.talkTime, 0) / 60)}{' '}
+                    min total talk time
                   </Badge>
                 )}
               </div>
@@ -1320,9 +1388,8 @@ export default function CallDetailPage() {
             <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {participants.map((participant, index) => {
-                  const analytics = participantAnalytics.find(a =>
-                    a.name === participant.name ||
-                    a.name.includes(participant.name)
+                  const analytics = participantAnalytics.find(
+                    (a) => a.name === participant.name || a.name.includes(participant.name)
                   );
 
                   return (
@@ -1333,22 +1400,25 @@ export default function CallDetailPage() {
                       {/* Role Badge */}
                       <Badge
                         className={cn(
-                          "absolute top-2 right-2 text-xs",
-                          participant.role === "sales_rep"
-                            ? "bg-purple-100 text-purple-700"
-                            : participant.role === "customer"
-                            ? "bg-blue-100 text-blue-700"
-                            : "bg-gray-100 text-gray-700"
+                          'absolute top-2 right-2 text-xs',
+                          participant.role === 'sales_rep'
+                            ? 'bg-purple-100 text-purple-700'
+                            : participant.role === 'customer'
+                              ? 'bg-blue-100 text-blue-700'
+                              : 'bg-gray-100 text-gray-700'
                         )}
                       >
-                        {participant.role === "sales_rep" ? "Sales Rep" :
-                         participant.role === "customer" ? "Customer" : "Other"}
+                        {participant.role === 'sales_rep'
+                          ? 'Sales Rep'
+                          : participant.role === 'customer'
+                            ? 'Customer'
+                            : 'Other'}
                       </Badge>
 
                       {/* Participant Info */}
                       <div className="space-y-2 mb-3">
                         <h4 className="font-semibold text-gray-900 dark:text-gray-100">
-                          {participant.name || "Unknown"}
+                          {participant.name || 'Unknown'}
                         </h4>
                         {participant.email && (
                           <p className="text-sm text-gray-600">{participant.email}</p>
@@ -1367,12 +1437,15 @@ export default function CallDetailPage() {
                           <div className="flex items-center justify-between text-sm">
                             <span className="text-gray-600">Talk Time</span>
                             <span className="font-medium">
-                              {Math.round(analytics.talkTime / 60)}m ({Math.round(analytics.talkTimePercentage)}%)
+                              {Math.round(analytics.talkTime / 60)}m (
+                              {Math.round(analytics.talkTimePercentage)}%)
                             </span>
                           </div>
                           <div className="flex items-center justify-between text-sm">
                             <span className="text-gray-600">Words Spoken</span>
-                            <span className="font-medium">{analytics.wordCount.toLocaleString()}</span>
+                            <span className="font-medium">
+                              {analytics.wordCount.toLocaleString()}
+                            </span>
                           </div>
                           <div className="flex items-center justify-between text-sm">
                             <span className="text-gray-600">Utterances</span>
@@ -1387,7 +1460,7 @@ export default function CallDetailPage() {
                                 <div
                                   className="bg-green-500"
                                   style={{
-                                    width: `${(analytics.sentiment.positive / analytics.utteranceCount) * 100}%`
+                                    width: `${(analytics.sentiment.positive / analytics.utteranceCount) * 100}%`,
                                   }}
                                   title={`Positive: ${analytics.sentiment.positive}`}
                                 />
@@ -1396,7 +1469,7 @@ export default function CallDetailPage() {
                                 <div
                                   className="bg-gray-400"
                                   style={{
-                                    width: `${(analytics.sentiment.neutral / analytics.utteranceCount) * 100}%`
+                                    width: `${(analytics.sentiment.neutral / analytics.utteranceCount) * 100}%`,
                                   }}
                                   title={`Neutral: ${analytics.sentiment.neutral}`}
                                 />
@@ -1405,7 +1478,7 @@ export default function CallDetailPage() {
                                 <div
                                   className="bg-red-500"
                                   style={{
-                                    width: `${(analytics.sentiment.negative / analytics.utteranceCount) * 100}%`
+                                    width: `${(analytics.sentiment.negative / analytics.utteranceCount) * 100}%`,
                                   }}
                                   title={`Negative: ${analytics.sentiment.negative}`}
                                 />
@@ -1423,7 +1496,7 @@ export default function CallDetailPage() {
               {participantAnalytics.length > 0 && (
                 <div className="mt-6 pt-6 border-t border-gray-200">
                   <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4 text-violet-600" />
+                    <MessageSquare className="w-4 h-4 text-purple-700" />
                     Conversation Analytics
                   </h4>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -1435,13 +1508,18 @@ export default function CallDetailPage() {
                     </div>
                     <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                       <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                        {Math.round(participantAnalytics.reduce((sum, p) => sum + p.talkTime, 0) / 60)}m
+                        {Math.round(
+                          participantAnalytics.reduce((sum, p) => sum + p.talkTime, 0) / 60
+                        )}
+                        m
                       </div>
                       <div className="text-xs text-gray-600">Total Duration</div>
                     </div>
                     <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                       <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                        {participantAnalytics.reduce((sum, p) => sum + p.wordCount, 0).toLocaleString()}
+                        {participantAnalytics
+                          .reduce((sum, p) => sum + p.wordCount, 0)
+                          .toLocaleString()}
                       </div>
                       <div className="text-xs text-gray-600">Total Words</div>
                     </div>
@@ -1465,20 +1543,20 @@ export default function CallDetailPage() {
             <div className="mb-4 h-20 bg-gray-100 rounded-lg relative overflow-hidden border border-gray-200">
               {/* Progress overlay */}
               <div
-                className="absolute inset-y-0 left-0 bg-gradient-to-r from-purple-500/30 to-purple-600/30 transition-all duration-100"
+                className="absolute inset-y-0 left-0 bg-gradient-to-r from-purple-700/30 to-purple-700/30 transition-all duration-100"
                 style={{ width: `${(currentTime / duration) * 100}%` }}
               />
               {/* Waveform bars simulation */}
               <div className="absolute inset-0 flex items-center gap-0.5 px-2">
                 {Array.from({ length: 100 }).map((_, i) => {
                   const height = Math.random() * 60 + 20;
-                  const isPast = (i / 100) < (currentTime / duration);
+                  const isPast = i / 100 < currentTime / duration;
                   return (
                     <div
                       key={i}
                       className={cn(
-                        "flex-1 rounded-full transition-colors",
-                        isPast ? "bg-purple-600" : "bg-gray-300"
+                        'flex-1 rounded-full transition-colors',
+                        isPast ? 'bg-purple-700' : 'bg-gray-300'
                       )}
                       style={{ height: `${height}%` }}
                     />
@@ -1495,7 +1573,7 @@ export default function CallDetailPage() {
                 disabled={!audioLoaded}
                 className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all ${
                   audioLoaded
-                    ? 'bg-purple-600 hover:bg-purple-700 hover:scale-105'
+                    ? 'bg-purple-700 hover:bg-purple-700 hover:scale-105'
                     : 'bg-gray-300 cursor-not-allowed'
                 }`}
               >
@@ -1510,22 +1588,24 @@ export default function CallDetailPage() {
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-2">
                   {audioLoaded ? (
-                    <span className={`text-sm font-mono font-semibold transition-all duration-300 ${
-                      isPlaying ? 'text-purple-600 animate-pulse' : 'text-gray-900 dark:text-gray-100'
-                    }`}>
+                    <span
+                      className={`text-sm font-mono font-semibold transition-all duration-300 ${
+                        isPlaying
+                          ? 'text-purple-700 animate-pulse'
+                          : 'text-gray-900 dark:text-gray-100'
+                      }`}
+                    >
                       <span className="text-lg">{formatTime(currentTime)}</span>
                       <span className="text-gray-400 mx-1">/</span>
                       <span className="text-base text-gray-600">{formatTime(duration)}</span>
                     </span>
                   ) : (
-                    <span className="text-sm text-gray-500 animate-pulse">
-                      Loading audio...
-                    </span>
+                    <span className="text-sm text-gray-500 animate-pulse">Loading audio...</span>
                   )}
                   <div className="flex items-center gap-2 text-xs text-gray-500">
-                    <span>{call.customer_name || "Customer"} Call</span>
+                    <span>{call.customer_name || 'Customer'} Call</span>
                     <span>•</span>
-                    <span>{call.sales_rep || "Sales Rep"}</span>
+                    <span>{call.sales_rep || 'Sales Rep'}</span>
                   </div>
                 </div>
 
@@ -1542,12 +1622,15 @@ export default function CallDetailPage() {
                   }}
                 >
                   <div
-                    className="absolute inset-y-0 left-0 bg-purple-600 transition-all"
+                    className="absolute inset-y-0 left-0 bg-purple-700 transition-all"
                     style={{ width: `${(currentTime / duration) * 100}%` }}
                   />
                   <div
-                    className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-purple-600 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
-                    style={{ left: `${(currentTime / duration) * 100}%`, transform: "translate(-50%, -50%)" }}
+                    className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-purple-700 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{
+                      left: `${(currentTime / duration) * 100}%`,
+                      transform: 'translate(-50%, -50%)',
+                    }}
                   />
                 </div>
               </div>
@@ -1584,195 +1667,198 @@ export default function CallDetailPage() {
         {/* Transcript Section - Full Width */}
         <Card className="border border-gray-200 shadow-sm">
           <CardHeader className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-            <CardTitle className="text-2xl font-bold text-gray-900 dark:text-gray-100">Call Transcript</CardTitle>
+            <CardTitle className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              Call Transcript
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-6 space-y-4 max-h-[800px] overflow-y-auto">
-                {transcript && transcript.utterances && transcript.utterances.length > 0 ? (
-                  transcript.utterances.map((utterance, index) => {
-                    const sentiment = sentimentConfig[utterance.sentiment as keyof typeof sentimentConfig] || sentimentConfig.neutral;
+            {transcript && transcript.utterances && transcript.utterances.length > 0 ? (
+              transcript.utterances.map((utterance, index) => {
+                const sentiment =
+                  sentimentConfig[utterance.sentiment as keyof typeof sentimentConfig] ||
+                  sentimentConfig.neutral;
 
-                    // Map speaker to participant name
-                    const speakerName = speakerMapping[utterance.speaker] || utterance.speaker;
+                // Map speaker to participant name
+                const speakerName = speakerMapping[utterance.speaker] || utterance.speaker;
 
-                    // Find the participant for this speaker
-                    const participant = participants.find(p =>
-                      p.name === speakerName ||
-                      speakerMapping[utterance.speaker] === p.name
-                    );
+                // Find the participant for this speaker
+                const participant = participants.find(
+                  (p) => p.name === speakerName || speakerMapping[utterance.speaker] === p.name
+                );
 
-                    const isRep = participant?.role === 'sales_rep' ||
-                                  utterance.speaker.toLowerCase().includes('rep') ||
-                                  utterance.speaker === 'A';
+                const isRep =
+                  participant?.role === 'sales_rep' ||
+                  utterance.speaker.toLowerCase().includes('rep') ||
+                  utterance.speaker === 'A';
 
-                    // Get initials for avatar
-                    const getInitials = (name: string) => {
-                      const parts = name.split(' ');
-                      if (parts.length >= 2) {
-                        return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-                      }
-                      return name.substring(0, 2).toUpperCase();
-                    };
+                // Get initials for avatar
+                const getInitials = (name: string) => {
+                  const parts = name.split(' ');
+                  if (parts.length >= 2) {
+                    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+                  }
+                  return name.substring(0, 2).toUpperCase();
+                };
 
-                    return (
-                      <div key={utterance.id} className="flex gap-3 group">
-                        {/* Avatar */}
-                        <div className="flex-shrink-0">
-                          <div
-                            className={cn(
-                              "w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold",
-                              participant?.role === 'sales_rep' ? "bg-purple-600 text-white" :
-                              participant?.role === 'customer' ? "bg-blue-500 text-white" :
-                              isRep ? "bg-purple-600 text-white" : "bg-gray-300 text-gray-700"
-                            )}
-                          >
-                            {speakerName && speakerName !== utterance.speaker
-                              ? getInitials(speakerName)
-                              : utterance.speaker.substring(0, 2).toUpperCase()}
-                          </div>
-                        </div>
-
-                        {/* Message Content */}
-                        <div className="flex-1 min-w-0">
-                          {/* Header */}
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">
-                              {speakerName}
-                            </span>
-                            {participant?.company && (
-                              <span className="text-xs text-gray-500">
-                                • {participant.company}
-                              </span>
-                            )}
-                            <button
-                              onClick={() => jumpToTimestamp(utterance.start_time)}
-                              className="text-xs text-gray-500 hover:text-purple-600 font-medium transition-colors"
-                            >
-                              [{formatTime(utterance.start_time)}]
-                            </button>
-                            <span className="text-lg">{sentiment.emoji}</span>
-
-                            {/* Jump to Audio button (appears on hover) */}
-                            <button
-                              onClick={() => jumpToTimestamp(utterance.start_time)}
-                              className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-xs text-purple-600 hover:text-purple-700 font-medium flex items-center gap-1"
-                            >
-                              <ExternalLink className="w-3 h-3" />
-                              Jump to Audio
-                            </button>
-                          </div>
-
-                          {/* Message Bubble */}
-                          <div
-                            className={cn(
-                              "p-4 rounded-lg border max-w-[90%]",
-                              isRep
-                                ? "bg-purple-50 border-purple-100"
-                                : "bg-gray-100 border-gray-200"
-                            )}
-                          >
-                            <p className="text-base text-gray-900 dark:text-gray-100 leading-relaxed">
-                              {utterance.text}
-                            </p>
-                          </div>
-                        </div>
+                return (
+                  <div key={utterance.id} className="flex gap-3 group">
+                    {/* Avatar */}
+                    <div className="flex-shrink-0">
+                      <div
+                        className={cn(
+                          'w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold',
+                          participant?.role === 'sales_rep'
+                            ? 'bg-purple-700 text-white'
+                            : participant?.role === 'customer'
+                              ? 'bg-blue-500 text-white'
+                              : isRep
+                                ? 'bg-purple-700 text-white'
+                                : 'bg-gray-300 text-gray-700'
+                        )}
+                      >
+                        {speakerName && speakerName !== utterance.speaker
+                          ? getInitials(speakerName)
+                          : utterance.speaker.substring(0, 2).toUpperCase()}
                       </div>
-                    );
-                  })
-                ) : transcript && transcript.full_text ? (
-                  <div className="text-gray-700 whitespace-pre-wrap leading-relaxed">
-                    {transcript.full_text}
+                    </div>
+
+                    {/* Message Content */}
+                    <div className="flex-1 min-w-0">
+                      {/* Header */}
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">
+                          {speakerName}
+                        </span>
+                        {participant?.company && (
+                          <span className="text-xs text-gray-500">• {participant.company}</span>
+                        )}
+                        <button
+                          onClick={() => jumpToTimestamp(utterance.start_time)}
+                          className="text-xs text-gray-500 hover:text-purple-700 font-medium transition-colors"
+                        >
+                          [{formatTime(utterance.start_time)}]
+                        </button>
+                        <span className="text-lg">{sentiment.emoji}</span>
+
+                        {/* Jump to Audio button (appears on hover) */}
+                        <button
+                          onClick={() => jumpToTimestamp(utterance.start_time)}
+                          className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-xs text-purple-700 hover:text-purple-700 font-medium flex items-center gap-1"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          Jump to Audio
+                        </button>
+                      </div>
+
+                      {/* Message Bubble */}
+                      <div
+                        className={cn(
+                          'p-4 rounded-lg border max-w-[90%]',
+                          isRep ? 'bg-purple-50 border-purple-100' : 'bg-gray-100 border-gray-200'
+                        )}
+                      >
+                        <p className="text-base text-gray-900 dark:text-gray-100 leading-relaxed">
+                          {utterance.text}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500 font-medium">
-                      {call.status === "processing" || call.status === "transcribing"
-                        ? "Transcript is being processed..."
-                        : "No transcript available for this call."}
-                    </p>
-                  </div>
-                )}
+                );
+              })
+            ) : transcript && transcript.full_text ? (
+              <div className="text-gray-700 whitespace-pre-wrap leading-relaxed">
+                {transcript.full_text}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500 font-medium">
+                  {call.status === 'processing' || call.status === 'transcribing'
+                    ? 'Transcript is being processed...'
+                    : 'No transcript available for this call.'}
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
         {/* Optional Typed Notes Section */}
-        {callDetail && (callDetail.call.status === 'completed' || callDetail.call.status === 'transcribed' || callDetail.call.status === 'processing' || callDetail.call.status === 'extracting') && (
-          <Card className="border border-gray-200 shadow-sm">
-            <CardHeader
-              className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              onClick={() => setNotesExpanded(!notesExpanded)}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <StickyNote className="w-5 h-5 text-gray-600" />
-                  <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                    Typed Notes
-                  </CardTitle>
-                  <span className="text-sm text-gray-500">
-                    (Optional - Add any typed notes from the call to improve extraction accuracy)
-                  </span>
-                  {notesSaving && (
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                      Saving...
-                    </div>
-                  )}
-                  {notesSaved && (
-                    <div className="flex items-center gap-2 text-sm text-green-600">
-                      <Check className="w-3 h-3" />
-                      Notes saved
-                    </div>
-                  )}
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="p-1 h-auto"
-                >
-                  {notesExpanded ? (
-                    <ChevronUp className="w-5 h-5 text-gray-500" />
-                  ) : (
-                    <ChevronDown className="w-5 h-5 text-gray-500" />
-                  )}
-                </Button>
-              </div>
-            </CardHeader>
-
-            {notesExpanded && (
-              <CardContent className="p-6">
-                <div className="space-y-3">
-                  <p className="text-sm text-gray-600">
-                    Paste or type any notes you took during the call. These will be used to enhance the CRM extraction accuracy.
-                    The transcript remains the primary source - notes are only used for additional context.
-                  </p>
-                  <textarea
-                    value={typedNotes}
-                    onChange={(e) => handleNotesChange(e.target.value)}
-                    placeholder="Enter your typed notes here... (e.g., customer mentioned budget of $50k, considering Q2 implementation, main competitor is XYZ Corp)"
-                    className="w-full min-h-[150px] p-4 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-y text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-800"
-                    maxLength={5000}
-                  />
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs text-gray-500">
-                      {typedNotes.length} / 5000 characters
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Auto-saves as you type
-                    </p>
+        {callDetail &&
+          (callDetail.call.status === 'completed' ||
+            callDetail.call.status === 'transcribed' ||
+            callDetail.call.status === 'processing' ||
+            callDetail.call.status === 'extracting') && (
+            <Card className="border border-gray-200 shadow-sm">
+              <CardHeader
+                className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                onClick={() => setNotesExpanded(!notesExpanded)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <StickyNote className="w-5 h-5 text-gray-600" />
+                    <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                      Typed Notes
+                    </CardTitle>
+                    <span className="text-sm text-gray-500">
+                      (Optional - Add any typed notes from the call to improve extraction accuracy)
+                    </span>
+                    {notesSaving && (
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        Saving...
+                      </div>
+                    )}
+                    {notesSaved && (
+                      <div className="flex items-center gap-2 text-sm text-green-600">
+                        <Check className="w-3 h-3" />
+                        Notes saved
+                      </div>
+                    )}
                   </div>
+                  <Button variant="ghost" size="sm" className="p-1 h-auto">
+                    {notesExpanded ? (
+                      <ChevronUp className="w-5 h-5 text-gray-500" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-gray-500" />
+                    )}
+                  </Button>
                 </div>
-              </CardContent>
-            )}
-          </Card>
-        )}
+              </CardHeader>
+
+              {notesExpanded && (
+                <CardContent className="p-6">
+                  <div className="space-y-3">
+                    <p className="text-sm text-gray-600">
+                      Paste or type any notes you took during the call. These will be used to
+                      enhance the CRM extraction accuracy. The transcript remains the primary source
+                      - notes are only used for additional context.
+                    </p>
+                    <textarea
+                      value={typedNotes}
+                      onChange={(e) => handleNotesChange(e.target.value)}
+                      placeholder="Enter your typed notes here... (e.g., customer mentioned budget of $50k, considering Q2 implementation, main competitor is XYZ Corp)"
+                      className="w-full min-h-[150px] p-4 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-700 focus:border-transparent resize-y text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-800"
+                      maxLength={5000}
+                    />
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-gray-500">{typedNotes.length} / 5000 characters</p>
+                      <p className="text-xs text-gray-500">Auto-saves as you type</p>
+                    </div>
+                  </div>
+                </CardContent>
+              )}
+            </Card>
+          )}
 
         {/* CRM Output Section - Full Width */}
         <Card className="border border-gray-200 dark:border-gray-700 shadow-sm">
           <CardHeader className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <FileText className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                <CardTitle className="text-2xl font-bold text-gray-900 dark:text-gray-100">CRM Output</CardTitle>
+                <FileText className="w-5 h-5 text-purple-700 dark:text-purple-400" />
+                <CardTitle className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  CRM Output
+                </CardTitle>
               </div>
               <div className="flex items-center gap-4">
                 {callDetail?.call.template && (
@@ -1809,18 +1895,20 @@ export default function CallDetailPage() {
             </div>
           </CardHeader>
           <CardContent className="p-6">
-                {/* Single content area that changes based on activeTab */}
-                <div className="mt-4">
-                  <div className={`p-6 rounded-lg border ${
-                    activeTab.startsWith('template_')
-                      ? 'bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border-purple-200 dark:border-purple-700'
-                      : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700'
-                  } min-h-[400px] max-h-[600px] overflow-y-auto`}>
-                    <pre className="text-base text-gray-900 dark:text-gray-100 whitespace-pre-wrap font-mono leading-relaxed">
-                      {generateCRMOutput(activeTab)}
-                    </pre>
-                  </div>
-                </div>
+            {/* Single content area that changes based on activeTab */}
+            <div className="mt-4">
+              <div
+                className={`p-6 rounded-lg border ${
+                  activeTab.startsWith('template_')
+                    ? 'bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border-purple-200 dark:border-purple-700'
+                    : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700'
+                } min-h-[400px] max-h-[600px] overflow-y-auto`}
+              >
+                <pre className="text-base text-gray-900 dark:text-gray-100 whitespace-pre-wrap font-mono leading-relaxed">
+                  {generateCRMOutput(activeTab)}
+                </pre>
+              </div>
+            </div>
 
             {/* Action Buttons Row */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
@@ -1831,7 +1919,7 @@ export default function CallDetailPage() {
                     activeTab.charAt(0).toUpperCase() + activeTab.slice(1)
                   )
                 }
-                className="h-12 bg-purple-600 hover:bg-purple-700 text-white text-base font-semibold shadow-lg hover:shadow-xl transition-all group"
+                className="h-12 bg-purple-700 hover:bg-purple-700 text-white text-base font-semibold shadow-lg hover:shadow-xl transition-all group"
               >
                 <Copy className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
                 Copy to Clipboard
@@ -1839,7 +1927,11 @@ export default function CallDetailPage() {
 
               <Button
                 onClick={() => setShowEmailModal(true)}
-                disabled={!transcript || (!transcript.full_text && (!transcript.utterances || transcript.utterances.length === 0))}
+                disabled={
+                  !transcript ||
+                  (!transcript.full_text &&
+                    (!transcript.utterances || transcript.utterances.length === 0))
+                }
                 className="h-12 bg-blue-600 text-white hover:bg-blue-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Mail className="w-4 h-4 mr-2" />

@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useState, useMemo, useEffect, useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { mockTemplates } from "@/lib/mockData";
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { mockTemplates } from '@/lib/mockData';
 import {
   FileText,
   Search,
@@ -21,8 +21,8 @@ import {
   TrendingUp,
   Loader2,
   Save,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 import {
   Sheet,
   SheetContent,
@@ -30,7 +30,7 @@ import {
   SheetTitle,
   SheetDescription,
   SheetClose,
-} from "@/components/ui/sheet";
+} from '@/components/ui/sheet';
 import {
   Dialog,
   DialogContent,
@@ -38,25 +38,25 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Template, TemplateField } from "@/lib/types";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useAuth } from "@/lib/AuthContext";
-import { createClient } from "@/lib/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+} from '@/components/ui/select';
+import { Template, TemplateField } from '@/lib/types';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useAuth } from '@/lib/AuthContext';
+import { createClient } from '@/lib/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
 
 // =====================================================
 // INTERFACES
@@ -86,9 +86,11 @@ export default function TemplatesPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<"most-used" | "recent" | "alphabetical" | "newest">("most-used");
-  const [filterCategory, setFilterCategory] = useState<"all" | "standard" | "custom">("all");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'most-used' | 'recent' | 'alphabetical' | 'newest'>(
+    'most-used'
+  );
+  const [filterCategory, setFilterCategory] = useState<'all' | 'standard' | 'custom'>('all');
   const [templateStats, setTemplateStats] = useState<TemplateStats>({});
   const [customTemplates, setCustomTemplates] = useState<CustomTemplate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -99,15 +101,15 @@ export default function TemplatesPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<CustomTemplate | null>(null);
   const [templateForm, setTemplateForm] = useState({
-    name: "",
-    description: "",
-    fields: [] as TemplateField[]
+    name: '',
+    description: '',
+    fields: [] as TemplateField[],
   });
   const [newField, setNewField] = useState({
-    fieldName: "",
-    fieldType: "text" as "text" | "number" | "date" | "picklist" | "textarea" | "email",
-    description: "",
-    picklistValues: [] as string[]
+    fieldName: '',
+    fieldType: 'text' as 'text' | 'number' | 'date' | 'picklist' | 'textarea' | 'email',
+    description: '',
+    picklistValues: [] as string[],
   });
 
   // =====================================================
@@ -141,16 +143,17 @@ export default function TemplatesPage() {
           console.error('Error fetching custom templates:', customError);
         } else {
           // Transform fields to match frontend format
-          const formattedTemplates = (customData || []).map(template => ({
+          const formattedTemplates = (customData || []).map((template) => ({
             ...template,
-            fields: template.template_fields?.map((f: any) => ({
-              id: f.id,
-              fieldName: f.field_name,
-              fieldType: f.field_type,
-              description: f.description,
-              picklistValues: f.picklist_values,
-              required: f.is_required
-            })) || []
+            fields:
+              template.template_fields?.map((f: any) => ({
+                id: f.id,
+                fieldName: f.field_name,
+                fieldType: f.field_type,
+                description: f.description,
+                picklistValues: f.picklist_values,
+                required: f.is_required,
+              })) || [],
           }));
           setCustomTemplates(formattedTemplates);
         }
@@ -167,25 +170,25 @@ export default function TemplatesPage() {
           const stats: TemplateStats = {};
 
           // Calculate stats for standard templates (simulated)
-          mockTemplates.forEach(template => {
+          mockTemplates.forEach((template) => {
             const callCount = callsData.length || 0;
             let usageCount = 0;
             if (template.category === 'standard') {
-              usageCount = Math.floor(callCount * (template.usageCount || 0) / 100);
+              usageCount = Math.floor((callCount * (template.usageCount || 0)) / 100);
             }
 
             stats[template.id] = {
               usageCount: usageCount,
-              lastUsed: callCount > 0 && callsData ? callsData[0].created_at : null
+              lastUsed: callCount > 0 && callsData ? callsData[0].created_at : null,
             };
           });
 
           // Calculate stats for custom templates
-          customData?.forEach(template => {
-            const templateCalls = callsData.filter(call => call.template_id === template.id);
+          customData?.forEach((template) => {
+            const templateCalls = callsData.filter((call) => call.template_id === template.id);
             stats[template.id] = {
               usageCount: templateCalls.length,
-              lastUsed: templateCalls.length > 0 ? templateCalls[0].created_at : null
+              lastUsed: templateCalls.length > 0 ? templateCalls[0].created_at : null,
             };
           });
 
@@ -218,9 +221,9 @@ export default function TemplatesPage() {
   const handleCreateTemplate = async () => {
     if (!user || !templateForm.name.trim()) {
       toast({
-        title: "Validation Error",
-        description: "Template name is required",
-        variant: "destructive"
+        title: 'Validation Error',
+        description: 'Template name is required',
+        variant: 'destructive',
       });
       return;
     }
@@ -236,7 +239,7 @@ export default function TemplatesPage() {
           name: templateForm.name,
           description: templateForm.description,
           category: 'custom',
-          field_count: templateForm.fields.length
+          field_count: templateForm.fields.length,
         })
         .select()
         .single();
@@ -252,7 +255,7 @@ export default function TemplatesPage() {
           description: field.description || '',
           is_required: false, // Default to false since the interface doesn't have this property
           sort_order: index,
-          picklist_values: field.picklistValues || null
+          picklist_values: field.picklistValues || null,
         }));
 
         const { error: fieldsError } = await supabase
@@ -261,10 +264,7 @@ export default function TemplatesPage() {
 
         if (fieldsError) {
           // If fields insert fails, delete the template
-          await supabase
-            .from('custom_templates')
-            .delete()
-            .eq('id', templateData.id);
+          await supabase.from('custom_templates').delete().eq('id', templateData.id);
           throw fieldsError;
         }
       }
@@ -281,30 +281,31 @@ export default function TemplatesPage() {
       // Transform fields to match frontend format
       const formattedTemplate = {
         ...completeTemplate,
-        fields: completeTemplate.template_fields?.map((f: any) => ({
-          id: f.id,
-          fieldName: f.field_name,
-          fieldType: f.field_type,
-          description: f.description,
-          picklistValues: f.picklist_values,
-          required: f.is_required
-        })) || []
+        fields:
+          completeTemplate.template_fields?.map((f: any) => ({
+            id: f.id,
+            fieldName: f.field_name,
+            fieldType: f.field_type,
+            description: f.description,
+            picklistValues: f.picklist_values,
+            required: f.is_required,
+          })) || [],
       };
 
-      setCustomTemplates(prev => [formattedTemplate, ...prev]);
+      setCustomTemplates((prev) => [formattedTemplate, ...prev]);
       setIsCreateDialogOpen(false);
-      setTemplateForm({ name: "", description: "", fields: [] });
+      setTemplateForm({ name: '', description: '', fields: [] });
 
       toast({
-        title: "✓ Template Created",
-        description: `${templateForm.name} has been created successfully.`
+        title: '✓ Template Created',
+        description: `${templateForm.name} has been created successfully.`,
       });
     } catch (err: any) {
       console.error('Error creating template:', err);
       toast({
-        title: "Error",
-        description: err.message || "Failed to create template",
-        variant: "destructive"
+        title: 'Error',
+        description: err.message || 'Failed to create template',
+        variant: 'destructive',
       });
     }
   };
@@ -312,9 +313,9 @@ export default function TemplatesPage() {
   const handleUpdateTemplate = async () => {
     if (!editingTemplate || !templateForm.name.trim()) {
       toast({
-        title: "Validation Error",
-        description: "Template name is required",
-        variant: "destructive"
+        title: 'Validation Error',
+        description: 'Template name is required',
+        variant: 'destructive',
       });
       return;
     }
@@ -328,7 +329,7 @@ export default function TemplatesPage() {
         .update({
           name: templateForm.name,
           description: templateForm.description,
-          field_count: templateForm.fields.length
+          field_count: templateForm.fields.length,
         })
         .eq('id', editingTemplate.id)
         .select()
@@ -353,7 +354,7 @@ export default function TemplatesPage() {
           description: field.description || '',
           is_required: false, // Default to false since the interface doesn't have this property
           sort_order: index,
-          picklist_values: field.picklistValues || null
+          picklist_values: field.picklistValues || null,
         }));
 
         const { error: fieldsError } = await supabase
@@ -375,46 +376,47 @@ export default function TemplatesPage() {
       // Transform fields to match frontend format
       const formattedTemplate = {
         ...completeTemplate,
-        fields: completeTemplate.template_fields?.map((f: any) => ({
-          id: f.id,
-          fieldName: f.field_name,
-          fieldType: f.field_type,
-          description: f.description,
-          picklistValues: f.picklist_values,
-          required: f.is_required
-        })) || []
+        fields:
+          completeTemplate.template_fields?.map((f: any) => ({
+            id: f.id,
+            fieldName: f.field_name,
+            fieldType: f.field_type,
+            description: f.description,
+            picklistValues: f.picklist_values,
+            required: f.is_required,
+          })) || [],
       };
 
-      setCustomTemplates(prev =>
-        prev.map(t => t.id === formattedTemplate.id ? formattedTemplate : t)
+      setCustomTemplates((prev) =>
+        prev.map((t) => (t.id === formattedTemplate.id ? formattedTemplate : t))
       );
       setIsEditDialogOpen(false);
       setEditingTemplate(null);
-      setTemplateForm({ name: "", description: "", fields: [] });
+      setTemplateForm({ name: '', description: '', fields: [] });
 
       toast({
-        title: "✓ Template Updated",
-        description: `${templateForm.name} has been updated successfully.`
+        title: '✓ Template Updated',
+        description: `${templateForm.name} has been updated successfully.`,
       });
     } catch (err: any) {
       console.error('Error updating template:', err);
       toast({
-        title: "Error",
-        description: err.message || "Failed to update template",
-        variant: "destructive"
+        title: 'Error',
+        description: err.message || 'Failed to update template',
+        variant: 'destructive',
       });
     }
   };
 
   const handleDeleteTemplate = async (templateId: string) => {
-    if (!confirm("Are you sure you want to delete this template?")) return;
+    if (!confirm('Are you sure you want to delete this template?')) return;
 
     try {
       if (!user) {
         toast({
-          title: "Error",
-          description: "You must be logged in to delete templates",
-          variant: "destructive"
+          title: 'Error',
+          description: 'You must be logged in to delete templates',
+          variant: 'destructive',
         });
         return;
       }
@@ -425,23 +427,23 @@ export default function TemplatesPage() {
         .from('custom_templates')
         .update({ deleted_at: new Date().toISOString() })
         .eq('id', templateId)
-        .eq('user_id', user.id);  // Explicitly filter by user_id
+        .eq('user_id', user.id); // Explicitly filter by user_id
 
       if (error) throw error;
 
-      setCustomTemplates(prev => prev.filter(t => t.id !== templateId));
+      setCustomTemplates((prev) => prev.filter((t) => t.id !== templateId));
       setSelectedTemplate(null);
 
       toast({
-        title: "✓ Template Deleted",
-        description: "Template has been deleted successfully."
+        title: '✓ Template Deleted',
+        description: 'Template has been deleted successfully.',
       });
     } catch (err: any) {
       console.error('Error deleting template:', err);
       toast({
-        title: "Error",
-        description: err.message || "Failed to delete template",
-        variant: "destructive"
+        title: 'Error',
+        description: err.message || 'Failed to delete template',
+        variant: 'destructive',
       });
     }
   };
@@ -449,8 +451,8 @@ export default function TemplatesPage() {
   const handleDuplicateTemplate = async (template: Template | CustomTemplate) => {
     setTemplateForm({
       name: `${template.name} (Copy)`,
-      description: 'description' in template ? template.description || "" : "",
-      fields: template.fields
+      description: 'description' in template ? template.description || '' : '',
+      fields: template.fields,
     });
     setIsCreateDialogOpen(true);
   };
@@ -462,9 +464,9 @@ export default function TemplatesPage() {
   const handleAddField = () => {
     if (!newField.fieldName.trim()) {
       toast({
-        title: "Validation Error",
-        description: "Field name is required",
-        variant: "destructive"
+        title: 'Validation Error',
+        description: 'Field name is required',
+        variant: 'destructive',
       });
       return;
     }
@@ -474,26 +476,26 @@ export default function TemplatesPage() {
       fieldName: newField.fieldName,
       fieldType: newField.fieldType,
       description: newField.description,
-      picklistValues: newField.fieldType === 'picklist' ? newField.picklistValues : undefined
+      picklistValues: newField.fieldType === 'picklist' ? newField.picklistValues : undefined,
     };
 
-    setTemplateForm(prev => ({
+    setTemplateForm((prev) => ({
       ...prev,
-      fields: [...prev.fields, field]
+      fields: [...prev.fields, field],
     }));
 
     setNewField({
-      fieldName: "",
-      fieldType: "text",
-      description: "",
-      picklistValues: []
+      fieldName: '',
+      fieldType: 'text',
+      description: '',
+      picklistValues: [],
     });
   };
 
   const handleRemoveField = (fieldId: string) => {
-    setTemplateForm(prev => ({
+    setTemplateForm((prev) => ({
       ...prev,
-      fields: prev.fields.filter(f => f.id !== fieldId)
+      fields: prev.fields.filter((f) => f.id !== fieldId),
     }));
   };
 
@@ -502,21 +504,21 @@ export default function TemplatesPage() {
   // =====================================================
 
   const allTemplates = useMemo(() => {
-    const standardWithStats = mockTemplates.map(template => {
+    const standardWithStats = mockTemplates.map((template) => {
       const stats = templateStats[template.id];
       return {
         ...template,
         usageCount: stats?.usageCount || 0,
-        lastModified: stats?.lastUsed || template.lastModified
+        lastModified: stats?.lastUsed || template.lastModified,
       };
     });
 
-    const customWithStats = customTemplates.map(template => {
+    const customWithStats = customTemplates.map((template) => {
       const stats = templateStats[template.id];
       return {
         ...template,
         usageCount: stats?.usageCount || 0,
-        lastModified: stats?.lastUsed || template.updated_at
+        lastModified: stats?.lastUsed || template.updated_at,
       };
     });
 
@@ -528,34 +530,37 @@ export default function TemplatesPage() {
   // =====================================================
 
   const filteredTemplates = useMemo(() => {
-    let result = allTemplates.filter((template) =>
-      template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      template.fields.some(field =>
-        field.fieldName.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+    let result = allTemplates.filter(
+      (template) =>
+        template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        template.fields.some((field) =>
+          field.fieldName.toLowerCase().includes(searchQuery.toLowerCase())
+        )
     );
 
     // Apply category filter
-    if (filterCategory !== "all") {
-      result = result.filter(t => t.category === filterCategory);
+    if (filterCategory !== 'all') {
+      result = result.filter((t) => t.category === filterCategory);
     }
 
     // Apply sorting
     switch (sortBy) {
-      case "most-used":
+      case 'most-used':
         result.sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0));
         break;
-      case "recent":
-        result.sort((a, b) =>
-          new Date(b.lastModified || "").getTime() - new Date(a.lastModified || "").getTime()
+      case 'recent':
+        result.sort(
+          (a, b) =>
+            new Date(b.lastModified || '').getTime() - new Date(a.lastModified || '').getTime()
         );
         break;
-      case "alphabetical":
+      case 'alphabetical':
         result.sort((a, b) => a.name.localeCompare(b.name));
         break;
-      case "newest":
-        result.sort((a, b) =>
-          new Date(b.lastModified || "").getTime() - new Date(a.lastModified || "").getTime()
+      case 'newest':
+        result.sort(
+          (a, b) =>
+            new Date(b.lastModified || '').getTime() - new Date(a.lastModified || '').getTime()
         );
         break;
     }
@@ -564,13 +569,13 @@ export default function TemplatesPage() {
   }, [allTemplates, searchQuery, sortBy, filterCategory]);
 
   // Group templates by category
-  const standardTemplates = useMemo(() =>
-    filteredTemplates.filter((t) => t.category === "standard"),
+  const standardTemplates = useMemo(
+    () => filteredTemplates.filter((t) => t.category === 'standard'),
     [filteredTemplates]
   );
 
-  const customTemplatesList = useMemo(() =>
-    filteredTemplates.filter((t) => t.category === "custom"),
+  const customTemplatesList = useMemo(
+    () => filteredTemplates.filter((t) => t.category === 'custom'),
     [filteredTemplates]
   );
 
@@ -581,34 +586,50 @@ export default function TemplatesPage() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // "/" to focus search
-      if (e.key === "/" && !selectedTemplate && !isCreateDialogOpen && !isEditDialogOpen) {
+      if (e.key === '/' && !selectedTemplate && !isCreateDialogOpen && !isEditDialogOpen) {
         e.preventDefault();
         searchInputRef.current?.focus();
       }
       // Escape to clear search or close modal
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         if (selectedTemplate) {
           setSelectedTemplate(null);
         } else if (searchQuery) {
-          setSearchQuery("");
+          setSearchQuery('');
         }
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedTemplate, searchQuery, isCreateDialogOpen, isEditDialogOpen]);
 
   // Template icons config
   const getTemplateIcon = (templateName: string) => {
-    if (templateName.includes("Salesforce")) {
-      return { bg: "bg-blue-100", iconColor: "text-blue-600", icon: <FileText className="w-6 h-6" /> };
-    } else if (templateName.includes("HubSpot")) {
-      return { bg: "bg-orange-100", iconColor: "text-orange-600", icon: <FileText className="w-6 h-6" /> };
-    } else if (templateName.includes("Pipedrive")) {
-      return { bg: "bg-green-100", iconColor: "text-green-600", icon: <FileText className="w-6 h-6" /> };
+    if (templateName.includes('Salesforce')) {
+      return {
+        bg: 'bg-blue-100',
+        iconColor: 'text-blue-600',
+        icon: <FileText className="w-6 h-6" />,
+      };
+    } else if (templateName.includes('HubSpot')) {
+      return {
+        bg: 'bg-orange-100',
+        iconColor: 'text-orange-600',
+        icon: <FileText className="w-6 h-6" />,
+      };
+    } else if (templateName.includes('Pipedrive')) {
+      return {
+        bg: 'bg-green-100',
+        iconColor: 'text-green-600',
+        icon: <FileText className="w-6 h-6" />,
+      };
     } else {
-      return { bg: "bg-purple-100", iconColor: "text-purple-600", icon: <FileText className="w-6 h-6" /> };
+      return {
+        bg: 'bg-purple-100',
+        iconColor: 'text-purple-700',
+        icon: <FileText className="w-6 h-6" />,
+      };
     }
   };
 
@@ -628,13 +649,10 @@ export default function TemplatesPage() {
       >
         {/* Icon */}
         <div className="flex justify-center mb-4">
-          <div className={cn(
-            "w-16 h-16 rounded-full flex items-center justify-center",
-            iconConfig.bg
-          )}>
-            <div className={iconConfig.iconColor}>
-              {iconConfig.icon}
-            </div>
+          <div
+            className={cn('w-16 h-16 rounded-full flex items-center justify-center', iconConfig.bg)}
+          >
+            <div className={iconConfig.iconColor}>{iconConfig.icon}</div>
           </div>
         </div>
 
@@ -684,8 +702,8 @@ export default function TemplatesPage() {
                       setEditingTemplate(template);
                       setTemplateForm({
                         name: template.name,
-                        description: template.description || "",
-                        fields: template.fields
+                        description: template.description || '',
+                        fields: template.fields,
                       });
                       setIsEditDialogOpen(true);
                     }}
@@ -726,9 +744,9 @@ export default function TemplatesPage() {
     return (
       <div
         onClick={() => setIsCreateDialogOpen(true)}
-        className="group bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-6 cursor-pointer transition-all duration-300 hover:bg-purple-50 hover:border-purple-400 flex flex-col items-center justify-center min-h-[240px]"
+        className="group bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-6 cursor-pointer transition-all duration-300 hover:bg-purple-100 hover:border-purple-400 flex flex-col items-center justify-center min-h-[240px]"
       >
-        <div className="w-12 h-12 flex items-center justify-center mb-4 text-purple-600 group-hover:scale-110 transition-transform duration-300">
+        <div className="w-12 h-12 flex items-center justify-center mb-4 text-purple-700 group-hover:scale-110 transition-transform duration-300">
           <Plus className="w-12 h-12" />
         </div>
         <h3 className="font-semibold text-gray-900 mb-2">Create Custom Template</h3>
@@ -748,7 +766,7 @@ export default function TemplatesPage() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
         <div className="flex items-center justify-center p-8 lg:p-16">
           <div className="text-center">
-            <Loader2 className="w-12 h-12 animate-spin text-violet-600 mx-auto mb-4" />
+            <Loader2 className="w-12 h-12 animate-spin text-purple-700 mx-auto mb-4" />
             <p className="text-slate-600 font-medium">Loading templates...</p>
           </div>
         </div>
@@ -780,7 +798,7 @@ export default function TemplatesPage() {
                 placeholder="Search templates..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-2 border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                className="pl-10 pr-4 py-2 border-gray-300 focus:ring-2 focus:ring-purple-700 focus:border-purple-700"
               />
             </div>
 
@@ -789,20 +807,27 @@ export default function TemplatesPage() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="flex-1 sm:flex-initial">
-                    Sort by: {sortBy === "most-used" ? "Most Used" : sortBy === "recent" ? "Recently Modified" : sortBy === "alphabetical" ? "Alphabetical" : "Newest First"}
+                    Sort by:{' '}
+                    {sortBy === 'most-used'
+                      ? 'Most Used'
+                      : sortBy === 'recent'
+                        ? 'Recently Modified'
+                        : sortBy === 'alphabetical'
+                          ? 'Alphabetical'
+                          : 'Newest First'}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setSortBy("most-used")}>
+                  <DropdownMenuItem onClick={() => setSortBy('most-used')}>
                     Most Used
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSortBy("recent")}>
+                  <DropdownMenuItem onClick={() => setSortBy('recent')}>
                     Recently Modified
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSortBy("alphabetical")}>
+                  <DropdownMenuItem onClick={() => setSortBy('alphabetical')}>
                     Alphabetical
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSortBy("newest")}>
+                  <DropdownMenuItem onClick={() => setSortBy('newest')}>
                     Newest First
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -810,7 +835,7 @@ export default function TemplatesPage() {
 
               <Button
                 onClick={() => setIsCreateDialogOpen(true)}
-                className="bg-purple-600 hover:bg-purple-700 text-white flex-1 sm:flex-initial"
+                className="bg-purple-700 hover:bg-purple-700 text-white flex-1 sm:flex-initial"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Create Custom Template
@@ -821,34 +846,34 @@ export default function TemplatesPage() {
           {/* Filter Chips */}
           <div className="flex gap-2 mt-4">
             <button
-              onClick={() => setFilterCategory("all")}
+              onClick={() => setFilterCategory('all')}
               className={cn(
-                "px-4 py-1.5 rounded-full text-sm font-medium transition-colors",
-                filterCategory === "all"
-                  ? "bg-purple-600 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                'px-4 py-1.5 rounded-full text-sm font-medium transition-colors',
+                filterCategory === 'all'
+                  ? 'bg-purple-700 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               )}
             >
               All
             </button>
             <button
-              onClick={() => setFilterCategory("standard")}
+              onClick={() => setFilterCategory('standard')}
               className={cn(
-                "px-4 py-1.5 rounded-full text-sm font-medium transition-colors",
-                filterCategory === "standard"
-                  ? "bg-purple-600 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                'px-4 py-1.5 rounded-full text-sm font-medium transition-colors',
+                filterCategory === 'standard'
+                  ? 'bg-purple-700 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               )}
             >
               Standard CRMs
             </button>
             <button
-              onClick={() => setFilterCategory("custom")}
+              onClick={() => setFilterCategory('custom')}
               className={cn(
-                "px-4 py-1.5 rounded-full text-sm font-medium transition-colors",
-                filterCategory === "custom"
-                  ? "bg-purple-600 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                'px-4 py-1.5 rounded-full text-sm font-medium transition-colors',
+                filterCategory === 'custom'
+                  ? 'bg-purple-700 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               )}
             >
               Custom
@@ -867,30 +892,33 @@ export default function TemplatesPage() {
         {filteredTemplates.length === 0 && searchQuery && (
           <div className="text-center py-12">
             <p className="text-gray-600 mb-2">No templates found.</p>
-            <p className="text-sm text-gray-500">Try different keywords or create a custom template.</p>
+            <p className="text-sm text-gray-500">
+              Try different keywords or create a custom template.
+            </p>
           </div>
         )}
 
         {/* Section 1: STANDARD CRM TEMPLATES */}
-        {(filterCategory === "all" || filterCategory === "standard") && standardTemplates.length > 0 && (
-          <div className="mb-16">
-            <div className="flex items-center gap-3 mb-6">
-              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
-                STANDARD CRM TEMPLATES
-              </h2>
-              <div className="flex-1 border-b border-gray-200" />
-            </div>
+        {(filterCategory === 'all' || filterCategory === 'standard') &&
+          standardTemplates.length > 0 && (
+            <div className="mb-16">
+              <div className="flex items-center gap-3 mb-6">
+                <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
+                  STANDARD CRM TEMPLATES
+                </h2>
+                <div className="flex-1 border-b border-gray-200" />
+              </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {standardTemplates.map((template) => (
-                <TemplateCard key={template.id} template={template} />
-              ))}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {standardTemplates.map((template) => (
+                  <TemplateCard key={template.id} template={template} />
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* Section 2: YOUR CUSTOM TEMPLATES */}
-        {(filterCategory === "all" || filterCategory === "custom") && (
+        {(filterCategory === 'all' || filterCategory === 'custom') && (
           <div>
             <div className="flex items-center gap-3 mb-6">
               <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
@@ -933,7 +961,7 @@ export default function TemplatesPage() {
                 id="template-name"
                 placeholder="e.g., Custom CRM Template"
                 value={templateForm.name}
-                onChange={(e) => setTemplateForm(prev => ({ ...prev, name: e.target.value }))}
+                onChange={(e) => setTemplateForm((prev) => ({ ...prev, name: e.target.value }))}
               />
             </div>
 
@@ -944,7 +972,9 @@ export default function TemplatesPage() {
                 id="template-description"
                 placeholder="Brief description of this template"
                 value={templateForm.description}
-                onChange={(e) => setTemplateForm(prev => ({ ...prev, description: e.target.value }))}
+                onChange={(e) =>
+                  setTemplateForm((prev) => ({ ...prev, description: e.target.value }))
+                }
               />
             </div>
 
@@ -953,16 +983,17 @@ export default function TemplatesPage() {
               <Label>Fields ({templateForm.fields.length})</Label>
               <div className="space-y-2 mt-2">
                 {templateForm.fields.map((field, index) => (
-                  <div key={field.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div
+                    key={field.id}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  >
                     <div>
                       <p className="font-medium text-sm">{field.fieldName}</p>
-                      <p className="text-xs text-gray-500">{field.fieldType} • {field.description}</p>
+                      <p className="text-xs text-gray-500">
+                        {field.fieldType} • {field.description}
+                      </p>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveField(field.id)}
-                    >
+                    <Button variant="ghost" size="sm" onClick={() => handleRemoveField(field.id)}>
                       <X className="w-4 h-4" />
                     </Button>
                   </div>
@@ -977,11 +1008,13 @@ export default function TemplatesPage() {
                 <Input
                   placeholder="Field Name"
                   value={newField.fieldName}
-                  onChange={(e) => setNewField(prev => ({ ...prev, fieldName: e.target.value }))}
+                  onChange={(e) => setNewField((prev) => ({ ...prev, fieldName: e.target.value }))}
                 />
                 <Select
                   value={newField.fieldType}
-                  onValueChange={(value: any) => setNewField(prev => ({ ...prev, fieldType: value }))}
+                  onValueChange={(value: any) =>
+                    setNewField((prev) => ({ ...prev, fieldType: value }))
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -1000,13 +1033,9 @@ export default function TemplatesPage() {
                 placeholder="Field Description"
                 className="mt-2"
                 value={newField.description}
-                onChange={(e) => setNewField(prev => ({ ...prev, description: e.target.value }))}
+                onChange={(e) => setNewField((prev) => ({ ...prev, description: e.target.value }))}
               />
-              <Button
-                onClick={handleAddField}
-                variant="outline"
-                className="mt-2 w-full"
-              >
+              <Button onClick={handleAddField} variant="outline" className="mt-2 w-full">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Field
               </Button>
@@ -1017,7 +1046,7 @@ export default function TemplatesPage() {
             <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleCreateTemplate} className="bg-purple-600 hover:bg-purple-700">
+            <Button onClick={handleCreateTemplate} className="bg-purple-700 hover:bg-purple-700">
               <Save className="w-4 h-4 mr-2" />
               Create Template
             </Button>
@@ -1033,9 +1062,7 @@ export default function TemplatesPage() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Template</DialogTitle>
-            <DialogDescription>
-              Update your custom CRM field mapping
-            </DialogDescription>
+            <DialogDescription>Update your custom CRM field mapping</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
@@ -1046,7 +1073,7 @@ export default function TemplatesPage() {
                 id="edit-template-name"
                 placeholder="e.g., Custom CRM Template"
                 value={templateForm.name}
-                onChange={(e) => setTemplateForm(prev => ({ ...prev, name: e.target.value }))}
+                onChange={(e) => setTemplateForm((prev) => ({ ...prev, name: e.target.value }))}
               />
             </div>
 
@@ -1057,7 +1084,9 @@ export default function TemplatesPage() {
                 id="edit-template-description"
                 placeholder="Brief description of this template"
                 value={templateForm.description}
-                onChange={(e) => setTemplateForm(prev => ({ ...prev, description: e.target.value }))}
+                onChange={(e) =>
+                  setTemplateForm((prev) => ({ ...prev, description: e.target.value }))
+                }
               />
             </div>
 
@@ -1066,16 +1095,17 @@ export default function TemplatesPage() {
               <Label>Fields ({templateForm.fields.length})</Label>
               <div className="space-y-2 mt-2">
                 {templateForm.fields.map((field, index) => (
-                  <div key={field.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div
+                    key={field.id}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  >
                     <div>
                       <p className="font-medium text-sm">{field.fieldName}</p>
-                      <p className="text-xs text-gray-500">{field.fieldType} • {field.description}</p>
+                      <p className="text-xs text-gray-500">
+                        {field.fieldType} • {field.description}
+                      </p>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveField(field.id)}
-                    >
+                    <Button variant="ghost" size="sm" onClick={() => handleRemoveField(field.id)}>
                       <X className="w-4 h-4" />
                     </Button>
                   </div>
@@ -1090,11 +1120,13 @@ export default function TemplatesPage() {
                 <Input
                   placeholder="Field Name"
                   value={newField.fieldName}
-                  onChange={(e) => setNewField(prev => ({ ...prev, fieldName: e.target.value }))}
+                  onChange={(e) => setNewField((prev) => ({ ...prev, fieldName: e.target.value }))}
                 />
                 <Select
                   value={newField.fieldType}
-                  onValueChange={(value: any) => setNewField(prev => ({ ...prev, fieldType: value }))}
+                  onValueChange={(value: any) =>
+                    setNewField((prev) => ({ ...prev, fieldType: value }))
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -1113,13 +1145,9 @@ export default function TemplatesPage() {
                 placeholder="Field Description"
                 className="mt-2"
                 value={newField.description}
-                onChange={(e) => setNewField(prev => ({ ...prev, description: e.target.value }))}
+                onChange={(e) => setNewField((prev) => ({ ...prev, description: e.target.value }))}
               />
-              <Button
-                onClick={handleAddField}
-                variant="outline"
-                className="mt-2 w-full"
-              >
+              <Button onClick={handleAddField} variant="outline" className="mt-2 w-full">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Field
               </Button>
@@ -1130,7 +1158,7 @@ export default function TemplatesPage() {
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleUpdateTemplate} className="bg-purple-600 hover:bg-purple-700">
+            <Button onClick={handleUpdateTemplate} className="bg-purple-700 hover:bg-purple-700">
               <Save className="w-4 h-4 mr-2" />
               Save Changes
             </Button>
@@ -1178,7 +1206,12 @@ export default function TemplatesPage() {
                       {selectedTemplate.lastModified && (
                         <span className="flex items-center gap-1">
                           <Clock className="w-4 h-4" />
-                          Updated {new Date(selectedTemplate.lastModified).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          Updated{' '}
+                          {new Date(selectedTemplate.lastModified).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })}
                         </span>
                       )}
                     </div>
@@ -1206,13 +1239,13 @@ export default function TemplatesPage() {
                   {selectedTemplate.category === 'custom' && (
                     <Button
                       size="sm"
-                      className="bg-purple-600 hover:bg-purple-700 text-white"
+                      className="bg-purple-700 hover:bg-purple-700 text-white"
                       onClick={() => {
                         setEditingTemplate(selectedTemplate as unknown as CustomTemplate);
                         setTemplateForm({
                           name: selectedTemplate.name,
-                          description: (selectedTemplate as any).description || "",
-                          fields: selectedTemplate.fields
+                          description: (selectedTemplate as any).description || '',
+                          fields: selectedTemplate.fields,
                         });
                         setSelectedTemplate(null);
                         setIsEditDialogOpen(true);
@@ -1235,8 +1268,8 @@ export default function TemplatesPage() {
                     <div
                       key={field.id}
                       className={cn(
-                        "group p-4 rounded-lg transition-colors",
-                        index % 2 === 0 ? "bg-gray-50" : "bg-white"
+                        'group p-4 rounded-lg transition-colors',
+                        index % 2 === 0 ? 'bg-gray-50' : 'bg-white'
                       )}
                     >
                       <div className="flex items-start justify-between">
@@ -1281,13 +1314,13 @@ export default function TemplatesPage() {
                     Delete Template
                   </Button>
                   <Button
-                    className="bg-purple-600 hover:bg-purple-700 text-white"
+                    className="bg-purple-700 hover:bg-purple-700 text-white"
                     onClick={() => {
                       setEditingTemplate(selectedTemplate as unknown as CustomTemplate);
                       setTemplateForm({
                         name: selectedTemplate.name,
-                        description: (selectedTemplate as any).description || "",
-                        fields: selectedTemplate.fields
+                        description: (selectedTemplate as any).description || '',
+                        fields: selectedTemplate.fields,
                       });
                       setSelectedTemplate(null);
                       setIsEditDialogOpen(true);

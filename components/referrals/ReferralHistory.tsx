@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from 'react';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -11,14 +11,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   CheckCircle,
   Clock,
@@ -29,9 +29,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Mail,
-} from "lucide-react";
-import { format } from "date-fns";
-import { toast } from "@/components/ui/use-toast";
+} from 'lucide-react';
+import { format } from 'date-fns';
+import { toast } from '@/components/ui/use-toast';
 
 interface Referral {
   id: string;
@@ -56,7 +56,7 @@ interface Referral {
 export function ReferralHistory() {
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -70,26 +70,26 @@ export function ReferralHistory() {
       setLoading(true);
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: "10",
+        limit: '10',
       });
 
-      if (statusFilter !== "all") {
-        params.append("status", statusFilter);
+      if (statusFilter !== 'all') {
+        params.append('status', statusFilter);
       }
 
       const response = await fetch(`/api/referrals/history?${params}`);
-      if (!response.ok) throw new Error("Failed to fetch referrals");
+      if (!response.ok) throw new Error('Failed to fetch referrals');
 
       const data = await response.json();
       setReferrals(data.referrals);
       setTotalPages(data.pagination.totalPages);
       setTotalCount(data.pagination.total);
     } catch (error) {
-      console.error("Error fetching referrals:", error);
+      console.error('Error fetching referrals:', error);
       toast({
-        title: "Error",
-        description: "Failed to load referral history",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to load referral history',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -99,44 +99,49 @@ export function ReferralHistory() {
   const getStatusBadge = (status: string) => {
     const config = {
       pending: {
-        label: "Pending",
-        variant: "secondary" as const,
+        label: 'Pending',
+        variant: 'secondary' as const,
         icon: Clock,
-        className: "",
+        className: '',
       },
       clicked: {
-        label: "Clicked",
-        variant: "outline" as const,
+        label: 'Clicked',
+        variant: 'outline' as const,
         icon: MousePointer,
-        className: "",
+        className: '',
       },
       signed_up: {
-        label: "Signed Up",
-        variant: "default" as const,
+        label: 'Signed Up',
+        variant: 'default' as const,
         icon: UserPlus,
-        className: "",
+        className: '',
       },
       active: {
-        label: "Active",
-        variant: "default" as const,
+        label: 'Active',
+        variant: 'default' as const,
         icon: CheckCircle,
-        className: "bg-green-600 hover:bg-green-700",
+        className: 'bg-green-600 hover:bg-green-700',
       },
       rewarded: {
-        label: "Rewarded",
-        variant: "default" as const,
+        label: 'Rewarded',
+        variant: 'default' as const,
         icon: Gift,
-        className: "bg-violet-600 hover:bg-violet-700",
+        className: 'bg-purple-700 hover:bg-purple-800',
       },
       expired: {
-        label: "Expired",
-        variant: "secondary" as const,
+        label: 'Expired',
+        variant: 'secondary' as const,
         icon: AlertCircle,
-        className: "",
+        className: '',
       },
     };
 
-    const { label, variant, icon: Icon, className } = config[status as keyof typeof config] || config.pending;
+    const {
+      label,
+      variant,
+      icon: Icon,
+      className,
+    } = config[status as keyof typeof config] || config.pending;
 
     return (
       <Badge variant={variant} className={className}>
@@ -154,7 +159,7 @@ export function ReferralHistory() {
     return (
       <Card className="p-8">
         <div className="flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-700"></div>
         </div>
       </Card>
     );
@@ -182,7 +187,7 @@ export function ReferralHistory() {
             </Select>
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            Total: {totalCount} referral{totalCount !== 1 ? "s" : ""}
+            Total: {totalCount} referral{totalCount !== 1 ? 's' : ''}
           </div>
         </div>
       </Card>
@@ -235,15 +240,15 @@ export function ReferralHistory() {
                       </TableCell>
                       <TableCell>
                         <span className="text-gray-600 dark:text-gray-400">
-                          {format(new Date(referral.created_at), "MMM d, yyyy")}
+                          {format(new Date(referral.created_at), 'MMM d, yyyy')}
                         </span>
                       </TableCell>
                       <TableCell>
-                        {referral.status === "rewarded" && (
+                        {referral.status === 'rewarded' && (
                           <div className="space-y-1">
                             {referral.reward_minutes && referral.reward_minutes > 0 && (
                               <div className="flex items-center gap-1 text-sm">
-                                <Clock className="w-3 h-3 text-violet-600" />
+                                <Clock className="w-3 h-3 text-purple-700" />
                                 <span>{referral.reward_minutes} mins</span>
                               </div>
                             )}
@@ -256,12 +261,12 @@ export function ReferralHistory() {
                             )}
                           </div>
                         )}
-                        {referral.status === "active" && (
+                        {referral.status === 'active' && (
                           <span className="text-sm text-amber-600 dark:text-amber-400">
                             Pending reward
                           </span>
                         )}
-                        {["pending", "clicked", "signed_up"].includes(referral.status) && (
+                        {['pending', 'clicked', 'signed_up'].includes(referral.status) && (
                           <span className="text-sm text-gray-400">-</span>
                         )}
                       </TableCell>

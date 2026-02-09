@@ -61,10 +61,12 @@ export default function InviteSignupPage() {
         // Note: This query may fail with 406 if RLS policies are too restrictive
         const { data: invite, error: fetchError } = await supabase
           .from('team_invitations')
-          .select(`
+          .select(
+            `
             *,
             organization:organizations(*)
-          `)
+          `
+          )
           .eq('token', token)
           .single();
 
@@ -72,7 +74,9 @@ export default function InviteSignupPage() {
           console.error('Error fetching invitation:', fetchError);
           // If it's a 406 error, it's likely an RLS issue
           if (fetchError.code === '406' || fetchError.message?.includes('406')) {
-            setError('Unable to access invitation. Please contact your administrator to update database permissions.');
+            setError(
+              'Unable to access invitation. Please contact your administrator to update database permissions.'
+            );
           } else {
             setError('Invitation not found or invalid');
           }
@@ -98,13 +102,17 @@ export default function InviteSignupPage() {
 
         // Check if expired
         if (new Date(invite.expires_at) < new Date()) {
-          setError('This invitation has expired. Please request a new one from your team administrator.');
+          setError(
+            'This invitation has expired. Please request a new one from your team administrator.'
+          );
           setCheckingInvite(false);
           return;
         }
 
         // Check if user already exists with this email
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         if (session) {
           // User is logged in, redirect to accept invitation
           router.push(`/invite/${token}`);
@@ -113,7 +121,6 @@ export default function InviteSignupPage() {
 
         setInvitation(invite);
         setCheckingInvite(false);
-
       } catch (err) {
         console.error('Error checking invitation:', err);
         setError('Failed to validate invitation');
@@ -198,7 +205,6 @@ export default function InviteSignupPage() {
           router.push('/dashboard');
         }, 1500);
       }
-
     } catch (err: any) {
       setError(err.message);
       setLoading(false);
@@ -262,22 +268,27 @@ export default function InviteSignupPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
+            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
               <Users className="h-6 w-6 text-white" />
             </div>
           </div>
           <CardTitle className="text-2xl font-bold">Join Your Team</CardTitle>
           <CardDescription>
             <div className="mt-4 p-4 bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-blue-300 rounded-xl">
-              <div className="text-xs font-medium text-blue-600 uppercase tracking-wider mb-1">You're joining</div>
-              <div className="font-bold text-xl text-blue-900">{invitation?.organization?.name}</div>
+              <div className="text-xs font-medium text-blue-600 uppercase tracking-wider mb-1">
+                You're joining
+              </div>
+              <div className="font-bold text-xl text-blue-900">
+                {invitation?.organization?.name}
+              </div>
               <div className="text-sm mt-2 text-blue-700">
-                Your role: <span className="font-semibold capitalize bg-white px-2 py-0.5 rounded">{invitation?.role}</span>
+                Your role:{' '}
+                <span className="font-semibold capitalize bg-white px-2 py-0.5 rounded">
+                  {invitation?.role}
+                </span>
               </div>
             </div>
-            <div className="mt-4 text-gray-600">
-              Complete the form below to create your account
-            </div>
+            <div className="mt-4 text-gray-600">Complete the form below to create your account</div>
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSignup}>
@@ -373,11 +384,7 @@ export default function InviteSignupPage() {
               </div>
             </div>
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={loading}
-            >
+            <Button type="submit" className="w-full" disabled={loading}>
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -127,7 +127,7 @@ export function FeedbackModal({ trigger }: FeedbackModalProps) {
       case 'feature':
         return 'text-blue-600';
       default:
-        return 'text-purple-600';
+        return 'text-purple-700';
     }
   };
 
@@ -144,7 +144,7 @@ export function FeedbackModal({ trigger }: FeedbackModalProps) {
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <MessageSquarePlus className="w-5 h-5 text-purple-600" />
+            <MessageSquarePlus className="w-5 h-5 text-purple-700" />
             Send Feedback
             <span className="text-xs text-gray-500 font-normal ml-auto">Ctrl+Shift+F</span>
           </DialogTitle>
@@ -170,7 +170,7 @@ export function FeedbackModal({ trigger }: FeedbackModalProps) {
                 </SelectItem>
                 <SelectItem value="feedback">
                   <div className="flex items-center gap-2">
-                    <Heart className="w-4 h-4 text-purple-600" />
+                    <Heart className="w-4 h-4 text-purple-700" />
                     <span>General Feedback</span>
                   </div>
                 </SelectItem>

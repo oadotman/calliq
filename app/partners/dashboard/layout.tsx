@@ -21,7 +21,7 @@ import {
   TrendingUp,
   Download,
   Award,
-  ChevronRight
+  ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -35,11 +35,7 @@ interface PartnerInfo {
   commission_rate: number;
 }
 
-export default function PartnerDashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function PartnerDashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [partner, setPartner] = useState<PartnerInfo | null>(null);
@@ -124,15 +120,11 @@ export default function PartnerDashboardLayout({
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
               >
-                {isMobileMenuOpen ? (
-                  <X className="h-6 w-6" />
-                ) : (
-                  <Menu className="h-6 w-6" />
-                )}
+                {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </button>
               <div className="flex-shrink-0 flex items-center">
                 <Link href="/partners/dashboard" className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
                     <Award className="w-5 h-5 text-white" />
                   </div>
                   <span className="font-bold text-lg text-gray-900">SynQall Partners</span>
@@ -168,8 +160,8 @@ export default function PartnerDashboardLayout({
         {/* Sidebar Navigation */}
         <aside
           className={cn(
-            "fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform lg:translate-x-0 lg:static lg:inset-0",
-            isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+            'fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform lg:translate-x-0 lg:static lg:inset-0',
+            isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
           )}
         >
           <div className="flex flex-col h-full pt-20 lg:pt-4">
@@ -181,23 +173,21 @@ export default function PartnerDashboardLayout({
                     key={item.name}
                     href={item.href}
                     className={cn(
-                      "group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                      'group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors',
                       isActive
-                        ? "bg-blue-50 text-blue-700"
-                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                        ? 'bg-blue-50 text-blue-700'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                     )}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <item.icon
                       className={cn(
-                        "mr-3 h-5 w-5",
-                        isActive ? "text-blue-600" : "text-gray-400 group-hover:text-gray-500"
+                        'mr-3 h-5 w-5',
+                        isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'
                       )}
                     />
                     {item.name}
-                    {isActive && (
-                      <ChevronRight className="ml-auto h-4 w-4" />
-                    )}
+                    {isActive && <ChevronRight className="ml-auto h-4 w-4" />}
                   </Link>
                 );
               })}
@@ -233,9 +223,7 @@ export default function PartnerDashboardLayout({
 
         {/* Main Content Area */}
         <main className="flex-1 overflow-x-hidden">
-          <div className="py-6 px-4 sm:px-6 lg:px-8">
-            {children}
-          </div>
+          <div className="py-6 px-4 sm:px-6 lg:px-8">{children}</div>
         </main>
       </div>
     </div>

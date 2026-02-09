@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { useState, useEffect } from 'react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   Clock,
   DollarSign,
@@ -12,9 +12,9 @@ import {
   AlertCircle,
   Sparkles,
   TrendingUp,
-} from "lucide-react";
-import { format } from "date-fns";
-import { toast } from "@/components/ui/use-toast";
+} from 'lucide-react';
+import { format } from 'date-fns';
+import { toast } from '@/components/ui/use-toast';
 
 interface Reward {
   id: string;
@@ -59,19 +59,19 @@ export function ReferralRewards() {
   const fetchRewards = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/referrals/claim");
-      if (!response.ok) throw new Error("Failed to fetch rewards");
+      const response = await fetch('/api/referrals/claim');
+      if (!response.ok) throw new Error('Failed to fetch rewards');
 
       const data = await response.json();
       setActiveRewards(data.activeRewards);
       setExpiredRewards(data.expiredRewards);
       setSummary(data.summary);
     } catch (error) {
-      console.error("Error fetching rewards:", error);
+      console.error('Error fetching rewards:', error);
       toast({
-        title: "Error",
-        description: "Failed to load rewards",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to load rewards',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -80,39 +80,39 @@ export function ReferralRewards() {
 
   const claimReward = async (rewardId?: string) => {
     try {
-      setClaiming(rewardId || "all");
+      setClaiming(rewardId || 'all');
 
-      const response = await fetch("/api/referrals/claim", {
-        method: "POST",
+      const response = await fetch('/api/referrals/claim', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           rewardId,
-          claimType: rewardId ? "single" : "all",
+          claimType: rewardId ? 'single' : 'all',
         }),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Failed to claim rewards");
+        throw new Error(error.error || 'Failed to claim rewards');
       }
 
       const data = await response.json();
 
       toast({
-        title: "Success!",
+        title: 'Success!',
         description: data.message,
       });
 
       // Refresh rewards
       await fetchRewards();
     } catch (error: any) {
-      console.error("Error claiming reward:", error);
+      console.error('Error claiming reward:', error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to claim reward",
-        variant: "destructive",
+        title: 'Error',
+        description: error.message || 'Failed to claim reward',
+        variant: 'destructive',
       });
     } finally {
       setClaiming(null);
@@ -127,7 +127,7 @@ export function ReferralRewards() {
     return (
       <Card className="p-8">
         <div className="flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-700"></div>
         </div>
       </Card>
     );
@@ -137,7 +137,7 @@ export function ReferralRewards() {
     <div className="space-y-6">
       {/* Summary Cards */}
       {summary && summary.totalAvailableMinutes + summary.totalAvailableCredits > 0 && (
-        <Card className="p-6 bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-950/20 dark:to-purple-950/20 border-violet-200 dark:border-violet-800">
+        <Card className="p-6 bg-gradient-to-r from-purple-50 to-purple-50 dark:from-purple-950/20 dark:to-purple-950/20 border-purple-200 dark:border-purple-900">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -146,14 +146,12 @@ export function ReferralRewards() {
               <div className="flex gap-6">
                 {summary.totalAvailableMinutes > 0 && (
                   <div className="flex items-center gap-2">
-                    <Clock className="w-5 h-5 text-violet-600" />
+                    <Clock className="w-5 h-5 text-purple-700" />
                     <div>
                       <p className="text-2xl font-bold text-gray-900 dark:text-white">
                         {summary.totalAvailableMinutes}
                       </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        minutes
-                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">minutes</p>
                     </div>
                   </div>
                 )}
@@ -164,9 +162,7 @@ export function ReferralRewards() {
                       <p className="text-2xl font-bold text-gray-900 dark:text-white">
                         {formatCredits(summary.totalAvailableCredits)}
                       </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        credits
-                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">credits</p>
                     </div>
                   </div>
                 )}
@@ -175,9 +171,9 @@ export function ReferralRewards() {
             <Button
               onClick={() => claimReward()}
               disabled={claiming !== null}
-              className="bg-violet-600 hover:bg-violet-700"
+              className="bg-purple-700 hover:bg-purple-800"
             >
-              {claiming === "all" ? (
+              {claiming === 'all' ? (
                 <div className="flex items-center gap-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   <span>Claiming...</span>
@@ -202,8 +198,8 @@ export function ReferralRewards() {
               <Card key={reward.id} className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-start gap-4">
-                    <div className="p-2 rounded-full bg-violet-100 dark:bg-violet-900/50">
-                      <Gift className="w-5 h-5 text-violet-600" />
+                    <div className="p-2 rounded-full bg-purple-100 dark:bg-purple-950/50">
+                      <Gift className="w-5 h-5 text-purple-700" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2 mb-1">
@@ -228,16 +224,17 @@ export function ReferralRewards() {
                       </div>
                       {reward.referral?.referred_email && (
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                          From: {reward.referral.referred_user?.raw_user_meta_data?.full_name ||
+                          From:{' '}
+                          {reward.referral.referred_user?.raw_user_meta_data?.full_name ||
                             reward.referral.referred_email}
                         </p>
                       )}
                       <p className="text-xs text-gray-400 mt-2">
-                        Earned {format(new Date(reward.created_at), "MMM d, yyyy")}
+                        Earned {format(new Date(reward.created_at), 'MMM d, yyyy')}
                         {reward.expires_at && (
                           <span>
-                            {" • Expires "}
-                            {format(new Date(reward.expires_at), "MMM d, yyyy")}
+                            {' • Expires '}
+                            {format(new Date(reward.expires_at), 'MMM d, yyyy')}
                           </span>
                         )}
                       </p>
@@ -250,9 +247,9 @@ export function ReferralRewards() {
                     disabled={claiming !== null}
                   >
                     {claiming === reward.id ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-violet-600"></div>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-700"></div>
                     ) : (
-                      "Claim"
+                      'Claim'
                     )}
                   </Button>
                 </div>
@@ -283,15 +280,13 @@ export function ReferralRewards() {
                       <Badge variant="secondary">Expired</Badge>
                     </div>
                     <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                      {reward.reward_minutes > 0 && (
-                        <span>{reward.reward_minutes} minutes</span>
-                      )}
+                      {reward.reward_minutes > 0 && <span>{reward.reward_minutes} minutes</span>}
                       {reward.reward_credits_cents > 0 && (
                         <span>{formatCredits(reward.reward_credits_cents)}</span>
                       )}
                     </div>
                     <p className="text-xs text-gray-400 mt-2">
-                      Expired {format(new Date(reward.expires_at!), "MMM d, yyyy")}
+                      Expired {format(new Date(reward.expires_at!), 'MMM d, yyyy')}
                     </p>
                   </div>
                 </div>

@@ -825,7 +825,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
       case 'uploading':
         return <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />;
       case 'transcribing':
-        return <Loader2 className="w-5 h-5 text-purple-500 animate-spin" />;
+        return <Loader2 className="w-5 h-5 text-purple-700 animate-spin" />;
       case 'extracting':
         return <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />;
       case 'processing':
@@ -907,13 +907,13 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
         )}
 
         {/* Template Selection */}
-        <div className="mb-6 p-4 bg-gradient-to-r from-violet-50 to-purple-50 border-2 border-violet-200 rounded-xl">
+        <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-purple-50 border-2 border-purple-200 rounded-xl">
           <div className="flex items-center justify-between mb-2">
-            <Label className="text-sm font-semibold text-violet-900">Select Output Template</Label>
+            <Label className="text-sm font-semibold text-purple-950">Select Output Template</Label>
             <Button
               variant="ghost"
               size="sm"
-              className="text-violet-700 hover:text-violet-900 hover:bg-violet-100 h-8"
+              className="text-purple-800 hover:text-purple-950 hover:bg-purple-200 h-8"
               onClick={() => setShowTemplateCreator(true)}
             >
               <Plus className="w-3 h-3 mr-1" />
@@ -939,7 +939,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
               ))}
             </SelectContent>
           </Select>
-          <p className="text-xs text-violet-700 mt-2">
+          <p className="text-xs text-purple-800 mt-2">
             AI will extract fields matching this template. You can change templates later.
           </p>
         </div>
@@ -1012,7 +1012,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
                               file.status === 'uploading'
                                 ? 'bg-blue-500'
                                 : file.status === 'transcribing'
-                                  ? 'bg-purple-500'
+                                  ? 'bg-purple-700'
                                   : file.status === 'extracting'
                                     ? 'bg-indigo-500'
                                     : 'bg-primary'

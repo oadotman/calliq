@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { X, Cookie, Settings } from "lucide-react";
-import Link from "next/link";
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { X, Cookie, Settings } from 'lucide-react';
+import Link from 'next/link';
 import {
   Dialog,
   DialogContent,
@@ -11,9 +11,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 
 interface CookiePreferences {
   essential: boolean; // Always true, can't be disabled
@@ -38,7 +38,7 @@ export function CookieConsent() {
   useEffect(() => {
     setMounted(true);
     // Check if user has already made a cookie choice
-    const consent = localStorage.getItem("cookie_consent");
+    const consent = localStorage.getItem('cookie_consent');
     if (!consent) {
       // Show banner after a short delay for better UX
       setTimeout(() => setShowBanner(true), 1000);
@@ -48,13 +48,13 @@ export function CookieConsent() {
         const savedPrefs = JSON.parse(consent);
         setPreferences({ ...defaultPreferences, ...savedPrefs });
       } catch (e) {
-        console.error("Failed to parse cookie preferences:", e);
+        console.error('Failed to parse cookie preferences:', e);
       }
     }
   }, []);
 
   const savePreferences = (prefs: CookiePreferences) => {
-    localStorage.setItem("cookie_consent", JSON.stringify(prefs));
+    localStorage.setItem('cookie_consent', JSON.stringify(prefs));
     setPreferences(prefs);
     setShowBanner(false);
     setShowSettings(false);
@@ -113,30 +113,28 @@ export function CookieConsent() {
             <div className="flex flex-col md:flex-row gap-6">
               {/* Icon */}
               <div className="flex-shrink-0">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-700 flex items-center justify-center">
                   <Cookie className="w-6 h-6 text-white" />
                 </div>
               </div>
 
               {/* Content */}
               <div className="flex-1 space-y-3">
-                <h3 className="text-lg font-bold text-gray-900">
-                  We value your privacy
-                </h3>
+                <h3 className="text-lg font-bold text-gray-900">We value your privacy</h3>
                 <p className="text-sm text-gray-600 leading-relaxed">
-                  We use cookies to enhance your experience, analyze site usage, and assist in our marketing efforts.
-                  Essential cookies are always enabled to ensure the app functions properly. You can customize your
-                  preferences or accept all cookies.
+                  We use cookies to enhance your experience, analyze site usage, and assist in our
+                  marketing efforts. Essential cookies are always enabled to ensure the app
+                  functions properly. You can customize your preferences or accept all cookies.
                 </p>
                 <p className="text-xs text-gray-500">
-                  By clicking "Accept All", you consent to our use of cookies. Read our{" "}
+                  By clicking "Accept All", you consent to our use of cookies. Read our{' '}
                   <Link href="/cookies" className="text-blue-600 underline hover:text-blue-700">
                     Cookie Policy
-                  </Link>{" "}
-                  and{" "}
+                  </Link>{' '}
+                  and{' '}
                   <Link href="/privacy" className="text-blue-600 underline hover:text-blue-700">
                     Privacy Policy
-                  </Link>{" "}
+                  </Link>{' '}
                   for more information.
                 </p>
               </div>
@@ -145,7 +143,7 @@ export function CookieConsent() {
               <div className="flex flex-col gap-2 md:flex-shrink-0 md:justify-center">
                 <Button
                   onClick={acceptAll}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold"
+                  className="bg-gradient-to-r from-blue-600 to-purple-700 hover:from-blue-700 hover:to-purple-700 text-white font-semibold"
                 >
                   Accept All
                 </Button>
@@ -182,8 +180,8 @@ export function CookieConsent() {
               Cookie Preferences
             </DialogTitle>
             <DialogDescription>
-              Manage your cookie preferences. Essential cookies are always enabled as they are necessary for the
-              Service to function.
+              Manage your cookie preferences. Essential cookies are always enabled as they are
+              necessary for the Service to function.
             </DialogDescription>
           </DialogHeader>
 
@@ -200,30 +198,28 @@ export function CookieConsent() {
                   </span>
                 </div>
                 <p className="text-sm text-gray-600 leading-relaxed">
-                  These cookies are necessary for the Service to function and cannot be disabled. They include
-                  authentication, security, and core functionality cookies.
+                  These cookies are necessary for the Service to function and cannot be disabled.
+                  They include authentication, security, and core functionality cookies.
                 </p>
                 <p className="text-xs text-gray-500 mt-2">
                   Examples: Session cookies, CSRF tokens, authentication tokens
                 </p>
               </div>
-              <Switch
-                id="essential"
-                checked={true}
-                disabled={true}
-                className="mt-1"
-              />
+              <Switch id="essential" checked={true} disabled={true} className="mt-1" />
             </div>
 
             {/* Functional Cookies */}
             <div className="flex items-start justify-between gap-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
               <div className="flex-1">
-                <Label htmlFor="functional" className="text-base font-semibold text-gray-900 mb-1 block">
+                <Label
+                  htmlFor="functional"
+                  className="text-base font-semibold text-gray-900 mb-1 block"
+                >
                   Functional Cookies
                 </Label>
                 <p className="text-sm text-gray-600 leading-relaxed">
-                  These cookies enable enhanced functionality and personalization, such as remembering your
-                  preferences and settings.
+                  These cookies enable enhanced functionality and personalization, such as
+                  remembering your preferences and settings.
                 </p>
                 <p className="text-xs text-gray-500 mt-2">
                   Examples: Theme preferences, language selection, UI state
@@ -242,12 +238,15 @@ export function CookieConsent() {
             {/* Analytics Cookies */}
             <div className="flex items-start justify-between gap-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
               <div className="flex-1">
-                <Label htmlFor="analytics" className="text-base font-semibold text-gray-900 mb-1 block">
+                <Label
+                  htmlFor="analytics"
+                  className="text-base font-semibold text-gray-900 mb-1 block"
+                >
                   Analytics Cookies
                 </Label>
                 <p className="text-sm text-gray-600 leading-relaxed">
-                  These cookies help us understand how users interact with the Service so we can improve it. They
-                  collect anonymized data about page views and feature usage.
+                  These cookies help us understand how users interact with the Service so we can
+                  improve it. They collect anonymized data about page views and feature usage.
                 </p>
                 <p className="text-xs text-gray-500 mt-2">
                   Third-party: PostHog (product analytics)
@@ -266,11 +265,15 @@ export function CookieConsent() {
             {/* Performance Cookies */}
             <div className="flex items-start justify-between gap-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
               <div className="flex-1">
-                <Label htmlFor="performance" className="text-base font-semibold text-gray-900 mb-1 block">
+                <Label
+                  htmlFor="performance"
+                  className="text-base font-semibold text-gray-900 mb-1 block"
+                >
                   Performance Cookies
                 </Label>
                 <p className="text-sm text-gray-600 leading-relaxed">
-                  These cookies help us monitor errors, track performance, and ensure the Service runs smoothly.
+                  These cookies help us monitor errors, track performance, and ensure the Service
+                  runs smoothly.
                 </p>
                 <p className="text-xs text-gray-500 mt-2">
                   Third-party: Sentry (error monitoring), Vercel (performance monitoring)
@@ -297,14 +300,14 @@ export function CookieConsent() {
             </Button>
             <Button
               onClick={saveCustom}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white order-1 sm:order-2"
+              className="bg-gradient-to-r from-blue-600 to-purple-700 hover:from-blue-700 hover:to-purple-700 text-white order-1 sm:order-2"
             >
               Save Preferences
             </Button>
           </DialogFooter>
 
           <div className="text-xs text-gray-500 text-center pb-2">
-            Learn more in our{" "}
+            Learn more in our{' '}
             <Link href="/cookies" className="text-blue-600 underline hover:text-blue-700">
               Cookie Policy
             </Link>

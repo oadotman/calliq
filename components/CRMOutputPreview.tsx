@@ -8,16 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Copy,
-  Check,
-  FileText,
-  Download,
-  Mail,
-  Building2,
-  Table,
-  Briefcase
-} from 'lucide-react';
+import { Copy, Check, FileText, Download, Mail, Building2, Table, Briefcase } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { formatCRMOutput } from '@/lib/output-formatters';
 
@@ -32,7 +23,7 @@ interface CRMOutputPreviewProps {
 
 export const CRMOutputPreview: React.FC<CRMOutputPreviewProps> = ({
   callData,
-  customTemplates = []
+  customTemplates = [],
 }) => {
   const [copiedTab, setCopiedTab] = useState<string | null>(null);
   const { toast } = useToast();
@@ -44,7 +35,7 @@ export const CRMOutputPreview: React.FC<CRMOutputPreviewProps> = ({
       await navigator.clipboard.writeText(output);
       setCopiedTab(format);
       toast({
-        title: "Copied to clipboard!",
+        title: 'Copied to clipboard!',
         description: `${format} format copied successfully`,
         duration: 2000,
       });
@@ -52,9 +43,9 @@ export const CRMOutputPreview: React.FC<CRMOutputPreviewProps> = ({
       setTimeout(() => setCopiedTab(null), 2000);
     } catch (error) {
       toast({
-        title: "Copy failed",
-        description: "Please try selecting and copying manually",
-        variant: "destructive",
+        title: 'Copy failed',
+        description: 'Please try selecting and copying manually',
+        variant: 'destructive',
       });
     }
   };
@@ -67,7 +58,7 @@ export const CRMOutputPreview: React.FC<CRMOutputPreviewProps> = ({
     { id: 'monday', label: 'Monday', icon: Table, color: 'bg-pink-500' },
     { id: 'zoho', label: 'Zoho', icon: Building2, color: 'bg-red-500' },
     { id: 'csv', label: 'CSV/Excel', icon: Table, color: 'bg-emerald-500' },
-    { id: 'email', label: 'Email', icon: Mail, color: 'bg-purple-500' },
+    { id: 'email', label: 'Email', icon: Mail, color: 'bg-purple-700' },
   ];
 
   return (
@@ -117,7 +108,7 @@ export const CRMOutputPreview: React.FC<CRMOutputPreviewProps> = ({
                     size="sm"
                     onClick={() => handleCopy(format.id)}
                     className="gap-2"
-                    variant={copiedTab === format.id ? "default" : "outline"}
+                    variant={copiedTab === format.id ? 'default' : 'outline'}
                   >
                     {copiedTab === format.id ? (
                       <>
@@ -160,7 +151,8 @@ export const CRMOutputPreview: React.FC<CRMOutputPreviewProps> = ({
                     💡 <strong>Tip:</strong>
                     {format.id === 'plain' && ' This format works with any CRM system.'}
                     {format.id === 'hubspot' && ' Paste directly into HubSpot deal properties.'}
-                    {format.id === 'salesforce' && ' Maps to standard Salesforce opportunity fields.'}
+                    {format.id === 'salesforce' &&
+                      ' Maps to standard Salesforce opportunity fields.'}
                     {format.id === 'pipedrive' && ' Ready for Pipedrive deal creation.'}
                     {format.id === 'monday' && ' Formatted for Monday.com boards.'}
                     {format.id === 'zoho' && ' Compatible with Zoho CRM fields.'}
@@ -178,7 +170,7 @@ export const CRMOutputPreview: React.FC<CRMOutputPreviewProps> = ({
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-3 bg-purple-50 dark:bg-purple-950 rounded-lg">
                   <div className="flex items-center gap-2">
-                    <Badge className="bg-purple-600">Custom Template</Badge>
+                    <Badge className="bg-purple-700">Custom Template</Badge>
                     <span className="font-medium">{template.name}</span>
                   </div>
                   <Button

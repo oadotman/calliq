@@ -21,7 +21,7 @@ import {
   ArrowDown,
   Info,
   CheckCircle,
-  Clock
+  Clock,
 } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import Link from 'next/link';
@@ -126,7 +126,9 @@ export default function PartnerDashboardPage() {
     const Icon = badge.icon;
 
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.color}`}>
+      <span
+        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.color}`}
+      >
         <Icon className="w-3 h-3 mr-1" />
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
@@ -144,16 +146,19 @@ export default function PartnerDashboardPage() {
   if (!data) {
     return (
       <Alert>
-        <AlertDescription>Failed to load dashboard data. Please try refreshing the page.</AlertDescription>
+        <AlertDescription>
+          Failed to load dashboard data. Please try refreshing the page.
+        </AlertDescription>
       </Alert>
     );
   }
 
   const stats = data.statistics;
   const monthlyChange = stats.current_month_earnings - stats.last_month_earnings;
-  const monthlyChangePercent = stats.last_month_earnings > 0
-    ? ((monthlyChange / stats.last_month_earnings) * 100).toFixed(1)
-    : '0';
+  const monthlyChangePercent =
+    stats.last_month_earnings > 0
+      ? ((monthlyChange / stats.last_month_earnings) * 100).toFixed(1)
+      : '0';
 
   return (
     <div className="space-y-6">
@@ -221,9 +226,7 @@ export default function PartnerDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.active_customers}</div>
-            <p className="text-xs text-gray-600 mt-1">
-              {stats.total_signups} total signups
-            </p>
+            <p className="text-xs text-gray-600 mt-1">{stats.total_signups} total signups</p>
           </CardContent>
         </Card>
 
@@ -261,7 +264,9 @@ export default function PartnerDashboardPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(stats.total_commission_earned)}</div>
+            <div className="text-2xl font-bold">
+              {formatCurrency(stats.total_commission_earned)}
+            </div>
             <p className="text-xs text-gray-600 mt-1">
               {formatCurrency(stats.total_commission_paid)} paid
             </p>
@@ -274,7 +279,8 @@ export default function PartnerDashboardPage() {
         <Alert className="border-green-200 bg-green-50">
           <DollarSign className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800">
-            <strong>Next Payout:</strong> {formatCurrency(data.next_payout.amount_cents)} scheduled for{' '}
+            <strong>Next Payout:</strong> {formatCurrency(data.next_payout.amount_cents)} scheduled
+            for{' '}
             {new Date(data.next_payout.date).toLocaleDateString('en-US', {
               month: 'long',
               day: 'numeric',
@@ -302,7 +308,11 @@ export default function PartnerDashboardPage() {
                 </div>
                 <div className="text-center p-4 bg-blue-50 rounded-lg">
                   <div className="text-2xl font-bold text-blue-600">
-                    {formatCurrency(stats.total_commission_earned - stats.total_commission_paid - stats.total_commission_pending)}
+                    {formatCurrency(
+                      stats.total_commission_earned -
+                        stats.total_commission_paid -
+                        stats.total_commission_pending
+                    )}
                   </div>
                   <p className="text-xs text-gray-600 mt-1">Approved</p>
                 </div>
@@ -320,7 +330,7 @@ export default function PartnerDashboardPage() {
                   <span className="font-semibold">
                     {(data.partner.commission_rate * 100).toFixed(0)}%
                     {data.partner.tier === 'premium' && (
-                      <span className="ml-2 text-xs text-purple-600">(Premium)</span>
+                      <span className="ml-2 text-xs text-purple-700">(Premium)</span>
                     )}
                   </span>
                 </div>

@@ -101,7 +101,7 @@ export function Sidebar() {
             onClick={() => setIsMobileOpen(false)}
             className={cn(
               styles.bottomLink,
-              'bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 mb-2'
+              'bg-gradient-to-r from-purple-700 to-purple-700 hover:from-purple-800 hover:to-purple-700 mb-2'
             )}
             style={{ color: 'white' }}
           >

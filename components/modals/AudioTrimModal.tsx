@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -8,12 +8,12 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Loader2, Scissors, Play, Pause, RotateCcw } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
-import WaveSurfer from "wavesurfer.js";
-import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.js";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Loader2, Scissors, Play, Pause, RotateCcw } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
+import WaveSurfer from 'wavesurfer.js';
+import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.js';
 
 interface AudioTrimModalProps {
   isOpen: boolean;
@@ -50,9 +50,9 @@ export function AudioTrimModal({
     // Create WaveSurfer instance
     const wavesurfer = WaveSurfer.create({
       container: waveformRef.current,
-      waveColor: "#ddd",
-      progressColor: "#8b5cf6",
-      cursorColor: "#6366f1",
+      waveColor: '#ddd',
+      progressColor: '#8b5cf6',
+      cursorColor: '#6366f1',
       barWidth: 2,
       barRadius: 3,
       cursorWidth: 2,
@@ -71,7 +71,7 @@ export function AudioTrimModal({
     wavesurfer.load(audioUrl);
 
     // Event listeners
-    wavesurfer.on("ready", () => {
+    wavesurfer.on('ready', () => {
       const audioDuration = wavesurfer.getDuration();
       setDuration(audioDuration);
       setTrimEnd(audioDuration);
@@ -81,17 +81,17 @@ export function AudioTrimModal({
       regions.addRegion({
         start: 0,
         end: audioDuration,
-        color: "rgba(139, 92, 246, 0.3)",
+        color: 'rgba(139, 92, 246, 0.3)',
         drag: true,
         resize: true,
       });
     });
 
-    wavesurfer.on("play", () => setIsPlaying(true));
-    wavesurfer.on("pause", () => setIsPlaying(false));
+    wavesurfer.on('play', () => setIsPlaying(true));
+    wavesurfer.on('pause', () => setIsPlaying(false));
 
     // Update trim times when region changes
-    regions.on("region-updated", (region: any) => {
+    regions.on('region-updated', (region: any) => {
       setTrimStart(region.start);
       setTrimEnd(region.end);
     });
@@ -115,7 +115,7 @@ export function AudioTrimModal({
       regionsRef.current.addRegion({
         start: 0,
         end: audioDuration,
-        color: "rgba(139, 92, 246, 0.3)",
+        color: 'rgba(139, 92, 246, 0.3)',
         drag: true,
         resize: true,
       });
@@ -128,9 +128,9 @@ export function AudioTrimModal({
   const handleTrim = async () => {
     if (trimEnd - trimStart < 1) {
       toast({
-        title: "Selection too short",
-        description: "Please select at least 1 second of audio to transcribe.",
-        variant: "destructive",
+        title: 'Selection too short',
+        description: 'Please select at least 1 second of audio to transcribe.',
+        variant: 'destructive',
       });
       return;
     }
@@ -139,9 +139,9 @@ export function AudioTrimModal({
 
     try {
       const response = await fetch(`/api/calls/${callId}/trim`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           startTime: trimStart,
@@ -152,22 +152,22 @@ export function AudioTrimModal({
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to trim audio");
+        throw new Error(data.error || 'Failed to trim audio');
       }
 
       toast({
-        title: "Audio trimmed successfully",
+        title: 'Audio trimmed successfully',
         description: `Selected ${formatTime(trimEnd - trimStart)} of audio. Transcription will start automatically.`,
       });
 
       onTrimComplete();
       onClose();
     } catch (error) {
-      console.error("Trim error:", error);
+      console.error('Trim error:', error);
       toast({
-        title: "Trim failed",
-        description: error instanceof Error ? error.message : "Failed to trim audio",
-        variant: "destructive",
+        title: 'Trim failed',
+        description: error instanceof Error ? error.message : 'Failed to trim audio',
+        variant: 'destructive',
       });
     } finally {
       setIsTrimming(false);
@@ -177,7 +177,7 @@ export function AudioTrimModal({
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   return (
@@ -185,11 +185,12 @@ export function AudioTrimModal({
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Scissors className="w-5 h-5 text-violet-600" />
+            <Scissors className="w-5 h-5 text-purple-700" />
             Trim Audio for Transcription
           </DialogTitle>
           <DialogDescription>
-            Select the portion of the audio you want to transcribe. Drag the edges of the highlighted region to adjust.
+            Select the portion of the audio you want to transcribe. Drag the edges of the
+            highlighted region to adjust.
           </DialogDescription>
         </DialogHeader>
 
@@ -198,7 +199,7 @@ export function AudioTrimModal({
           <div className="relative bg-gray-50 rounded-lg p-4">
             {isLoading && (
               <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-lg">
-                <Loader2 className="w-6 h-6 animate-spin text-violet-600" />
+                <Loader2 className="w-6 h-6 animate-spin text-purple-700" />
               </div>
             )}
             <div ref={waveformRef} className="w-full" />
@@ -207,33 +208,19 @@ export function AudioTrimModal({
           {/* Controls */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Button
-                onClick={handlePlayPause}
-                disabled={isLoading}
-                variant="outline"
-                size="sm"
-              >
-                {isPlaying ? (
-                  <Pause className="w-4 h-4" />
-                ) : (
-                  <Play className="w-4 h-4" />
-                )}
+              <Button onClick={handlePlayPause} disabled={isLoading} variant="outline" size="sm">
+                {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
               </Button>
-              <Button
-                onClick={handleReset}
-                disabled={isLoading}
-                variant="outline"
-                size="sm"
-              >
+              <Button onClick={handleReset} disabled={isLoading} variant="outline" size="sm">
                 <RotateCcw className="w-4 h-4 mr-2" />
                 Reset
               </Button>
             </div>
 
             <div className="text-sm text-gray-600">
-              <span className="font-medium">Selected:</span>{" "}
-              {formatTime(trimStart)} - {formatTime(trimEnd)}{" "}
-              <span className="text-violet-600 font-medium">
+              <span className="font-medium">Selected:</span> {formatTime(trimStart)} -{' '}
+              {formatTime(trimEnd)}{' '}
+              <span className="text-purple-700 font-medium">
                 ({formatTime(trimEnd - trimStart)})
               </span>
             </div>
@@ -241,23 +228,19 @@ export function AudioTrimModal({
 
           {/* Info */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
-            <strong>Tip:</strong> Drag the colored region edges to select the portion you want to transcribe.
-            Only the selected portion will be processed, saving time and usage credits.
+            <strong>Tip:</strong> Drag the colored region edges to select the portion you want to
+            transcribe. Only the selected portion will be processed, saving time and usage credits.
           </div>
         </div>
 
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={onClose}
-            disabled={isTrimming}
-          >
+          <Button variant="outline" onClick={onClose} disabled={isTrimming}>
             Cancel
           </Button>
           <Button
             onClick={handleTrim}
             disabled={isTrimming || isLoading}
-            className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
+            className="bg-gradient-to-r from-purple-700 to-purple-700 hover:from-purple-800 hover:to-purple-700"
           >
             {isTrimming ? (
               <>

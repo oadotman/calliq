@@ -1,10 +1,22 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Activity, Zap, AlertCircle, CheckCircle } from "lucide-react";
-import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Activity, Zap, AlertCircle, CheckCircle } from 'lucide-react';
+import {
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+} from 'recharts';
 
 interface PerformanceData {
   summary: {
@@ -41,18 +53,18 @@ interface PerformanceData {
 
 export function PerformanceMetrics() {
   const [performanceData, setPerformanceData] = useState<PerformanceData | null>(null);
-  const [period, setPeriod] = useState("24h");
+  const [period, setPeriod] = useState('24h');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchPerformance() {
       try {
         const response = await fetch(`/api/analytics/performance?period=${period}`);
-        if (!response.ok) throw new Error("Failed to fetch performance data");
+        if (!response.ok) throw new Error('Failed to fetch performance data');
         const data = await response.json();
         setPerformanceData(data);
       } catch (error) {
-        console.error("Error fetching performance data:", error);
+        console.error('Error fetching performance data:', error);
       } finally {
         setLoading(false);
       }
@@ -86,7 +98,8 @@ export function PerformanceMetrics() {
               <CheckCircle className="w-5 h-5 text-green-600" />
             </div>
             <p className="text-xs text-slate-600 mt-1">
-              {performanceData.summary.successfulExecutions} of {performanceData.summary.totalExecutions} executions
+              {performanceData.summary.successfulExecutions} of{' '}
+              {performanceData.summary.totalExecutions} executions
             </p>
           </CardContent>
         </Card>
@@ -103,8 +116,8 @@ export function PerformanceMetrics() {
               <Zap className="w-5 h-5 text-blue-600" />
             </div>
             <p className="text-xs text-slate-600 mt-1">
-              P50: {(performanceData.summary.p50ExecutionTime / 1000).toFixed(2)}s |
-              P95: {(performanceData.summary.p95ExecutionTime / 1000).toFixed(2)}s
+              P50: {(performanceData.summary.p50ExecutionTime / 1000).toFixed(2)}s | P95:{' '}
+              {(performanceData.summary.p95ExecutionTime / 1000).toFixed(2)}s
             </p>
           </CardContent>
         </Card>
@@ -118,7 +131,7 @@ export function PerformanceMetrics() {
               <span className="text-3xl font-bold text-purple-700">
                 {performanceData.summary.totalCalls}
               </span>
-              <Activity className="w-5 h-5 text-purple-600" />
+              <Activity className="w-5 h-5 text-purple-700" />
             </div>
             <p className="text-xs text-slate-600 mt-1">
               Avg processing: {performanceData.summary.avgProcessingTime.toFixed(1)}s
@@ -138,7 +151,12 @@ export function PerformanceMetrics() {
               <AlertCircle className="w-5 h-5 text-red-600" />
             </div>
             <p className="text-xs text-slate-600 mt-1">
-              {((performanceData.summary.failedExecutions / performanceData.summary.totalExecutions) * 100).toFixed(1)}% failure rate
+              {(
+                (performanceData.summary.failedExecutions /
+                  performanceData.summary.totalExecutions) *
+                100
+              ).toFixed(1)}
+              % failure rate
             </p>
           </CardContent>
         </Card>
@@ -165,15 +183,17 @@ export function PerformanceMetrics() {
                   <XAxis
                     dataKey="timestamp"
                     stroke="#64748B"
-                    tickFormatter={(value) => new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    tickFormatter={(value) =>
+                      new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    }
                   />
                   <YAxis stroke="#64748B" />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "#1E293B",
-                      border: "none",
-                      borderRadius: "8px",
-                      color: "#fff",
+                      backgroundColor: '#1E293B',
+                      border: 'none',
+                      borderRadius: '8px',
+                      color: '#fff',
                     }}
                     labelFormatter={(value) => new Date(value).toLocaleString()}
                   />
@@ -203,10 +223,10 @@ export function PerformanceMetrics() {
                   <YAxis stroke="#64748B" />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "#1E293B",
-                      border: "none",
-                      borderRadius: "8px",
-                      color: "#fff",
+                      backgroundColor: '#1E293B',
+                      border: 'none',
+                      borderRadius: '8px',
+                      color: '#fff',
                     }}
                   />
                   <Bar dataKey="successRate" fill="#8B5CF6" radius={[8, 8, 0, 0]} />
@@ -227,15 +247,17 @@ export function PerformanceMetrics() {
                   <XAxis
                     dataKey="timestamp"
                     stroke="#64748B"
-                    tickFormatter={(value) => new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    tickFormatter={(value) =>
+                      new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    }
                   />
                   <YAxis stroke="#64748B" />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "#1E293B",
-                      border: "none",
-                      borderRadius: "8px",
-                      color: "#fff",
+                      backgroundColor: '#1E293B',
+                      border: 'none',
+                      borderRadius: '8px',
+                      color: '#fff',
                     }}
                     labelFormatter={(value) => new Date(value).toLocaleString()}
                   />

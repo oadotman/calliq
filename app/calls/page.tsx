@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { useState, useMemo, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
+import { useState, useMemo, useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { formatDate, formatDuration } from "@/lib/utils";
+} from '@/components/ui/dropdown-menu';
+import { formatDate, formatDuration } from '@/lib/utils';
 import {
   Search,
   Download,
@@ -29,13 +29,13 @@ import {
   Check,
   X,
   Plus,
-} from "lucide-react";
-import Link from "next/link";
-import { useAuth } from "@/lib/AuthContext";
-import { createClient } from "@/lib/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
-import { UploadModal } from "@/components/modals/UploadModal";
-import { OrganizationSwitcher } from "@/components/OrganizationSwitcher";
+} from 'lucide-react';
+import Link from 'next/link';
+import { useAuth } from '@/lib/AuthContext';
+import { createClient } from '@/lib/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
+import { UploadModal } from '@/components/modals/UploadModal';
+import { OrganizationSwitcher } from '@/components/OrganizationSwitcher';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,7 +45,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from '@/components/ui/alert-dialog';
 
 interface Call {
   id: string;
@@ -63,9 +63,9 @@ export default function CallsPage() {
   const { user, organization } = useAuth();
   const [calls, setCalls] = useState<Call[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchInput, setSearchInput] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedRep, setSelectedRep] = useState<string>("all");
+  const [searchInput, setSearchInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedRep, setSelectedRep] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedCallIds, setSelectedCallIds] = useState<string[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -188,11 +188,11 @@ export default function CallsPage() {
       }
 
       // Remove call from local state
-      setCalls(prevCalls => prevCalls.filter(call => call.id !== callId));
+      setCalls((prevCalls) => prevCalls.filter((call) => call.id !== callId));
 
       toast({
-        title: "Call deleted",
-        description: "The call has been successfully deleted.",
+        title: 'Call deleted',
+        description: 'The call has been successfully deleted.',
       });
 
       setDeleteDialogOpen(false);
@@ -200,9 +200,9 @@ export default function CallsPage() {
     } catch (error) {
       console.error('Error deleting call:', error);
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete call",
-        variant: "destructive",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to delete call',
+        variant: 'destructive',
       });
     } finally {
       setIsDeleting(false);
@@ -228,12 +228,10 @@ export default function CallsPage() {
       }
 
       // Remove calls from local state
-      setCalls(prevCalls =>
-        prevCalls.filter(call => !selectedCallIds.includes(call.id))
-      );
+      setCalls((prevCalls) => prevCalls.filter((call) => !selectedCallIds.includes(call.id)));
 
       toast({
-        title: "Calls deleted",
+        title: 'Calls deleted',
         description: `${selectedCallIds.length} calls have been successfully deleted.`,
       });
 
@@ -242,9 +240,9 @@ export default function CallsPage() {
     } catch (error) {
       console.error('Error deleting calls:', error);
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete calls",
-        variant: "destructive",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to delete calls',
+        variant: 'destructive',
       });
     } finally {
       setIsDeleting(false);
@@ -259,9 +257,9 @@ export default function CallsPage() {
   const initiateBulkDelete = () => {
     if (selectedCallIds.length === 0) {
       toast({
-        title: "No calls selected",
-        description: "Please select calls to delete",
-        variant: "destructive",
+        title: 'No calls selected',
+        description: 'Please select calls to delete',
+        variant: 'destructive',
       });
       return;
     }
@@ -275,7 +273,7 @@ export default function CallsPage() {
         (call.customer_name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
         (call.sales_rep?.toLowerCase() || '').includes(searchQuery.toLowerCase());
 
-      const matchesRep = selectedRep === "all" || call.sales_rep === selectedRep;
+      const matchesRep = selectedRep === 'all' || call.sales_rep === selectedRep;
 
       return matchesSearch && matchesRep;
     });
@@ -284,10 +282,7 @@ export default function CallsPage() {
   const totalPages = Math.ceil(filteredCalls.length / itemsPerPage);
 
   const paginatedCalls = useMemo(() => {
-    return filteredCalls.slice(
-      (currentPage - 1) * itemsPerPage,
-      currentPage * itemsPerPage
-    );
+    return filteredCalls.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   }, [filteredCalls, currentPage]);
 
   const uniqueReps = useMemo(() => {
@@ -325,7 +320,7 @@ export default function CallsPage() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950/30">
         <div className="flex items-center justify-center p-8 lg:p-16">
           <div className="text-center">
-            <Loader2 className="w-12 h-12 animate-spin text-violet-600 dark:text-violet-400 mx-auto mb-4" />
+            <Loader2 className="w-12 h-12 animate-spin text-purple-700 dark:text-purple-700 mx-auto mb-4" />
             <p className="text-slate-600 dark:text-slate-400 font-medium">Loading calls...</p>
           </div>
         </div>
@@ -338,7 +333,7 @@ export default function CallsPage() {
       <div className="p-4 lg:p-8 space-y-6 animate-in fade-in duration-200">
         {/* Header */}
         <div className="relative group">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-violet-600/10 rounded-3xl blur-lg opacity-60 group-hover:opacity-80 transition-opacity duration-300" />
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-purple-700/10 rounded-3xl blur-lg opacity-60 group-hover:opacity-80 transition-opacity duration-300" />
           <div className="relative bg-white dark:bg-slate-900 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 shadow-xl">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div>
@@ -353,17 +348,17 @@ export default function CallsPage() {
                 <OrganizationSwitcher />
                 <div className="h-8 w-px bg-slate-200 dark:bg-slate-700" />
                 <div className="flex gap-3">
-                <Button
-                  onClick={() => setIsUploadModalOpen(true)}
-                  className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white shadow-lg shadow-violet-500/30 hover:shadow-xl hover:shadow-violet-500/50 transition-all duration-300 rounded-xl border-0 font-semibold group/btn"
-                >
-                  <Plus className="w-4 h-4 mr-2 group-hover/btn:scale-110 transition-transform" />
-                  Process New Call
-                </Button>
-                <Button className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/50 transition-all duration-300 rounded-xl border-0 font-semibold group/btn">
-                  <Download className="w-4 h-4 mr-2 group-hover/btn:scale-110 transition-transform" />
-                  Export All Data
-                </Button>
+                  <Button
+                    onClick={() => setIsUploadModalOpen(true)}
+                    className="bg-gradient-to-r from-purple-700 to-purple-700 hover:from-purple-800 hover:to-purple-700 text-white shadow-lg shadow-purple-700/30 hover:shadow-xl hover:shadow-purple-700/50 transition-all duration-300 rounded-xl border-0 font-semibold group/btn"
+                  >
+                    <Plus className="w-4 h-4 mr-2 group-hover/btn:scale-110 transition-transform" />
+                    Process New Call
+                  </Button>
+                  <Button className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/50 transition-all duration-300 rounded-xl border-0 font-semibold group/btn">
+                    <Download className="w-4 h-4 mr-2 group-hover/btn:scale-110 transition-transform" />
+                    Export All Data
+                  </Button>
                 </div>
               </div>
             </div>
@@ -376,12 +371,12 @@ export default function CallsPage() {
             <div className="flex flex-col lg:flex-row gap-4">
               {/* Search */}
               <div className="flex-1 relative group">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-violet-600 transition-colors z-10" />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-purple-700 transition-colors z-10" />
                 <Input
                   placeholder="Search by customer, sales rep..."
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  className="pl-12 pr-4 py-3.5 bg-slate-50 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-violet-500/20 focus:border-violet-500 focus:bg-white transition-all placeholder:text-slate-400 text-base font-medium shadow-sm hover:shadow-md focus:shadow-lg"
+                  className="pl-12 pr-4 py-3.5 bg-slate-50 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-purple-700/20 focus:border-purple-700 focus:bg-white transition-all placeholder:text-slate-400 text-base font-medium shadow-sm hover:shadow-md focus:shadow-lg"
                 />
               </div>
 
@@ -390,17 +385,14 @@ export default function CallsPage() {
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
-                    className="w-full lg:w-auto px-6 py-3 border-2 border-slate-200 hover:border-violet-300 hover:bg-violet-50 rounded-xl font-medium transition-all duration-200"
+                    className="w-full lg:w-auto px-6 py-3 border-2 border-slate-200 hover:border-purple-300 hover:bg-purple-100 rounded-xl font-medium transition-all duration-200"
                   >
                     <Filter className="w-4 h-4 mr-2" />
-                    Sales Rep: {selectedRep === "all" ? "All" : selectedRep}
+                    Sales Rep: {selectedRep === 'all' ? 'All' : selectedRep}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="rounded-xl">
-                  <DropdownMenuItem
-                    onClick={() => setSelectedRep("all")}
-                    className="rounded-lg"
-                  >
+                  <DropdownMenuItem onClick={() => setSelectedRep('all')} className="rounded-lg">
                     All Reps
                   </DropdownMenuItem>
                   {uniqueReps.map((rep) => (
@@ -423,7 +415,7 @@ export default function CallsPage() {
           <div className="bg-purple-50 border-2 border-purple-300 rounded-2xl p-4 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-purple-700 rounded-lg flex items-center justify-center">
                   <Check className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-sm font-semibold text-purple-900">
@@ -435,14 +427,14 @@ export default function CallsPage() {
                   variant="ghost"
                   size="sm"
                   onClick={handleClearSelection}
-                  className="text-purple-600 hover:text-purple-700 hover:bg-purple-100 rounded-lg"
+                  className="text-purple-700 hover:text-purple-700 hover:bg-purple-200 rounded-lg"
                 >
                   <X className="w-4 h-4 mr-1" />
                   Clear
                 </Button>
                 <Button
                   size="sm"
-                  className="bg-purple-600 hover:bg-purple-700 text-white rounded-lg"
+                  className="bg-purple-700 hover:bg-purple-700 text-white rounded-lg"
                 >
                   <Download className="w-4 h-4 mr-1" />
                   Export Selected
@@ -466,8 +458,8 @@ export default function CallsPage() {
           <CardContent className="p-0">
             {filteredCalls.length === 0 ? (
               <div className="text-center py-20 px-6">
-                <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-violet-100 to-purple-100 flex items-center justify-center">
-                  <Search className="w-12 h-12 text-violet-600" />
+                <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-purple-100 to-purple-100 flex items-center justify-center">
+                  <Search className="w-12 h-12 text-purple-700" />
                 </div>
                 <h3 className="text-2xl font-bold mb-3 text-slate-900">
                   {searchQuery || selectedRep !== 'all' ? 'No calls found' : 'No calls yet'}
@@ -483,14 +475,14 @@ export default function CallsPage() {
                       setSearchInput('');
                       setSelectedRep('all');
                     }}
-                    className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white shadow-xl rounded-xl px-8 py-3 text-base border-0"
+                    className="bg-gradient-to-r from-purple-700 to-purple-700 hover:from-purple-800 hover:to-purple-700 text-white shadow-xl rounded-xl px-8 py-3 text-base border-0"
                   >
                     Clear Filters
                   </Button>
                 ) : (
                   <Button
                     onClick={() => setIsUploadModalOpen(true)}
-                    className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white shadow-xl rounded-xl px-8 py-3 text-base border-0"
+                    className="bg-gradient-to-r from-purple-700 to-purple-700 hover:from-purple-800 hover:to-purple-700 text-white shadow-xl rounded-xl px-8 py-3 text-base border-0"
                   >
                     <Plus className="w-5 h-5 mr-2" />
                     Process Your First Call
@@ -533,7 +525,7 @@ export default function CallsPage() {
                     {paginatedCalls.map((call, index) => (
                       <tr
                         key={call.id}
-                        className="group hover:bg-gradient-to-r hover:from-violet-50/30 hover:to-transparent transition-all duration-200"
+                        className="group hover:bg-gradient-to-r hover:from-purple-50/30 hover:to-transparent transition-all duration-200"
                         style={{ animationDelay: `${index * 30}ms` }}
                       >
                         <td className="px-6 py-5">
@@ -547,8 +539,8 @@ export default function CallsPage() {
                         </td>
                         <td className="px-6 py-5">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-100 to-purple-100 flex items-center justify-center flex-shrink-0">
-                              <span className="text-sm font-bold text-violet-600">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-100 to-purple-100 flex items-center justify-center flex-shrink-0">
+                              <span className="text-sm font-bold text-purple-700">
                                 {call.customer_name ? call.customer_name.charAt(0) : '?'}
                               </span>
                             </div>
@@ -575,21 +567,21 @@ export default function CallsPage() {
                           </div>
                         </td>
                         <td className="px-6 py-5">
-                          {call.status === "completed" && (
+                          {call.status === 'completed' && (
                             <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg font-medium text-sm border border-emerald-200">
                               <CheckCircle2 className="w-4 h-4" />
                               Completed
                             </div>
                           )}
-                          {(call.status === "processing" ||
-                            call.status === "transcribing" ||
-                            call.status === "extracting") && (
+                          {(call.status === 'processing' ||
+                            call.status === 'transcribing' ||
+                            call.status === 'extracting') && (
                             <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg font-medium text-sm border border-amber-200">
                               <Loader2 className="w-4 h-4 animate-spin" />
                               Processing
                             </div>
                           )}
-                          {call.status === "failed" && (
+                          {call.status === 'failed' && (
                             <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-100 text-red-700 rounded-lg font-medium text-sm border border-red-200">
                               <AlertCircle className="w-4 h-4" />
                               Failed
@@ -602,7 +594,7 @@ export default function CallsPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="text-violet-600 hover:text-violet-700 hover:bg-violet-50 rounded-lg font-medium transition-all duration-200"
+                                className="text-purple-700 hover:text-purple-800 hover:bg-purple-100 rounded-lg font-medium transition-all duration-200"
                               >
                                 <Eye className="w-4 h-4 mr-1.5" />
                                 View
@@ -647,19 +639,15 @@ export default function CallsPage() {
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-6 py-4 bg-white rounded-2xl border border-slate-200 shadow-lg">
             <div className="text-sm text-slate-600 font-medium">
-              Showing{" "}
+              Showing{' '}
               <span className="font-bold text-slate-900">
                 {(currentPage - 1) * itemsPerPage + 1}
-              </span>{" "}
-              to{" "}
+              </span>{' '}
+              to{' '}
               <span className="font-bold text-slate-900">
                 {Math.min(currentPage * itemsPerPage, filteredCalls.length)}
-              </span>{" "}
-              of{" "}
-              <span className="font-bold text-slate-900">
-                {filteredCalls.length}
-              </span>{" "}
-              calls
+              </span>{' '}
+              of <span className="font-bold text-slate-900">{filteredCalls.length}</span> calls
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -688,13 +676,11 @@ export default function CallsPage() {
                   return (
                     <Button
                       key={pageNum}
-                      variant={currentPage === pageNum ? "default" : "outline"}
+                      variant={currentPage === pageNum ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => setCurrentPage(pageNum)}
                       className={`w-10 h-10 rounded-lg border-2 ${
-                        currentPage === pageNum
-                          ? "bg-violet-600 text-white border-violet-600"
-                          : ""
+                        currentPage === pageNum ? 'bg-purple-700 text-white border-purple-700' : ''
                       }`}
                     >
                       {pageNum}
@@ -723,8 +709,8 @@ export default function CallsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the call
-              and all associated data.
+              This action cannot be undone. This will permanently delete the call and all associated
+              data.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -753,8 +739,8 @@ export default function CallsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {selectedCallIds.length} calls?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the selected
-              calls and all associated data.
+              This action cannot be undone. This will permanently delete the selected calls and all
+              associated data.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -781,17 +767,14 @@ export default function CallsPage() {
       <div className="fixed bottom-8 right-8 z-50">
         <Button
           onClick={() => setIsUploadModalOpen(true)}
-          className="w-16 h-16 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white shadow-2xl shadow-violet-500/50 hover:shadow-3xl hover:scale-110 transition-all duration-300 rounded-full flex items-center justify-center group"
+          className="w-16 h-16 bg-gradient-to-r from-purple-700 to-purple-700 hover:from-purple-800 hover:to-purple-700 text-white shadow-2xl shadow-purple-700/50 hover:shadow-3xl hover:scale-110 transition-all duration-300 rounded-full flex items-center justify-center group"
         >
           <Plus className="w-8 h-8 group-hover:rotate-90 transition-transform duration-300" />
         </Button>
       </div>
 
       {/* Upload Modal */}
-      <UploadModal
-        isOpen={isUploadModalOpen}
-        onClose={() => setIsUploadModalOpen(false)}
-      />
+      <UploadModal isOpen={isUploadModalOpen} onClose={() => setIsUploadModalOpen(false)} />
     </div>
   );
 }

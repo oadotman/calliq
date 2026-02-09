@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Zap, Menu, X } from "lucide-react";
+import { useState } from 'react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Zap, Menu, X } from 'lucide-react';
 
 export function PartnerNavigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -14,7 +14,7 @@ export function PartnerNavigation() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-violet-600 to-purple-600 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-br from-purple-700 to-purple-700 rounded-lg flex items-center justify-center">
               <Zap className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold text-gray-900">SynQall</span>
@@ -35,16 +35,28 @@ export function PartnerNavigation() {
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center gap-6">
-            <Link href="/" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
+            <Link
+              href="/"
+              className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+            >
               Home
             </Link>
-            <Link href="/partners" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
+            <Link
+              href="/partners"
+              className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+            >
               Partner Program
             </Link>
-            <Link href="/pricing" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
+            <Link
+              href="/pricing"
+              className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+            >
               Pricing
             </Link>
-            <Link href="/blog" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
+            <Link
+              href="/blog"
+              className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+            >
               Blog
             </Link>
             <Link href="/partners/login">
@@ -53,7 +65,7 @@ export function PartnerNavigation() {
               </Button>
             </Link>
             <Link href="/partners/apply">
-              <Button className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white shadow-lg">
+              <Button className="bg-gradient-to-r from-purple-700 to-purple-700 hover:from-purple-800 hover:to-purple-700 text-white shadow-lg">
                 Apply Now
               </Button>
             </Link>
@@ -100,7 +112,7 @@ export function PartnerNavigation() {
                 </Button>
               </Link>
               <Link href="/partners/apply" onClick={() => setMobileMenuOpen(false)}>
-                <Button className="w-full justify-center bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white shadow-lg">
+                <Button className="w-full justify-center bg-gradient-to-r from-purple-700 to-purple-700 hover:from-purple-800 hover:to-purple-700 text-white shadow-lg">
                   Apply Now
                 </Button>
               </Link>

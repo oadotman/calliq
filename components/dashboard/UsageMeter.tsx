@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { Clock, BarChart3, Plus } from "lucide-react";
-import { useAuth } from "@/lib/AuthContext";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { useEffect, useState } from 'react';
+import { Clock, BarChart3, Plus } from 'lucide-react';
+import { useAuth } from '@/lib/AuthContext';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 interface UsageData {
   minutesUsed: number;
@@ -32,9 +32,7 @@ export function UsageMeter() {
   async function fetchUsage() {
     try {
       // Pass organizationId if available to ensure we get correct org's usage
-      const url = organization?.id
-        ? `/api/usage?organizationId=${organization.id}`
-        : '/api/usage';
+      const url = organization?.id ? `/api/usage?organizationId=${organization.id}` : '/api/usage';
 
       const response = await fetch(url);
       const data = await response.json();
@@ -56,7 +54,7 @@ export function UsageMeter() {
     return (
       <div className="bg-white rounded-2xl shadow-[0px_1px_3px_rgba(0,0,0,0.08)] p-8">
         <div className="flex items-center gap-3 mb-6">
-          <Clock className="w-6 h-6 text-violet-600" />
+          <Clock className="w-6 h-6 text-purple-700" />
           <h3 className="text-lg font-semibold text-gray-900">Monthly Usage</h3>
         </div>
         <div className="animate-pulse space-y-4">
@@ -85,7 +83,7 @@ export function UsageMeter() {
       {/* Title Row */}
       <div className="flex items-center gap-3">
         <div className="w-6 h-6 flex items-center justify-center">
-          <Clock className="w-6 h-6 text-violet-600" />
+          <Clock className="w-6 h-6 text-purple-700" />
         </div>
         <h3 className="text-lg font-semibold text-gray-900">Monthly Usage</h3>
       </div>
@@ -107,10 +105,10 @@ export function UsageMeter() {
         <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
           <div
             className={cn(
-              "h-full bg-emerald-500 transition-all duration-500 ease-out",
-              usage.warningLevel === 'exceeded' && "bg-red-500",
-              usage.warningLevel === 'high' && "bg-orange-500",
-              usage.warningLevel === 'medium' && "bg-yellow-500"
+              'h-full bg-emerald-500 transition-all duration-500 ease-out',
+              usage.warningLevel === 'exceeded' && 'bg-red-500',
+              usage.warningLevel === 'high' && 'bg-orange-500',
+              usage.warningLevel === 'medium' && 'bg-yellow-500'
             )}
             style={{ width: `${Math.min(usage.percentUsed, 100)}%` }}
           />
@@ -128,23 +126,23 @@ export function UsageMeter() {
 
         {/* Show Add Minutes button when usage is high or exceeded, and not on free plan */}
         {(usage.warningLevel === 'high' || usage.warningLevel === 'exceeded') &&
-         usage.planType !== 'free' && (
-          <Link href="/overage">
-            <Button
-              size="sm"
-              variant={usage.warningLevel === 'exceeded' ? 'destructive' : 'default'}
-              className={cn(
-                "gap-1.5",
-                usage.warningLevel === 'exceeded'
-                  ? "bg-red-600 hover:bg-red-700"
-                  : "bg-violet-600 hover:bg-violet-700"
-              )}
-            >
-              <Plus className="w-3 h-3" />
-              Add Minutes
-            </Button>
-          </Link>
-        )}
+          usage.planType !== 'free' && (
+            <Link href="/overage">
+              <Button
+                size="sm"
+                variant={usage.warningLevel === 'exceeded' ? 'destructive' : 'default'}
+                className={cn(
+                  'gap-1.5',
+                  usage.warningLevel === 'exceeded'
+                    ? 'bg-red-600 hover:bg-red-700'
+                    : 'bg-purple-700 hover:bg-purple-800'
+                )}
+              >
+                <Plus className="w-3 h-3" />
+                Add Minutes
+              </Button>
+            </Link>
+          )}
       </div>
     </div>
   );

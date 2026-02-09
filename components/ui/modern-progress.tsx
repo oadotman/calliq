@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
 
 interface ModernProgressProps {
   progress: number;
@@ -14,7 +14,7 @@ export function ModernProgress({
   progress,
   message = 'Processing...',
   status = 'processing',
-  className = ''
+  className = '',
 }: ModernProgressProps) {
   const [displayProgress, setDisplayProgress] = useState(0);
 
@@ -32,7 +32,7 @@ export function ModernProgress({
     delay: i * 0.2,
     duration: 2 + Math.random() * 2,
     size: 4 + Math.random() * 8,
-    x: Math.random() * 100
+    x: Math.random() * 100,
   }));
 
   return (
@@ -48,11 +48,11 @@ export function ModernProgress({
             animate={{ width: `${displayProgress}%` }}
             transition={{
               duration: 0.5,
-              ease: [0.4, 0.0, 0.2, 1]
+              ease: [0.4, 0.0, 0.2, 1],
             }}
           >
             {/* Gradient Background */}
-            <div className="absolute inset-0 bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-500" />
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-700 via-purple-700 to-indigo-500" />
 
             {/* Shimmer Effect */}
             <motion.div
@@ -61,48 +61,49 @@ export function ModernProgress({
               transition={{
                 duration: 2,
                 repeat: Infinity,
-                ease: 'linear'
+                ease: 'linear',
               }}
               style={{ transform: 'skewX(-20deg)' }}
             />
           </motion.div>
 
           {/* Floating Bubbles */}
-          {displayProgress > 0 && bubbles.map((bubble) => (
-            <motion.div
-              key={bubble.id}
-              className="absolute rounded-full bg-purple-400/20"
-              style={{
-                width: bubble.size,
-                height: bubble.size,
-                left: `${(displayProgress / 100) * bubble.x}%`,
-                bottom: 0
-              }}
-              animate={{
-                y: [-20, -60, -20],
-                opacity: [0.3, 0.6, 0.3],
-                scale: [1, 1.2, 1]
-              }}
-              transition={{
-                duration: bubble.duration,
-                repeat: Infinity,
-                delay: bubble.delay,
-                ease: 'easeInOut'
-              }}
-            />
-          ))}
+          {displayProgress > 0 &&
+            bubbles.map((bubble) => (
+              <motion.div
+                key={bubble.id}
+                className="absolute rounded-full bg-purple-400/20"
+                style={{
+                  width: bubble.size,
+                  height: bubble.size,
+                  left: `${(displayProgress / 100) * bubble.x}%`,
+                  bottom: 0,
+                }}
+                animate={{
+                  y: [-20, -60, -20],
+                  opacity: [0.3, 0.6, 0.3],
+                  scale: [1, 1.2, 1],
+                }}
+                transition={{
+                  duration: bubble.duration,
+                  repeat: Infinity,
+                  delay: bubble.delay,
+                  ease: 'easeInOut',
+                }}
+              />
+            ))}
         </div>
 
         {/* Glow Effect */}
         <motion.div
-          className="absolute -inset-1 bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-500 rounded-full opacity-30 blur-lg"
+          className="absolute -inset-1 bg-gradient-to-r from-purple-700 via-purple-700 to-indigo-500 rounded-full opacity-30 blur-lg"
           animate={{
-            opacity: status === 'processing' ? [0.2, 0.4, 0.2] : 0.1
+            opacity: status === 'processing' ? [0.2, 0.4, 0.2] : 0.1,
           }}
           transition={{
             duration: 2,
             repeat: Infinity,
-            ease: 'easeInOut'
+            ease: 'easeInOut',
           }}
         />
       </div>
@@ -113,19 +114,26 @@ export function ModernProgress({
           {/* Status Indicator */}
           <motion.div
             className={`w-2 h-2 rounded-full ${
-              status === 'completed' ? 'bg-green-500' :
-              status === 'error' ? 'bg-red-500' :
-              status === 'queued' ? 'bg-yellow-500' :
-              'bg-purple-500'
+              status === 'completed'
+                ? 'bg-green-500'
+                : status === 'error'
+                  ? 'bg-red-500'
+                  : status === 'queued'
+                    ? 'bg-yellow-500'
+                    : 'bg-purple-700'
             }`}
-            animate={status === 'processing' ? {
-              scale: [1, 1.5, 1],
-              opacity: [1, 0.5, 1]
-            } : {}}
+            animate={
+              status === 'processing'
+                ? {
+                    scale: [1, 1.5, 1],
+                    opacity: [1, 0.5, 1],
+                  }
+                : {}
+            }
             transition={{
               duration: 1,
               repeat: Infinity,
-              ease: 'easeInOut'
+              ease: 'easeInOut',
             }}
           />
 
@@ -143,7 +151,7 @@ export function ModernProgress({
 
         {/* Percentage */}
         <motion.span
-          className="text-sm font-semibold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent"
+          className="text-sm font-semibold bg-gradient-to-r from-purple-700 to-purple-700 bg-clip-text text-transparent"
           key={displayProgress}
           initial={{ scale: 1.2 }}
           animate={{ scale: 1 }}
@@ -162,19 +170,19 @@ export function ModernProgress({
               className="absolute w-1 h-1 bg-green-400 rounded-full"
               style={{
                 left: '50%',
-                top: '50%'
+                top: '50%',
               }}
               initial={{ scale: 0, x: 0, y: 0 }}
               animate={{
                 scale: [0, 1, 0],
                 x: (Math.random() - 0.5) * 100,
                 y: (Math.random() - 0.5) * 50,
-                opacity: [1, 0]
+                opacity: [1, 0],
               }}
               transition={{
                 duration: 0.8,
                 delay: i * 0.05,
-                ease: 'easeOut'
+                ease: 'easeOut',
               }}
             />
           ))}

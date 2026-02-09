@@ -1,25 +1,16 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { formatDate, formatDuration } from "@/lib/utils";
-import { SentimentType } from "@/lib/types";
-import {
-  Clock,
-  Zap,
-  Phone,
-  Users,
-  Plus,
-  Sparkles,
-  TrendingUp,
-  Loader2,
-} from "lucide-react";
-import Link from "next/link";
-import { useAuth } from "@/lib/AuthContext";
-import { createClient } from "@/lib/supabase/client";
-import { UsageMeter } from "@/components/dashboard/UsageMeter";
-import { MetricCard } from "@/components/dashboard/MetricCard";
-import { QuickActions } from "@/components/dashboard/QuickActions";
-import { UploadModal } from "@/components/modals/UploadModal";
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { formatDate, formatDuration } from '@/lib/utils';
+import { SentimentType } from '@/lib/types';
+import { Clock, Zap, Phone, Users, Plus, Sparkles, TrendingUp, Loader2 } from 'lucide-react';
+import Link from 'next/link';
+import { useAuth } from '@/lib/AuthContext';
+import { createClient } from '@/lib/supabase/client';
+import { UsageMeter } from '@/components/dashboard/UsageMeter';
+import { MetricCard } from '@/components/dashboard/MetricCard';
+import { QuickActions } from '@/components/dashboard/QuickActions';
+import { UploadModal } from '@/components/modals/UploadModal';
 
 interface DashboardStats {
   callsThisMonth: number;
@@ -95,7 +86,14 @@ export default function DashboardContent() {
 
               if (org) {
                 planLimit = org.max_minutes_monthly || 30;
-                console.log('Fetched organization:', org.name, 'Plan:', org.plan_type, 'Limit:', planLimit);
+                console.log(
+                  'Fetched organization:',
+                  org.name,
+                  'Plan:',
+                  org.plan_type,
+                  'Limit:',
+                  planLimit
+                );
               }
             }
           } catch (err) {
@@ -185,10 +183,12 @@ export default function DashboardContent() {
                 (sum, call) => sum + (call.duration_minutes || 0),
                 0
               );
-              console.log(`Organization usage from calls: ${totalMinutesThisMonth} minutes from ${orgCalls.length} calls`);
+              console.log(
+                `Organization usage from calls: ${totalMinutesThisMonth} minutes from ${orgCalls.length} calls`
+              );
 
               // Log details for debugging
-              const uniqueUsers = new Set(orgCalls.map(c => c.user_id));
+              const uniqueUsers = new Set(orgCalls.map((c) => c.user_id));
               console.log(`Unique users with calls: ${uniqueUsers.size}`);
             } else if (callsError) {
               console.error('Error fetching organization calls:', callsError);
@@ -237,18 +237,18 @@ export default function DashboardContent() {
         }
 
         // Calculate time saved (assuming 15 min saved per call)
-        const hoursSavedThisMonth = Math.round((callsThisMonth * 15) / 60 * 10) / 10;
-        const hoursSavedLastMonth = Math.round((callsLastMonth * 15) / 60 * 10) / 10;
+        const hoursSavedThisMonth = Math.round(((callsThisMonth * 15) / 60) * 10) / 10;
+        const hoursSavedLastMonth = Math.round(((callsLastMonth * 15) / 60) * 10) / 10;
 
         // Calculate trend
-        let callsTrend = "+0%";
+        let callsTrend = '+0%';
         if (callsLastMonth > 0) {
           const percentChange = Math.round(
             ((callsThisMonth - callsLastMonth) / callsLastMonth) * 100
           );
-          callsTrend = `${percentChange > 0 ? "+" : ""}${percentChange}%`;
+          callsTrend = `${percentChange > 0 ? '+' : ''}${percentChange}%`;
         } else if (callsThisMonth > 0) {
-          callsTrend = "+100%";
+          callsTrend = '+100%';
         }
 
         if (isMounted) {
@@ -327,7 +327,7 @@ export default function DashboardContent() {
 
   // Get plan type display with memoization - moved before conditional return
   const planDisplay = useMemo(() => {
-    if (!organization) return "Starter Plan";
+    if (!organization) return 'Starter Plan';
     switch (organization?.plan_type) {
       case 'free':
         return 'Free Plan';
@@ -347,7 +347,7 @@ export default function DashboardContent() {
       <div className="min-h-screen bg-white">
         <div className="flex items-center justify-center p-12">
           <div className="text-center">
-            <Loader2 className="w-12 h-12 animate-spin text-violet-600 mx-auto mb-4" />
+            <Loader2 className="w-12 h-12 animate-spin text-purple-700 mx-auto mb-4" />
             <p className="text-gray-500 font-medium">Loading dashboard...</p>
           </div>
         </div>
@@ -360,10 +360,8 @@ export default function DashboardContent() {
       <div className="p-12 space-y-8">
         {/* TOP SECTION - Header Area */}
         <div className="flex items-center justify-between">
-          <h1 className="text-[28px] font-semibold text-gray-800">
-            Dashboard
-          </h1>
-          <div className="bg-purple-50 text-violet-600 px-4 py-1.5 rounded-full">
+          <h1 className="text-[28px] font-semibold text-gray-800">Dashboard</h1>
+          <div className="bg-purple-50 text-purple-700 px-4 py-1.5 rounded-full">
             <span className="text-sm font-medium">✨ {planDisplay}</span>
           </div>
         </div>
@@ -391,7 +389,7 @@ export default function DashboardContent() {
               subText="This month"
               trend={{
                 value: `${stats.callsTrend} vs last month`,
-                isPositive: stats.callsTrend.startsWith('+')
+                isPositive: stats.callsTrend.startsWith('+'),
               }}
             />
 
@@ -410,14 +408,14 @@ export default function DashboardContent() {
             {/* Active Team Card */}
             <MetricCard
               icon={Users}
-              iconBgColor="bg-violet-600"
+              iconBgColor="bg-purple-700"
               cardBgColor="bg-purple-50"
               label="ACTIVE TEAM"
               value={1}
               subText="Team member online"
               statusIndicator={{
                 isActive: true,
-                text: "Available now"
+                text: 'Available now',
               }}
             />
           </div>
@@ -427,17 +425,14 @@ export default function DashboardContent() {
         <div className="fixed bottom-8 right-8 z-50">
           <button
             onClick={handleOpenUploadModal}
-            className="w-16 h-16 bg-violet-600 hover:bg-violet-700 text-white rounded-full shadow-[0px_8px_16px_rgba(124,58,237,0.3)] hover:shadow-[0px_12px_20px_rgba(124,58,237,0.4)] hover:scale-105 transition-all duration-200 flex items-center justify-center group"
+            className="w-16 h-16 bg-purple-700 hover:bg-purple-800 text-white rounded-full shadow-[0px_8px_16px_rgba(124,58,237,0.3)] hover:shadow-[0px_12px_20px_rgba(124,58,237,0.4)] hover:scale-105 transition-all duration-200 flex items-center justify-center group"
           >
             <Plus className="w-8 h-8" strokeWidth={2.5} />
           </button>
         </div>
 
         {/* Upload Modal */}
-        <UploadModal
-          isOpen={isUploadModalOpen}
-          onClose={handleCloseUploadModal}
-        />
+        <UploadModal isOpen={isUploadModalOpen} onClose={handleCloseUploadModal} />
       </div>
     </div>
   );

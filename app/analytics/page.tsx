@@ -168,7 +168,7 @@ export default function AnalyticsPage() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
         <div className="flex items-center justify-center p-8 lg:p-16">
           <div className="text-center">
-            <Loader2 className="w-12 h-12 animate-spin text-violet-600 mx-auto mb-4" />
+            <Loader2 className="w-12 h-12 animate-spin text-purple-700 mx-auto mb-4" />
             <p className="text-slate-600 font-medium">Loading analytics...</p>
           </div>
         </div>
@@ -226,10 +226,10 @@ export default function AnalyticsPage() {
       <div className="p-4 lg:p-8 space-y-8 animate-in fade-in duration-200">
         {/* Page Header */}
         <div className="relative group">
-          <div className="absolute inset-0 bg-gradient-to-r from-violet-600/10 via-purple-600/10 to-pink-600/10 rounded-3xl blur-lg opacity-60 group-hover:opacity-80 transition-opacity duration-300" />
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-700/10 via-purple-700/10 to-pink-600/10 rounded-3xl blur-lg opacity-60 group-hover:opacity-80 transition-opacity duration-300" />
           <div className="relative bg-white rounded-2xl p-8 border border-slate-200 shadow-xl">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-gradient-to-br from-violet-600 to-purple-600 rounded-2xl shadow-lg">
+              <div className="p-3 bg-gradient-to-br from-purple-700 to-purple-700 rounded-2xl shadow-lg">
                 <BarChart3 className="w-8 h-8 text-white" />
               </div>
               <div>
@@ -287,7 +287,7 @@ export default function AnalyticsPage() {
                 <CardTitle className="text-sm font-semibold text-slate-700 tracking-wide uppercase">
                   Avg. Sentiment
                 </CardTitle>
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center shadow-lg shadow-purple-500/30 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-700 to-pink-600 flex items-center justify-center shadow-lg shadow-purple-700/30 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
                   <TrendingUp className="w-6 h-6 text-white" />
                 </div>
               </div>
@@ -522,7 +522,7 @@ export default function AnalyticsPage() {
                   {analytics.keywordsData.map((item, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-4 bg-gradient-to-r from-slate-50 to-transparent rounded-xl border border-slate-100 hover:border-purple-200 hover:bg-purple-50/30 transition-all duration-200 group"
+                      className="flex items-center justify-between p-4 bg-gradient-to-r from-slate-50 to-transparent rounded-xl border border-slate-100 hover:border-purple-300 hover:bg-purple-100/30 transition-all duration-200 group"
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">

@@ -1,21 +1,21 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Send } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Send } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 
 export function ContactForm() {
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    company: "",
-    subject: "",
-    message: "",
+    name: '',
+    email: '',
+    company: '',
+    subject: '',
+    message: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -25,25 +25,25 @@ export function ContactForm() {
     setIsSubmitting(true);
 
     // Simulate form submission
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise((resolve) => setTimeout(resolve, 1500));
 
     toast({
-      title: "Message sent successfully!",
+      title: 'Message sent successfully!',
       description: "We'll get back to you within 24 hours.",
     });
 
     setFormData({
-      name: "",
-      email: "",
-      company: "",
-      subject: "",
-      message: "",
+      name: '',
+      email: '',
+      company: '',
+      subject: '',
+      message: '',
     });
     setIsSubmitting(false);
   };
 
   return (
-    <Card className="border-2 border-violet-200 dark:border-violet-700 shadow-xl">
+    <Card className="border-2 border-purple-200 dark:border-purple-800 shadow-xl">
       <CardHeader className="text-center pb-8">
         <CardTitle className="text-2xl">Send Us a Message</CardTitle>
         <p className="text-slate-600 dark:text-slate-400 mt-2">
@@ -126,10 +126,10 @@ export function ContactForm() {
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white"
+            className="w-full bg-gradient-to-r from-purple-700 to-purple-700 hover:from-purple-800 hover:to-purple-700 text-white"
           >
             {isSubmitting ? (
-              "Sending..."
+              'Sending...'
             ) : (
               <>
                 Send Message

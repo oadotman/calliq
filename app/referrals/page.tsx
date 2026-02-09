@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import { useState, useEffect } from 'react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import {
   Copy,
   Gift,
@@ -23,11 +23,11 @@ import {
   ChevronRight,
   Info,
   ExternalLink,
-} from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
-import { ReferralHistory } from "@/components/referrals/ReferralHistory";
-import { ReferralRewards } from "@/components/referrals/ReferralRewards";
-import { ReferralInviteModal } from "@/components/referrals/ReferralInviteModal";
+} from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
+import { ReferralHistory } from '@/components/referrals/ReferralHistory';
+import { ReferralRewards } from '@/components/referrals/ReferralRewards';
+import { ReferralInviteModal } from '@/components/referrals/ReferralInviteModal';
 
 interface ReferralStats {
   totalSent: number;
@@ -61,13 +61,13 @@ interface ReferralTier {
 
 export default function ReferralsPage() {
   const [loading, setLoading] = useState(true);
-  const [referralCode, setReferralCode] = useState("");
-  const [referralLink, setReferralLink] = useState("");
+  const [referralCode, setReferralCode] = useState('');
+  const [referralLink, setReferralLink] = useState('');
   const [stats, setStats] = useState<ReferralStats | null>(null);
   const [tiers, setTiers] = useState<ReferralTier[]>([]);
   const [shareLinks, setShareLinks] = useState<any>({});
   const [showInviteModal, setShowInviteModal] = useState(false);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState('overview');
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -79,8 +79,8 @@ export default function ReferralsPage() {
       setLoading(true);
 
       // Fetch referral code and stats
-      const response = await fetch("/api/referrals/generate");
-      if (!response.ok) throw new Error("Failed to fetch referral data");
+      const response = await fetch('/api/referrals/generate');
+      if (!response.ok) throw new Error('Failed to fetch referral data');
 
       const data = await response.json();
       setReferralCode(data.referralCode);
@@ -89,11 +89,11 @@ export default function ReferralsPage() {
       setTiers(data.tiers);
       setShareLinks(data.shareLinks);
     } catch (error) {
-      console.error("Error fetching referral data:", error);
+      console.error('Error fetching referral data:', error);
       toast({
-        title: "Error",
-        description: "Failed to load referral data",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to load referral data',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -104,8 +104,8 @@ export default function ReferralsPage() {
     navigator.clipboard.writeText(referralLink);
     setCopied(true);
     toast({
-      title: "Copied!",
-      description: "Referral link copied to clipboard",
+      title: 'Copied!',
+      description: 'Referral link copied to clipboard',
     });
     setTimeout(() => setCopied(false), 2000);
   };
@@ -117,7 +117,7 @@ export default function ReferralsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-700"></div>
       </div>
     );
   }
@@ -127,16 +127,14 @@ export default function ReferralsPage() {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Referral Program
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Referral Program</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">
             Invite friends and earn rewards when they become paying customers
           </p>
         </div>
         <Button
           onClick={() => setShowInviteModal(true)}
-          className="bg-violet-600 hover:bg-violet-700"
+          className="bg-purple-700 hover:bg-purple-800"
         >
           <Mail className="w-4 h-4 mr-2" />
           Invite Friends
@@ -145,11 +143,11 @@ export default function ReferralsPage() {
 
       {/* Current Tier & Progress */}
       {stats && (
-        <Card className="p-6 bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-950/20 dark:to-purple-950/20 border-violet-200 dark:border-violet-800">
+        <Card className="p-6 bg-gradient-to-r from-purple-50 to-purple-50 dark:from-purple-950/20 dark:to-purple-950/20 border-purple-200 dark:border-purple-900">
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-4">
-                <div className="p-3 rounded-full bg-violet-600 text-white">
+                <div className="p-3 rounded-full bg-purple-700 text-white">
                   <Award className="w-6 h-6" />
                 </div>
                 <div>
@@ -169,16 +167,18 @@ export default function ReferralsPage() {
                       Progress to {stats.nextTierName}
                     </span>
                     <span className="font-medium text-gray-900 dark:text-white">
-                      {stats.progressToNextTier.current} / {stats.progressToNextTier.required} referrals
+                      {stats.progressToNextTier.current} / {stats.progressToNextTier.required}{' '}
+                      referrals
                     </span>
                   </div>
-                  <Progress
-                    value={stats.progressToNextTier.percentage}
-                    className="h-3"
-                  />
+                  <Progress value={stats.progressToNextTier.percentage} className="h-3" />
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     {stats.progressToNextTier.required - stats.progressToNextTier.current} more
-                    successful referral{stats.progressToNextTier.required - stats.progressToNextTier.current !== 1 ? 's' : ''} needed
+                    successful referral
+                    {stats.progressToNextTier.required - stats.progressToNextTier.current !== 1
+                      ? 's'
+                      : ''}{' '}
+                    needed
                   </p>
                 </div>
               )}
@@ -190,7 +190,7 @@ export default function ReferralsPage() {
               <div className="space-y-1">
                 {stats.availableMinutes > 0 && (
                   <div className="flex items-center justify-end gap-2">
-                    <Clock className="w-4 h-4 text-violet-600" />
+                    <Clock className="w-4 h-4 text-purple-700" />
                     <span className="font-semibold text-gray-900 dark:text-white">
                       {stats.availableMinutes} minutes
                     </span>
@@ -218,7 +218,7 @@ export default function ReferralsPage() {
             onClick={() => setShowInviteModal(true)}
             variant="default"
             size="sm"
-            className="bg-violet-600 hover:bg-violet-700"
+            className="bg-purple-700 hover:bg-purple-800"
           >
             <Mail className="w-4 h-4 mr-2" />
             Send Invitations
@@ -233,11 +233,7 @@ export default function ReferralsPage() {
                 readOnly
                 className="flex-1 px-4 py-2 bg-gray-50 dark:bg-gray-800 text-sm"
               />
-              <Button
-                onClick={copyReferralLink}
-                variant="ghost"
-                className="rounded-none px-4"
-              >
+              <Button onClick={copyReferralLink} variant="ghost" className="rounded-none px-4">
                 {copied ? (
                   <CheckCircle className="w-4 h-4 text-green-600" />
                 ) : (
@@ -250,7 +246,7 @@ export default function ReferralsPage() {
             <Button
               variant="outline"
               size="icon"
-              onClick={() => window.open(shareLinks.twitter, "_blank")}
+              onClick={() => window.open(shareLinks.twitter, '_blank')}
               title="Share on Twitter"
             >
               <Twitter className="w-4 h-4" />
@@ -258,7 +254,7 @@ export default function ReferralsPage() {
             <Button
               variant="outline"
               size="icon"
-              onClick={() => window.open(shareLinks.linkedin, "_blank")}
+              onClick={() => window.open(shareLinks.linkedin, '_blank')}
               title="Share on LinkedIn"
             >
               <Linkedin className="w-4 h-4" />
@@ -266,7 +262,7 @@ export default function ReferralsPage() {
             <Button
               variant="outline"
               size="icon"
-              onClick={() => window.location.href = shareLinks.email}
+              onClick={() => (window.location.href = shareLinks.email)}
               title="Share via Email"
             >
               <Mail className="w-4 h-4" />
@@ -325,7 +321,7 @@ export default function ReferralsPage() {
                   {stats.totalRewarded}
                 </p>
               </div>
-              <Gift className="w-8 h-8 text-violet-400" />
+              <Gift className="w-8 h-8 text-purple-700" />
             </div>
           </Card>
         </div>
@@ -353,10 +349,10 @@ export default function ReferralsPage() {
                     key={tier.tier_level}
                     className={`p-4 rounded-lg border-2 transition-colors ${
                       isCurrentTier
-                        ? "border-violet-500 bg-violet-50 dark:bg-violet-950/20"
+                        ? 'border-purple-700 bg-purple-50 dark:bg-purple-950/20'
                         : isAchieved
-                        ? "border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/20"
-                        : "border-gray-200 dark:border-gray-700"
+                          ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/20'
+                          : 'border-gray-200 dark:border-gray-700'
                     }`}
                   >
                     <div className="flex items-start justify-between">
@@ -365,8 +361,8 @@ export default function ReferralsPage() {
                           <div
                             className={`p-2 rounded-full ${
                               isAchieved
-                                ? "bg-green-600 text-white"
-                                : "bg-gray-200 dark:bg-gray-700 text-gray-500"
+                                ? 'bg-green-600 text-white'
+                                : 'bg-gray-200 dark:bg-gray-700 text-gray-500'
                             }`}
                           >
                             {isAchieved ? (
@@ -386,7 +382,7 @@ export default function ReferralsPage() {
                             </h4>
                             <p className="text-sm text-gray-600 dark:text-gray-400">
                               {tier.referrals_required} successful referral
-                              {tier.referrals_required !== 1 ? "s" : ""}
+                              {tier.referrals_required !== 1 ? 's' : ''}
                             </p>
                           </div>
                         </div>
@@ -398,10 +394,8 @@ export default function ReferralsPage() {
                         <div className="space-y-1">
                           {tier.reward_minutes > 0 && (
                             <div className="flex items-center justify-end gap-2">
-                              <Clock className="w-4 h-4 text-violet-600" />
-                              <span className="font-semibold">
-                                {tier.reward_minutes} mins
-                              </span>
+                              <Clock className="w-4 h-4 text-purple-700" />
+                              <span className="font-semibold">{tier.reward_minutes} mins</span>
                             </div>
                           )}
                           {tier.reward_credits_cents > 0 && (
@@ -427,14 +421,12 @@ export default function ReferralsPage() {
             <div className="space-y-4">
               <div className="flex gap-4">
                 <div className="flex-shrink-0">
-                  <div className="w-8 h-8 rounded-full bg-violet-100 dark:bg-violet-900/50 flex items-center justify-center text-violet-600 font-semibold">
+                  <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-950/50 flex items-center justify-center text-purple-700 font-semibold">
                     1
                   </div>
                 </div>
                 <div>
-                  <h4 className="font-medium text-gray-900 dark:text-white">
-                    Share Your Link
-                  </h4>
+                  <h4 className="font-medium text-gray-900 dark:text-white">Share Your Link</h4>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                     Send your unique referral link to friends and colleagues
                   </p>
@@ -443,14 +435,12 @@ export default function ReferralsPage() {
 
               <div className="flex gap-4">
                 <div className="flex-shrink-0">
-                  <div className="w-8 h-8 rounded-full bg-violet-100 dark:bg-violet-900/50 flex items-center justify-center text-violet-600 font-semibold">
+                  <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-950/50 flex items-center justify-center text-purple-700 font-semibold">
                     2
                   </div>
                 </div>
                 <div>
-                  <h4 className="font-medium text-gray-900 dark:text-white">
-                    They Sign Up
-                  </h4>
+                  <h4 className="font-medium text-gray-900 dark:text-white">They Sign Up</h4>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                     Your friends register using your referral link
                   </p>
@@ -459,7 +449,7 @@ export default function ReferralsPage() {
 
               <div className="flex gap-4">
                 <div className="flex-shrink-0">
-                  <div className="w-8 h-8 rounded-full bg-violet-100 dark:bg-violet-900/50 flex items-center justify-center text-violet-600 font-semibold">
+                  <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-950/50 flex items-center justify-center text-purple-700 font-semibold">
                     3
                   </div>
                 </div>
@@ -475,14 +465,12 @@ export default function ReferralsPage() {
 
               <div className="flex gap-4">
                 <div className="flex-shrink-0">
-                  <div className="w-8 h-8 rounded-full bg-violet-100 dark:bg-violet-900/50 flex items-center justify-center text-violet-600 font-semibold">
+                  <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-950/50 flex items-center justify-center text-purple-700 font-semibold">
                     4
                   </div>
                 </div>
                 <div>
-                  <h4 className="font-medium text-gray-900 dark:text-white">
-                    Earn Rewards
-                  </h4>
+                  <h4 className="font-medium text-gray-900 dark:text-white">Earn Rewards</h4>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                     Get free minutes and credits based on your referral tier
                   </p>

@@ -69,13 +69,40 @@
   }
 }
 
-/* Custom gradient styles */
+/* Modern Dark Purple Color System */
+@layer base {
+  :root {
+    /* Dark Purple Palette */
+    --purple-50: 250 248 255;
+    --purple-100: 243 237 254;
+    --purple-200: 221 207 249;
+    --purple-300: 192 165 242;
+    --purple-400: 152 111 226;
+    --purple-500: 139 92 224; /* Medium purple */
+    --purple-600: 109 52 188; /* Main purple */
+    --purple-700: 85 33 151; /* Dark purple */
+    --purple-800: 66 22 121; /* Darker purple */
+    --purple-900: 49 15 93; /* Very dark purple */
+    --purple-950: 30 8 61; /* Deepest purple */
+  }
+}
+
+/* Custom gradient styles - Updated to dark purple */
 .gradient-text {
-  @apply bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent;
+  @apply bg-gradient-to-r from-purple-800 to-purple-700 bg-clip-text text-transparent;
 }
 
 .gradient-bg {
-  @apply bg-gradient-to-r from-blue-500 to-purple-600;
+  @apply bg-gradient-to-r from-purple-700 to-purple-700;
+}
+
+/* Modern dark purple gradients */
+.gradient-purple-dark {
+  @apply bg-gradient-to-r from-purple-900 to-purple-700;
+}
+
+.gradient-purple-subtle {
+  @apply bg-gradient-to-br from-purple-50 to-purple-100/50;
 }
 
 /* Card hover effects */
@@ -95,8 +122,12 @@ html {
 
 /* Custom animations */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideInFromTop {
@@ -227,7 +258,8 @@ html {
 }
 
 @keyframes pulse-glow {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
   }
   50% {
@@ -280,20 +312,83 @@ html {
   animation-delay: 0.5s;
 }
 
-/* Hover effects for cards and buttons */
+/* Modern hover effects for cards and buttons */
 .hover-lift {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .hover-lift:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  transform: translateY(-6px);
+  box-shadow: 0 20px 40px rgba(85, 33, 151, 0.2);
 }
 
 .hover-glow {
-  transition: box-shadow 0.3s ease;
+  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .hover-glow:hover {
-  box-shadow: 0 0 30px rgba(139, 92, 246, 0.4);
+  box-shadow: 0 0 40px rgba(85, 33, 151, 0.3);
+}
+
+/* Modern glassmorphism effect */
+.glass-card {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 32px rgba(85, 33, 151, 0.1);
+}
+
+.dark .glass-card {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Modern button styles */
+.btn-modern {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-modern::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transform: translate(-50%, -50%);
+  transition:
+    width 0.6s,
+    height 0.6s;
+}
+
+.btn-modern:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+/* Smooth focus states */
+*:focus-visible {
+  outline: 2px solid rgb(85, 33, 151);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Modern card depth */
+.card-depth {
+  box-shadow:
+    0 1px 3px rgba(85, 33, 151, 0.05),
+    0 10px 40px rgba(85, 33, 151, 0.08);
+  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-depth:hover {
+  box-shadow:
+    0 1px 3px rgba(85, 33, 151, 0.1),
+    0 20px 60px rgba(85, 33, 151, 0.15);
 }

@@ -27,7 +27,7 @@ import {
   ChevronRight,
   Building,
   UserPlus,
-  FileSearch
+  FileSearch,
 } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -38,7 +38,7 @@ export default function AdminDashboard() {
     totalPartners: 0,
     pendingApplications: 0,
     pendingPayouts: 0,
-    totalUsers: 0
+    totalUsers: 0,
   });
   const router = useRouter();
   const supabase = createBrowserClient();
@@ -50,7 +50,9 @@ export default function AdminDashboard() {
 
   const checkAdminAccess = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
       if (!user) {
         router.push('/login');
@@ -105,7 +107,7 @@ export default function AdminDashboard() {
         totalPartners: partners?.length || 0,
         pendingApplications: applications?.length || 0,
         pendingPayouts: commissions?.length || 0,
-        totalUsers: users?.length || 0
+        totalUsers: users?.length || 0,
       });
     } catch (error) {
       console.error('Error loading stats:', error);
@@ -116,7 +118,7 @@ export default function AdminDashboard() {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-700 mx-auto"></div>
           <p className="mt-4 text-gray-600">Checking admin access...</p>
         </div>
       </div>
@@ -138,12 +140,11 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-gray-600 mb-4">
-              Only administrators and owners can access this area. If you believe this is an error, please contact your system administrator.
+              Only administrators and owners can access this area. If you believe this is an error,
+              please contact your system administrator.
             </p>
             <div className="flex gap-2">
-              <Button onClick={() => router.push('/dashboard')}>
-                Go to Dashboard
-              </Button>
+              <Button onClick={() => router.push('/dashboard')}>Go to Dashboard</Button>
               <Button variant="outline" onClick={() => router.push('/')}>
                 Go to Home
               </Button>
@@ -176,29 +177,29 @@ export default function AdminDashboard() {
       title: 'Partner Program',
       description: 'Manage partners, applications, and commissions',
       icon: Users,
-      color: 'bg-purple-500',
+      color: 'bg-purple-700',
       items: [
         {
           label: 'Partner Overview',
           href: '/admin/partners',
           icon: BarChart,
-          badge: stats.totalPartners > 0 ? `${stats.totalPartners} active` : null
+          badge: stats.totalPartners > 0 ? `${stats.totalPartners} active` : null,
         },
         {
           label: 'Applications',
           href: '/admin/partners/applications',
           icon: FileText,
           badge: stats.pendingApplications > 0 ? `${stats.pendingApplications} pending` : null,
-          badgeVariant: 'warning'
+          badgeVariant: 'warning',
         },
         {
           label: 'Payouts',
           href: '/admin/partners/payouts',
           icon: CreditCard,
           badge: stats.pendingPayouts > 0 ? `${stats.pendingPayouts} pending` : null,
-          badgeVariant: 'warning'
-        }
-      ]
+          badgeVariant: 'warning',
+        },
+      ],
     },
     {
       title: 'User Management',
@@ -210,19 +211,19 @@ export default function AdminDashboard() {
           label: 'All Users',
           href: '/admin/users',
           icon: Users,
-          badge: stats.totalUsers > 0 ? `${stats.totalUsers} total` : null
+          badge: stats.totalUsers > 0 ? `${stats.totalUsers} total` : null,
         },
         {
           label: 'Organizations',
           href: '/admin/organizations',
-          icon: Building
+          icon: Building,
         },
         {
           label: 'Invitations',
           href: '/admin/invitations',
-          icon: UserPlus
-        }
-      ]
+          icon: UserPlus,
+        },
+      ],
     },
     {
       title: 'System',
@@ -233,20 +234,20 @@ export default function AdminDashboard() {
         {
           label: 'Audit Logs',
           href: '/admin/audit',
-          icon: FileSearch
+          icon: FileSearch,
         },
         {
           label: 'System Settings',
           href: '/admin/settings',
-          icon: Settings
+          icon: Settings,
         },
         {
           label: 'Security',
           href: '/admin/security',
-          icon: Shield
-        }
-      ]
-    }
+          icon: Shield,
+        },
+      ],
+    },
   ];
 
   return (
@@ -255,7 +256,7 @@ export default function AdminDashboard() {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-2">
-            <Shield className="h-8 w-8 text-purple-600" />
+            <Shield className="h-8 w-8 text-purple-700" />
             <h1 className="text-3xl font-bold">Admin Dashboard</h1>
           </div>
           <p className="text-gray-600">Welcome back, {userEmail}</p>
@@ -270,7 +271,7 @@ export default function AdminDashboard() {
                   <p className="text-sm text-gray-600">Active Partners</p>
                   <p className="text-2xl font-bold">{stats.totalPartners}</p>
                 </div>
-                <Users className="h-8 w-8 text-purple-600" />
+                <Users className="h-8 w-8 text-purple-700" />
               </div>
             </CardContent>
           </Card>
@@ -340,7 +341,16 @@ export default function AdminDashboard() {
                                   <span className="font-medium">{item.label}</span>
                                 </div>
                                 {item.badge && (
-                                  <Badge variant={(item.badgeVariant || 'default') as 'default' | 'secondary' | 'destructive' | 'outline' | 'warning'}>
+                                  <Badge
+                                    variant={
+                                      (item.badgeVariant || 'default') as
+                                        | 'default'
+                                        | 'secondary'
+                                        | 'destructive'
+                                        | 'outline'
+                                        | 'warning'
+                                    }
+                                  >
                                     {item.badge}
                                   </Badge>
                                 )}

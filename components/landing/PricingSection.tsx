@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Check } from "lucide-react";
-import { getPublicPlans } from "@/lib/pricing";
+import { useState } from 'react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Check } from 'lucide-react';
+import { getPublicPlans } from '@/lib/pricing';
 
 export function PricingSection() {
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
   const plans = getPublicPlans();
 
   return (
@@ -24,21 +24,21 @@ export function PricingSection() {
           </p>
           <div className="inline-flex items-center gap-4 p-1 bg-white dark:bg-slate-800 rounded-full shadow-md">
             <button
-              onClick={() => setBillingCycle("monthly")}
+              onClick={() => setBillingCycle('monthly')}
               className={`px-6 py-2 rounded-full font-semibold transition-all ${
-                billingCycle === "monthly"
-                  ? "bg-violet-600 text-white shadow-lg"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+                billingCycle === 'monthly'
+                  ? 'bg-purple-700 text-white shadow-lg'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
               }`}
             >
               Monthly
             </button>
             <button
-              onClick={() => setBillingCycle("annual")}
+              onClick={() => setBillingCycle('annual')}
               className={`px-6 py-2 rounded-full font-semibold transition-all ${
-                billingCycle === "annual"
-                  ? "bg-violet-600 text-white shadow-lg"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+                billingCycle === 'annual'
+                  ? 'bg-purple-700 text-white shadow-lg'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
               }`}
             >
               Annual
@@ -54,13 +54,13 @@ export function PricingSection() {
               key={plan.id}
               className={`relative ${
                 plan.isPopular
-                  ? "border-2 border-violet-200 dark:border-violet-700 shadow-2xl shadow-violet-500/20"
-                  : "border-2 border-slate-200 dark:border-slate-700"
+                  ? 'border-2 border-purple-200 dark:border-purple-800 shadow-2xl shadow-purple-700/20'
+                  : 'border-2 border-slate-200 dark:border-slate-700'
               }`}
             >
               {plan.isPopular && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                  <Badge className="bg-gradient-to-r from-violet-600 to-purple-600 text-white px-4 py-1.5">
+                  <Badge className="bg-gradient-to-r from-purple-700 to-purple-700 text-white px-4 py-1.5">
                     Most Popular
                   </Badge>
                 </div>
@@ -75,20 +75,23 @@ export function PricingSection() {
                   ) : (
                     <>
                       <div className="text-4xl font-bold text-slate-900 dark:text-slate-100">
-                        ${billingCycle === "monthly" ? plan.price : Math.round(plan.priceAnnual / 12)}
+                        $
+                        {billingCycle === 'monthly'
+                          ? plan.price
+                          : Math.round(plan.priceAnnual / 12)}
                       </div>
                       <div className="text-sm text-slate-600 dark:text-slate-400">
-                        {billingCycle === "monthly" ? "/month" : "/month, billed annually"}
+                        {billingCycle === 'monthly' ? '/month' : '/month, billed annually'}
                       </div>
                     </>
                   )}
                 </div>
-                <Link href={plan.id === "free" ? "/signup" : "/signup"}>
+                <Link href={plan.id === 'free' ? '/signup' : '/signup'}>
                   <Button
                     className={`w-full ${
                       plan.isPopular
-                        ? "bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white"
-                        : "bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 text-white"
+                        ? 'bg-gradient-to-r from-purple-700 to-purple-700 hover:from-purple-800 hover:to-purple-700 text-white'
+                        : 'bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 text-white'
                     }`}
                   >
                     {plan.cta}
