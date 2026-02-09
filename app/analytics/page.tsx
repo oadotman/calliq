@@ -1,16 +1,8 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Clock,
-  TrendingUp,
-  Users,
-  MessageSquare,
-  BarChart3,
-  Tag,
-  Loader2,
-} from "lucide-react";
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Clock, TrendingUp, Users, MessageSquare, BarChart3, Tag, Loader2 } from 'lucide-react';
 import {
   LineChart,
   Line,
@@ -25,10 +17,10 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-} from "recharts";
-import { useAuth } from "@/lib/AuthContext";
-import { createClient } from "@/lib/supabase/client";
-import { format, startOfMonth, endOfMonth, subMonths, parseISO } from "date-fns";
+} from 'recharts';
+import { useAuth } from '@/lib/AuthContext';
+import { createClient } from '@/lib/supabase/client';
+import { format, startOfMonth, endOfMonth, subMonths, parseISO } from 'date-fns';
 
 // =====================================================
 // INTERFACES
@@ -80,41 +72,63 @@ export default function AnalyticsPage() {
         // Transform API response to match the expected analytics format
         const analyticsData: AnalyticsData = {
           totalTimeSaved: Math.round(data.overview.timeSaved / 60), // Convert minutes to hours
-          avgSentiment: Math.round((data.sentiment.average + 1) * 5), // Convert -1 to 1 scale to 0-10
+          avgSentiment:
+            data.overview.totalCalls === 0 ? 0 : Math.round((data.sentiment.average + 1) * 5), // Convert -1 to 1 scale to 0-10, but 0 if no calls
           activeReps: data.overview.activeUsers,
           avgCallLength: Math.round(data.overview.avgCallDuration / 60), // Convert seconds to minutes
           timeSavedData: data.trends.monthly.map((m: any) => ({
             month: m.month,
-            hours: Math.round(m.totalDuration / 60) // Convert minutes to hours
+            hours: Math.round(m.totalDuration / 60), // Convert minutes to hours
           })),
           callsByRepData: data.team.topPerformers.map((p: any) => ({
             rep: p.email.split('@')[0], // Use email prefix as rep name
-            calls: p.callCount
+            calls: p.callCount,
           })),
           sentimentData: [
             {
-              name: "Positive",
-              value: Math.round((data.sentiment.distribution.positive / (data.sentiment.distribution.positive + data.sentiment.distribution.neutral + data.sentiment.distribution.negative)) * 100) || 0,
-              color: "#10B981"
+              name: 'Positive',
+              value:
+                Math.round(
+                  (data.sentiment.distribution.positive /
+                    (data.sentiment.distribution.positive +
+                      data.sentiment.distribution.neutral +
+                      data.sentiment.distribution.negative)) *
+                    100
+                ) || 0,
+              color: '#10B981',
             },
             {
-              name: "Neutral",
-              value: Math.round((data.sentiment.distribution.neutral / (data.sentiment.distribution.positive + data.sentiment.distribution.neutral + data.sentiment.distribution.negative)) * 100) || 0,
-              color: "#94A3B8"
+              name: 'Neutral',
+              value:
+                Math.round(
+                  (data.sentiment.distribution.neutral /
+                    (data.sentiment.distribution.positive +
+                      data.sentiment.distribution.neutral +
+                      data.sentiment.distribution.negative)) *
+                    100
+                ) || 0,
+              color: '#94A3B8',
             },
             {
-              name: "Negative",
-              value: Math.round((data.sentiment.distribution.negative / (data.sentiment.distribution.positive + data.sentiment.distribution.neutral + data.sentiment.distribution.negative)) * 100) || 0,
-              color: "#DC2626"
-            }
+              name: 'Negative',
+              value:
+                Math.round(
+                  (data.sentiment.distribution.negative /
+                    (data.sentiment.distribution.positive +
+                      data.sentiment.distribution.neutral +
+                      data.sentiment.distribution.negative)) *
+                    100
+                ) || 0,
+              color: '#DC2626',
+            },
           ],
           keywordsData: data.keywords.top.slice(0, 6).map((k: any) => ({
             keyword: k.keyword,
             count: k.count,
-            trend: k.count > 10 ? 'up' : k.count > 5 ? 'neutral' : 'down'
+            trend: k.count > 10 ? 'up' : k.count > 5 ? 'neutral' : 'down',
           })),
           lastMonthTimeSaved: 0, // Will calculate from trends if needed
-          lastMonthSentiment: 0 // Will calculate from trends if needed
+          lastMonthSentiment: 0, // Will calculate from trends if needed
         };
 
         // Calculate last month metrics from trends if available
@@ -167,7 +181,9 @@ export default function AnalyticsPage() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
         <div className="flex items-center justify-center p-8 lg:p-16">
           <div className="text-center">
-            <p className="text-slate-600 font-medium">Please select an organization to view analytics.</p>
+            <p className="text-slate-600 font-medium">
+              Please select an organization to view analytics.
+            </p>
           </div>
         </div>
       </div>
@@ -187,13 +203,19 @@ export default function AnalyticsPage() {
   }
 
   // Calculate trends
-  const timeSavedTrend = analytics.lastMonthTimeSaved > 0
-    ? Math.round(((analytics.totalTimeSaved - analytics.lastMonthTimeSaved) / analytics.lastMonthTimeSaved) * 100)
-    : 0;
+  const timeSavedTrend =
+    analytics.lastMonthTimeSaved > 0
+      ? Math.round(
+          ((analytics.totalTimeSaved - analytics.lastMonthTimeSaved) /
+            analytics.lastMonthTimeSaved) *
+            100
+        )
+      : 0;
 
-  const sentimentTrend = analytics.lastMonthSentiment > 0
-    ? parseFloat((analytics.avgSentiment - analytics.lastMonthSentiment).toFixed(1))
-    : 0;
+  const sentimentTrend =
+    analytics.lastMonthSentiment > 0
+      ? parseFloat((analytics.avgSentiment - analytics.lastMonthSentiment).toFixed(1))
+      : 0;
 
   // =====================================================
   // MAIN RENDER
@@ -241,11 +263,18 @@ export default function AnalyticsPage() {
                 {analytics.totalTimeSaved} hours
               </div>
               <div className="flex items-center gap-2 text-sm font-medium">
-                <div className={`flex items-center gap-1 px-2.5 py-1 rounded-lg ${
-                  timeSavedTrend >= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
-                }`}>
+                <div
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg ${
+                    timeSavedTrend >= 0
+                      ? 'bg-emerald-100 text-emerald-700'
+                      : 'bg-red-100 text-red-700'
+                  }`}
+                >
                   <TrendingUp className={`w-4 h-4 ${timeSavedTrend < 0 ? 'rotate-180' : ''}`} />
-                  <span>{timeSavedTrend >= 0 ? '+' : ''}{timeSavedTrend}% vs last month</span>
+                  <span>
+                    {timeSavedTrend >= 0 ? '+' : ''}
+                    {timeSavedTrend}% vs last month
+                  </span>
                 </div>
               </div>
             </CardContent>
@@ -265,16 +294,27 @@ export default function AnalyticsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-4xl font-bold text-slate-900 mb-2">
-                {analytics.avgSentiment}/10
+                {analytics.avgSentiment === 0 ? '—' : `${analytics.avgSentiment}/10`}
               </div>
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <div className={`flex items-center gap-1 px-2.5 py-1 rounded-lg ${
-                  sentimentTrend >= 0 ? 'bg-purple-100 text-purple-700' : 'bg-red-100 text-red-700'
-                }`}>
-                  <TrendingUp className={`w-4 h-4 ${sentimentTrend < 0 ? 'rotate-180' : ''}`} />
-                  <span>{sentimentTrend >= 0 ? '+' : ''}{sentimentTrend} vs last month</span>
+              {analytics.avgSentiment > 0 ? (
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <div
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg ${
+                      sentimentTrend >= 0
+                        ? 'bg-purple-100 text-purple-700'
+                        : 'bg-red-100 text-red-700'
+                    }`}
+                  >
+                    <TrendingUp className={`w-4 h-4 ${sentimentTrend < 0 ? 'rotate-180' : ''}`} />
+                    <span>
+                      {sentimentTrend >= 0 ? '+' : ''}
+                      {sentimentTrend} vs last month
+                    </span>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <p className="text-sm text-slate-500">No calls yet</p>
+              )}
             </CardContent>
           </Card>
 
@@ -291,12 +331,8 @@ export default function AnalyticsPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-4xl font-bold text-slate-900 mb-2">
-                {analytics.activeReps}
-              </div>
-              <p className="text-sm text-slate-600 font-medium">
-                Team members
-              </p>
+              <div className="text-4xl font-bold text-slate-900 mb-2">{analytics.activeReps}</div>
+              <p className="text-sm text-slate-600 font-medium">Team members</p>
             </CardContent>
           </Card>
 
@@ -316,9 +352,7 @@ export default function AnalyticsPage() {
               <div className="text-4xl font-bold text-slate-900 mb-2">
                 {analytics.avgCallLength} min
               </div>
-              <p className="text-sm text-slate-600 font-medium">
-                Per call
-              </p>
+              <p className="text-sm text-slate-600 font-medium">Per call</p>
             </CardContent>
           </Card>
         </div>
@@ -341,21 +375,21 @@ export default function AnalyticsPage() {
                     <XAxis
                       dataKey="month"
                       stroke="#64748B"
-                      style={{ fontSize: "12px", fontWeight: 500 }}
+                      style={{ fontSize: '12px', fontWeight: 500 }}
                     />
                     <YAxis
                       stroke="#64748B"
-                      style={{ fontSize: "12px", fontWeight: 500 }}
-                      label={{ value: "Hours", angle: -90, position: "insideLeft" }}
+                      style={{ fontSize: '12px', fontWeight: 500 }}
+                      label={{ value: 'Hours', angle: -90, position: 'insideLeft' }}
                     />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "#1E293B",
-                        border: "none",
-                        borderRadius: "12px",
-                        color: "#fff",
-                        padding: "12px",
-                        fontSize: "14px",
+                        backgroundColor: '#1E293B',
+                        border: 'none',
+                        borderRadius: '12px',
+                        color: '#fff',
+                        padding: '12px',
+                        fontSize: '14px',
                         fontWeight: 500,
                       }}
                     />
@@ -364,7 +398,7 @@ export default function AnalyticsPage() {
                       dataKey="hours"
                       stroke="#8B5CF6"
                       strokeWidth={3}
-                      dot={{ fill: "#8B5CF6", strokeWidth: 2, r: 5 }}
+                      dot={{ fill: '#8B5CF6', strokeWidth: 2, r: 5 }}
                       activeDot={{ r: 7 }}
                     />
                   </LineChart>
@@ -393,29 +427,25 @@ export default function AnalyticsPage() {
                     <XAxis
                       dataKey="rep"
                       stroke="#64748B"
-                      style={{ fontSize: "12px", fontWeight: 500 }}
+                      style={{ fontSize: '12px', fontWeight: 500 }}
                     />
                     <YAxis
                       stroke="#64748B"
-                      style={{ fontSize: "12px", fontWeight: 500 }}
-                      label={{ value: "Calls", angle: -90, position: "insideLeft" }}
+                      style={{ fontSize: '12px', fontWeight: 500 }}
+                      label={{ value: 'Calls', angle: -90, position: 'insideLeft' }}
                     />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "#1E293B",
-                        border: "none",
-                        borderRadius: "12px",
-                        color: "#fff",
-                        padding: "12px",
-                        fontSize: "14px",
+                        backgroundColor: '#1E293B',
+                        border: 'none',
+                        borderRadius: '12px',
+                        color: '#fff',
+                        padding: '12px',
+                        fontSize: '14px',
                         fontWeight: 500,
                       }}
                     />
-                    <Bar
-                      dataKey="calls"
-                      fill="#8B5CF6"
-                      radius={[8, 8, 0, 0]}
-                    />
+                    <Bar dataKey="calls" fill="#8B5CF6" radius={[8, 8, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
@@ -456,12 +486,12 @@ export default function AnalyticsPage() {
                   </Pie>
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "#1E293B",
-                      border: "none",
-                      borderRadius: "12px",
-                      color: "#fff",
-                      padding: "12px",
-                      fontSize: "14px",
+                      backgroundColor: '#1E293B',
+                      border: 'none',
+                      borderRadius: '12px',
+                      color: '#fff',
+                      padding: '12px',
+                      fontSize: '14px',
                       fontWeight: 500,
                     }}
                   />
@@ -470,13 +500,8 @@ export default function AnalyticsPage() {
               <div className="flex items-center justify-center gap-6 mt-4">
                 {analytics.sentimentData.map((item) => (
                   <div key={item.name} className="flex items-center gap-2">
-                    <div
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <span className="text-sm font-medium text-slate-700">
-                      {item.name}
-                    </span>
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                    <span className="text-sm font-medium text-slate-700">{item.name}</span>
                   </div>
                 ))}
               </div>
@@ -504,27 +529,23 @@ export default function AnalyticsPage() {
                           <Tag className="w-5 h-5 text-blue-600" />
                         </div>
                         <div>
-                          <p className="font-semibold text-slate-900 text-sm">
-                            {item.keyword}
-                          </p>
-                          <p className="text-xs text-slate-500">
-                            Mentioned {item.count} times
-                          </p>
+                          <p className="font-semibold text-slate-900 text-sm">{item.keyword}</p>
+                          <p className="text-xs text-slate-500">Mentioned {item.count} times</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-2xl font-bold text-slate-900">{item.count}</span>
-                        {item.trend === "up" && (
+                        {item.trend === 'up' && (
                           <div className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-lg">
                             <TrendingUp className="w-4 h-4" />
                           </div>
                         )}
-                        {item.trend === "down" && (
+                        {item.trend === 'down' && (
                           <div className="px-2 py-1 bg-red-100 text-red-700 rounded-lg rotate-180">
                             <TrendingUp className="w-4 h-4" />
                           </div>
                         )}
-                        {item.trend === "neutral" && (
+                        {item.trend === 'neutral' && (
                           <div className="px-2 py-1 bg-slate-100 text-slate-600 rounded-lg">
                             <div className="w-4 h-0.5 bg-slate-600" />
                           </div>
