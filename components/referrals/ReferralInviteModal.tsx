@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -8,13 +8,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { toast } from "@/components/ui/use-toast";
-import { Mail, Send, X, Plus, Trash2 } from "lucide-react";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from '@/components/ui/use-toast';
+import { Mail, Send, X, Plus, Trash2 } from 'lucide-react';
+import { fetchWithCSRF } from '@/lib/client/csrf';
 
 interface ReferralInviteModalProps {
   onClose: () => void;
@@ -27,7 +28,7 @@ export function ReferralInviteModal({
   onSuccess,
   referralCode,
 }: ReferralInviteModalProps) {
-  const [emails, setEmails] = useState<string[]>([""]);
+  const [emails, setEmails] = useState<string[]>(['']);
   const [message, setMessage] = useState(
     `Hi there!\n\nI've been using SynQall for call recording and AI-powered transcription, and I think you'd find it really valuable for your business.\n\nSign up using my referral link to get started with 30 free minutes!\n\nBest regards`
   );
@@ -36,13 +37,13 @@ export function ReferralInviteModal({
 
   const addEmailField = () => {
     if (emails.length < 10) {
-      setEmails([...emails, ""]);
+      setEmails([...emails, '']);
     }
   };
 
   const removeEmailField = (index: number) => {
     const newEmails = emails.filter((_, i) => i !== index);
-    setEmails(newEmails.length === 0 ? [""] : newEmails);
+    setEmails(newEmails.length === 0 ? [''] : newEmails);
 
     // Clear error for removed field
     const newErrors = { ...errors };
@@ -73,9 +74,9 @@ export function ReferralInviteModal({
       const trimmed = email.trim();
       if (trimmed) {
         if (!emailRegex.test(trimmed)) {
-          newErrors[index] = "Invalid email format";
+          newErrors[index] = 'Invalid email format';
         } else if (uniqueEmails.has(trimmed.toLowerCase())) {
-          newErrors[index] = "Duplicate email";
+          newErrors[index] = 'Duplicate email';
         } else {
           uniqueEmails.add(trimmed.toLowerCase());
           hasValidEmail = true;
@@ -87,9 +88,9 @@ export function ReferralInviteModal({
 
     if (!hasValidEmail) {
       toast({
-        title: "Error",
-        description: "Please enter at least one valid email",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Please enter at least one valid email',
+        variant: 'destructive',
       });
       return false;
     }
@@ -104,22 +105,26 @@ export function ReferralInviteModal({
     const validEmails = emails.filter((email) => email.trim());
 
     try {
-      // Send all invitations through the new API endpoint
-      const response = await fetch("/api/referrals/send-invitation", {
-        method: "POST",
+      // Send all invitations through the new API endpoint with CSRF protection
+      const response = await fetchWithCSRF('/api/referrals/send-invitation', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          emails: validEmails.map(email => email.trim()),
-          personalMessage: message !== `Hi there!\n\nI've been using SynQall for call recording and AI-powered transcription, and I think you'd find it really valuable for your business.\n\nSign up using my referral link to get started with 30 free minutes!\n\nBest regards` ? message : undefined,
+          emails: validEmails.map((email) => email.trim()),
+          personalMessage:
+            message !==
+            `Hi there!\n\nI've been using SynQall for call recording and AI-powered transcription, and I think you'd find it really valuable for your business.\n\nSign up using my referral link to get started with 30 free minutes!\n\nBest regards`
+              ? message
+              : undefined,
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to send invitations");
+        throw new Error(data.error || 'Failed to send invitations');
       }
 
       setSending(false);
@@ -127,35 +132,34 @@ export function ReferralInviteModal({
       // Handle results
       if (data.results.sent.length > 0) {
         toast({
-          title: "Success!",
-          description: `Sent ${data.results.sent.length} invitation${data.results.sent.length !== 1 ? "s" : ""} via email`,
+          title: 'Success!',
+          description: `Sent ${data.results.sent.length} invitation${data.results.sent.length !== 1 ? 's' : ''} via email`,
         });
         onSuccess();
       }
 
       if (data.results.alreadyReferred.length > 0) {
         toast({
-          title: "Already Referred",
-          description: `${data.results.alreadyReferred.length} email${data.results.alreadyReferred.length !== 1 ? "s were" : " was"} already referred`,
-          variant: "default",
+          title: 'Already Referred',
+          description: `${data.results.alreadyReferred.length} email${data.results.alreadyReferred.length !== 1 ? 's were' : ' was'} already referred`,
+          variant: 'default',
         });
       }
 
       if (data.results.failed.length > 0) {
         const failedMessages = data.results.failed.map((f: any) => `${f.email}: ${f.error}`);
         toast({
-          title: "Some invitations failed",
-          description: failedMessages.join(", "),
-          variant: "destructive",
+          title: 'Some invitations failed',
+          description: failedMessages.join(', '),
+          variant: 'destructive',
         });
       }
-
     } catch (error: any) {
       setSending(false);
       toast({
-        title: "Error",
-        description: error.message || "Failed to send invitations",
-        variant: "destructive",
+        title: 'Error',
+        description: error.message || 'Failed to send invitations',
+        variant: 'destructive',
       });
     }
   };
@@ -182,11 +186,9 @@ export function ReferralInviteModal({
                     placeholder="friend@example.com"
                     value={email}
                     onChange={(e) => updateEmail(index, e.target.value)}
-                    className={errors[index] ? "border-red-500" : ""}
+                    className={errors[index] ? 'border-red-500' : ''}
                   />
-                  {errors[index] && (
-                    <p className="text-xs text-red-500 mt-1">{errors[index]}</p>
-                  )}
+                  {errors[index] && <p className="text-xs text-red-500 mt-1">{errors[index]}</p>}
                 </div>
                 {emails.length > 1 && (
                   <Button
